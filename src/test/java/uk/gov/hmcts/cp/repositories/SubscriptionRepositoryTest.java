@@ -26,6 +26,7 @@ class SubscriptionRepositoryTest extends RepositoryTestBase {
         assertThat(subscriptions).hasSize(1);
         assertThat(subscriptions.get(0).getId()).isNotNull();
         assertThat(subscriptions.get(0).getEventType()).isEqualTo(PCR);
+        assertThat(subscriptions.get(0).getNotifyUrl()).isEqualTo("https://example.com/notify");
     }
 
     @Test
