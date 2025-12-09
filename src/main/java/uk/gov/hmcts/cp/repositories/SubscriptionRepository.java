@@ -5,9 +5,10 @@ import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.cp.entities.SubscriptionEntity;
 
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, Long> {
+public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, UUID> {
 
-    List<SubscriptionEntity> getBySubscriberId(long subscriberId);
+    List<SubscriptionEntity> getBySubscriberId(UUID subscriberId);
 }

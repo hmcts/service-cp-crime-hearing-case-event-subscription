@@ -13,6 +13,7 @@ import uk.gov.hmcts.cp.openapi.model.Result;
 import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -30,17 +31,20 @@ class SubscriptionServiceTest {
 
     SubscriptionEntity subscriptionEntity = SubscriptionEntity.builder().notifyUrl("url").build();
 
+    UUID subscriberId = UUID.fromString("2413d0fd-8a75-4fb6-828d-1a1fb7ae7290");
+    UUID subscriptionId = UUID.fromString("ee2e6e17-7c37-45ec-a1d4-4023500fb90d");
+
     @Test
     void get_single_subscription_should_return_single() {
-        when(subscriptionRepository.getReferenceById(123L)).thenReturn(subscriptionEntity);
-        Result response = subscriptionService.getSubscriptionById(123L);
+        when(subscriptionRepository.getReferenceById(subscriptionId)).thenReturn(subscriptionEntity);
+        Result response = subscriptionService.getSubscriptionById(subscriptionId);
         assertThat(response.getResultText()).isEqualTo("url");
     }
 
     @Test
     void get_subscription_by_subscriber_id_should_return() {
-        when(subscriptionRepository.getBySubscriberId(123L)).thenReturn(List.of(subscriptionEntity));
-        List<Result> response = subscriptionService.getSubscriptionsBySubscriber(123L);
+        when(subscriptionRepository.getBySubscriberId(subscriberId)).thenReturn(List.of(subscriptionEntity));
+        List<Result> response = subscriptionService.getSubscriptionsBySubscriber(subscriberId);
         assertThat(response).hasSize(1);
         assertThat(response.get(0).getResultText()).isEqualTo("url");
     }

@@ -13,6 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import uk.gov.hmcts.cp.model.EventType;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "subscription")
 @Getter
@@ -22,10 +24,10 @@ import uk.gov.hmcts.cp.model.EventType;
 public class SubscriptionEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    private long subscriberId;
+    private UUID subscriberId;
     @Enumerated(EnumType.STRING)
     private EventType eventType;
     private String notifyUrl;

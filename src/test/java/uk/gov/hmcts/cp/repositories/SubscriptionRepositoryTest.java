@@ -6,6 +6,7 @@ import uk.gov.hmcts.cp.entities.SubscriberEntity;
 import uk.gov.hmcts.cp.entities.SubscriptionEntity;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -31,7 +32,8 @@ class SubscriptionRepositoryTest extends RepositoryTestBase {
 
     @Test
     void fk_constraint_should_prevent_orphaned_subscription() {
-        assertThrows(Exception.class, () -> insertSubscription(99L));
+        UUID randomSubscriptionId = UUID.randomUUID();
+        assertThrows(Exception.class, () -> insertSubscription(randomSubscriptionId));
     }
 
     @Test

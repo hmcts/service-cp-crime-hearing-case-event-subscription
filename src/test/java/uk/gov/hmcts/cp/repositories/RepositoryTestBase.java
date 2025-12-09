@@ -10,6 +10,8 @@ import uk.gov.hmcts.cp.entities.SubscriberEntity;
 import uk.gov.hmcts.cp.entities.SubscriptionEntity;
 import uk.gov.hmcts.cp.model.EventType;
 
+import java.util.UUID;
+
 @SpringBootTest
 @ContextConfiguration(initializers = TestContainersInitialise.class)
 @AutoConfigureMockMvc
@@ -35,7 +37,7 @@ public abstract class RepositoryTestBase {
         return saved;
     }
 
-    protected SubscriptionEntity insertSubscription(long subscriberId) {
+    protected SubscriptionEntity insertSubscription(UUID subscriberId) {
         SubscriptionEntity subscription = SubscriptionEntity.builder()
                 .subscriberId(subscriberId)
                 .eventType(EventType.PCR)

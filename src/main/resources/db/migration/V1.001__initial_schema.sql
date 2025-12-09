@@ -1,12 +1,12 @@
 create table subscriber (
-    id                  bigserial primary key not null,
+    id                  uuid primary key not null,
     name                varchar(128) not null
 );
 create unique index on subscriber (name);
 
 create table subscription (
-    id                  bigserial primary key not null,
-    subscriber_id       bigint  not null,
+    id                  uuid primary key not null,
+    subscriber_id       uuid  not null,
     event_type          varchar(32) not null,
     notify_url          text        not null
 );

@@ -9,6 +9,7 @@ import uk.gov.hmcts.cp.openapi.model.Result;
 import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -18,12 +19,12 @@ public class SubscriptionService {
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionMapper mapper;
 
-    public Result getSubscriptionById(final long subscriptionId) {
+    public Result getSubscriptionById(final UUID subscriptionId) {
         SubscriptionEntity entity = subscriptionRepository.getReferenceById(subscriptionId);
         return mapper.mapSubscriptionToResult(entity);
     }
 
-    public List<Result> getSubscriptionsBySubscriber(final long subscriberId) {
+    public List<Result> getSubscriptionsBySubscriber(final UUID subscriberId) {
         List<SubscriptionEntity> subscriptions = subscriptionRepository.getBySubscriberId(subscriberId);
         return mapper.mapSubscriptionsToResults(subscriptions);
     }
