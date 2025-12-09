@@ -1,5 +1,5 @@
 # Dockerfile (project root)
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21
 
 WORKDIR /app
 
