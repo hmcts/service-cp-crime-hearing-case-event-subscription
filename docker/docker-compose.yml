@@ -1,4 +1,15 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+
   app:
     container_name: app
     build:
@@ -6,5 +17,6 @@ services:
       dockerfile: docker/Dockerfile
     ports:
       - "8082:8082"
-    environment:
-      SERVER_PORT: 8082
+
+volumes:
+  postgres-db-volume:

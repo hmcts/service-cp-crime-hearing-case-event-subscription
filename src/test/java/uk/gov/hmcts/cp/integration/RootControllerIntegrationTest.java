@@ -1,4 +1,4 @@
-package uk.gov.hmcts.cp.controllers.integration;
+package uk.gov.hmcts.cp.integration;
 
 import org.junit.jupiter.api.Test;
 
