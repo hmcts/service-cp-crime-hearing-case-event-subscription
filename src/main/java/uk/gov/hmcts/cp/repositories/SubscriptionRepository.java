@@ -4,6 +4,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.cp.entities.SubscriptionEntity;
 
+import java.util.List;
+
 @Repository
 public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, Long> {
+
+    List<SubscriptionEntity> getBySubscriberId(long subscriberId);
 }

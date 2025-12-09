@@ -41,4 +41,7 @@ springBoot {
 
 dependencies {
   implementation('uk.gov.hmcts.cp:api-cp-crime-courthearing-cases-results:0.0.0-a65d290')
+
+  // Lets add this to the api because we need it to prevent its openapi NotNull errors
+  implementation("io.swagger.core.v3:swagger-annotations:2.2.41")
 }

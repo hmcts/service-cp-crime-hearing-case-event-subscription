@@ -33,4 +33,12 @@ class SubscriptionRepositoryTest extends RepositoryTestBase {
     void fk_constraint_should_prevent_orphaned_subscription() {
         assertThrows(Exception.class, () -> insertSubscription(99L));
     }
+
+    @Test
+    void query_by_subscriber_id_should_return_subscription_list() {
+        SubscriberEntity subscriber = insertSubscriber("My subscriber");
+        insertSubscription(subscriber.getId());
+        List<SubscriptionEntity> subscriptions = subscriptionRepository.getBySubscriberId(subscriber.getId());
+        assertThat(subscriptions).hasSize(1);
+    }
 }
