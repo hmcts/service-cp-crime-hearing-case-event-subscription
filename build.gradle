@@ -25,9 +25,6 @@ apply {
   from("$rootDir/gradle/github/pmd.gradle")
   from("$rootDir/gradle/github/test.gradle")
   from("$rootDir/gradle/github/jar.gradle")
-
-  from("$rootDir/gradle/tasks/apitest.gradle")
-  from("$rootDir/gradle/tasks/docker.gradle")
 }
 
 springBoot {
