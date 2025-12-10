@@ -1,0 +1,34 @@
+jar {
+  enabled = true
+  archiveClassifier.set('plain')
+  manifest {
+    attributes(
+      'Implementation-Title': project.name,
+      'Implementation-Version': project.version.toString()
+    )
+  }
+  if (file("CHANGELOG.md").exists()) {
+    from('CHANGELOG.md') {
+      into 'META-INF'
+    }
+  } else {
+    println "⚠️  CHANGELOG.md not found, skipping inclusion in JAR"
+  }
+}
+
+bootJar {
+  archiveFileName = "${rootProject.name}-${project.version}.jar"
+
+  manifest {
+    attributes('Implementation-Version': project.version.toString())
+  }
+}
+
+tasks.named('composeBuild') {
+  dependsOn tasks.named('bootJar')
+}
+
+tasks.withType(AbstractArchiveTask).configureEach {
+  preserveFileTimestamps = false
+  reproducibleFileOrder = true
+}
