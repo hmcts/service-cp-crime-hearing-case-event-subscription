@@ -20,12 +20,12 @@ public class SubscriptionService {
     private final SubscriptionMapper mapper;
 
     public Result getSubscriptionById(final UUID subscriptionId) {
-        SubscriptionEntity entity = subscriptionRepository.getReferenceById(subscriptionId);
+        final SubscriptionEntity entity = subscriptionRepository.getReferenceById(subscriptionId);
         return mapper.mapSubscriptionToResult(entity);
     }
 
     public List<Result> getSubscriptionsBySubscriber(final UUID subscriberId) {
-        List<SubscriptionEntity> subscriptions = subscriptionRepository.getBySubscriberId(subscriberId);
+        final List<SubscriptionEntity> subscriptions = subscriptionRepository.getBySubscriberId(subscriberId);
         return mapper.mapSubscriptionsToResults(subscriptions);
     }
 }

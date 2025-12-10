@@ -12,8 +12,8 @@ import java.util.List;
 public interface SubscriptionMapper {
 
     @Mapping(source = "notifyUrl", target = "resultText")
-    public abstract Result mapSubscriptionToResult(SubscriptionEntity subscription);
+    Result mapSubscriptionToResult(SubscriptionEntity subscription);
 
-    public abstract List<Result> mapSubscriptionsToResults(List<SubscriptionEntity> subscriptions);
+    List<Result> mapSubscriptionsToResults(List<SubscriptionEntity> subscriptions);
 
 }

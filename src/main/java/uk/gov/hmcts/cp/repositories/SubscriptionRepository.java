@@ -7,6 +7,7 @@ import uk.gov.hmcts.cp.entities.SubscriptionEntity;
 import java.util.List;
 import java.util.UUID;
 
+@FunctionalInterface
 @Repository
 public interface SubscriptionRepository extends JpaRepository<SubscriptionEntity, UUID> {
 
