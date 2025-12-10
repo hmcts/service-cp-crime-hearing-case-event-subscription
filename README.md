@@ -1,6 +1,6 @@
 # API HMCTS 
 
-The Court Hearing Cases API provides details of a criminal court case results
+The Court Hearing Cases API publishes events relating criminal court cases
 
 ### Contribute to This Repository
 
