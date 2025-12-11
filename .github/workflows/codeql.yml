@@ -89,14 +89,14 @@ jobs:
           gradle-version: current
 
       - name: Gradle Build
-        run: gradle build -x test -x api
+        run: gradle build -x test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: DAST - Build and run containerised app
         run: |
-          docker compose -f docker/docker-compose.yml up -d
+          docker compose -f docker-compose.yml up -d
           
           echo "Waiting for health endpoint..."
           for i in {1..30}; do

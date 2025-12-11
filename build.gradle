@@ -17,6 +17,7 @@ version = System.getProperty('ARTEFACT_VERSION') ?: '0.0.999'
 apply {
   from("$rootDir/gradle/dependencies/java-core.gradle")
   from("$rootDir/gradle/dependencies/spring-core.gradle")
+  from("$rootDir/gradle/dependencies/spring-db.gradle")
 
   from("$rootDir/gradle/github/repositories.gradle")
   from("$rootDir/gradle/github/java.gradle")
@@ -26,7 +27,6 @@ apply {
   from("$rootDir/gradle/github/jar.gradle")
 
   from("$rootDir/gradle/tasks/apitest.gradle")
-  from("$rootDir/gradle/tasks/docker.gradle")
 }
 
 springBoot {
@@ -40,4 +40,7 @@ springBoot {
 
 dependencies {
   implementation('uk.gov.hmcts.cp:api-cp-crime-courthearing-cases-results:0.0.0-a65d290')
+
+  // Lets add this to the api because we need it to prevent its openapi NotNull errors
+  implementation("io.swagger.core.v3:swagger-annotations:2.2.41")
 }

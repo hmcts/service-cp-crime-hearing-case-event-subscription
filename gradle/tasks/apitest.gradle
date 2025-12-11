@@ -1,4 +1,4 @@
-tasks.register('api', Test) {
+tasks.register('apiTest', Test) {
   description = "Runs api tests against docker-compose stack"
   group = "Verification"
 
@@ -13,12 +13,12 @@ tasks.register('api', Test) {
 }
 
 tasks.named('check') {
-  dependsOn tasks.named('api')
+  dependsOn tasks.named('apiTest')
 }
 
 tasks.named('build') {
   dependsOn tasks.named('test')
-  dependsOn tasks.named('api')
+  dependsOn tasks.named('apiTest')
 }
 
 sourceSets {
@@ -30,5 +30,21 @@ sourceSets {
   }
 }
 
-dependencies {
+dockerCompose {
+  useComposeFiles = ['docker-compose.yml']
+  startedServices = ['db', 'app']
+
+  buildBeforeUp = true
+  waitForTcpPorts = true
+  upAdditionalArgs = ['--wait', '--wait-timeout', '120']
+
+  captureContainersOutput = true
+  removeOrphans = true
+  stopContainers = true
+  removeContainers = true
+
+  projectName = "app"
+
+  useDockerComposeV2 = true
+  dockerExecutable = 'docker'
 }
