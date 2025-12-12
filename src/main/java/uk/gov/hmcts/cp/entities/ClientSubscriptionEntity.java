@@ -11,24 +11,31 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import uk.gov.hmcts.cp.model.EventType;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name = "subscription")
+@Table(name = "client_subscription")
 @Getter
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class SubscriptionEntity {
+public class ClientSubscriptionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private UUID subscriberId;
+    private String notificationEndpoint;
     @Enumerated(EnumType.STRING)
-    private EventType eventType;
-    private String notifyUrl;
+    private List<EventType> eventTypes;
+    @CreationTimestamp
+    private OffsetDateTime createdAt;
+    @UpdateTimestamp
+    private OffsetDateTime updatedAt;
 }

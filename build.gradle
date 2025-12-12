@@ -29,18 +29,11 @@ apply {
   from("$rootDir/gradle/tasks/apitest.gradle")
 }
 
-springBoot {
-  buildInfo {
-    properties {
-      name = project.name
-      version = project.version.toString()
-    }
-  }
-}
-
 dependencies {
-  implementation('uk.gov.hmcts.cp:api-cp-crime-courthearing-cases-results:0.0.0-a65d290')
-
-  // Lets add this to the api because we need it to prevent its openapi NotNull errors
+  // package jakarta.validation.constraints;
+  // We need to add this to the api because we need it to prevent its openapi NotNull errors
   implementation("io.swagger.core.v3:swagger-annotations:2.2.41")
+  implementation("jakarta.validation:jakarta.validation-api:4.0.0-M1")
+
+  implementation('uk.gov.hmcts.cp:api-cp-crime-courthearing-cases-eventtype-subscription:0.1.0-0719c09')
 }

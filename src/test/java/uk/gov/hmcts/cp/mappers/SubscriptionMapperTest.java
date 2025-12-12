@@ -1,28 +1,63 @@
 package uk.gov.hmcts.cp.mappers;
 
 import org.junit.jupiter.api.Test;
-import uk.gov.hmcts.cp.entities.SubscriptionEntity;
-import uk.gov.hmcts.cp.openapi.model.Result;
+import uk.gov.hmcts.cp.entities.ClientSubscriptionEntity;
+import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
+import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
+import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 
+import java.net.URI;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static uk.gov.hmcts.cp.model.EventType.CUSTODIAL_RESULT;
+import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
 
 class SubscriptionMapperTest {
 
     SubscriptionMapper mapper = new SubscriptionMapperImpl();
 
+    UUID clientNotificationId = UUID.fromString("d730c6e1-66ba-4ef0-a3dd-0b9928faa76d");
+    NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
+            .webhookUrl(URI.create("https://example.com"))
+            .build();
+    OffsetDateTime createdAt = OffsetDateTime.now().minusDays(2);
+    OffsetDateTime updatedAt = OffsetDateTime.now().minusHours(2);
+
     @Test
-    void single_subscription_should_map_to_response() {
-        SubscriptionEntity subscription = SubscriptionEntity.builder().notifyUrl("https://example").build();
-        Result result = mapper.mapSubscriptionToResult(subscription);
-        assertThat(result.getResultText()).isEqualTo("https://example");
+    void request_should_map_to_entity() {
+        ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
+                .notificationEndpoint(notificationEndpoint)
+                .eventTypes(List.of(PCR))
+                .build();
+
+        ClientSubscriptionEntity entity = mapper.mapRequestToEntity(request);
+
+        assertThat(entity.getId()).isNull();
+        assertThat(entity.getNotificationEndpoint()).isEqualTo("https://example.com");
+        assertThat(entity.getEventTypes().toString()).isEqualTo("[PCR]");
+        assertThat(entity.getCreatedAt()).isNull();
+        assertThat(entity.getUpdatedAt()).isNull();
     }
 
     @Test
-    void list_of_subscriptions_should_map_to_response() {
-        SubscriptionEntity subscription = SubscriptionEntity.builder().notifyUrl("https://example").build();
-        List<Result> results = mapper.mapSubscriptionsToResults(List.of(subscription));
-        assertThat(results).hasSize(1);
+    void entity_should_map_to_response() {
+        ClientSubscriptionEntity clientSubscriptionEntity = ClientSubscriptionEntity.builder()
+                .id(clientNotificationId)
+                .notificationEndpoint(notificationEndpoint.getWebhookUrl().toString())
+                .eventTypes(List.of(CUSTODIAL_RESULT))
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
+                .build();
+
+        ClientSubscription subscription = mapper.mapEntityToResponse(clientSubscriptionEntity);
+
+        assertThat(subscription.getClientSubscriptionId()).isEqualTo(clientNotificationId);
+        assertThat(subscription.getNotificationEndpoint()).isEqualTo(notificationEndpoint);
+        assertThat(subscription.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT]");
+        assertThat(subscription.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(subscription.getUpdatedAt()).isEqualTo(updatedAt);
     }
 }
