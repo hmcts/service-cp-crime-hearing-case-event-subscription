@@ -1,4 +1,4 @@
-tasks.register('api', Test) {
+tasks.register('apiTest', Test) {
   description = "Runs api tests against docker-compose stack"
   group = "Verification"
 
@@ -10,22 +10,15 @@ tasks.register('api', Test) {
 
   dependsOn tasks.composeUp
   finalizedBy tasks.composeDown
-
-  jvmArgs = ['-Xshare:off']
-  testLogging {
-    events "passed", "skipped", "failed"
-    exceptionFormat = 'full'
-    showStandardStreams = true
-  }
 }
 
 tasks.named('check') {
-  dependsOn tasks.named('api')
+  dependsOn tasks.named('apiTest')
 }
 
 tasks.named('build') {
   dependsOn tasks.named('test')
-  dependsOn tasks.named('api')
+  dependsOn tasks.named('apiTest')
 }
 
 sourceSets {
@@ -35,18 +28,12 @@ sourceSets {
       runtimeClasspath += sourceSets.main.output
 
     }
-    resources.srcDir file('src/apiTest/resources')
   }
 }
 
 configurations {
   apiTestImplementation.extendsFrom testImplementation
   apiTestRuntimeOnly.extendsFrom testRuntimeOnly
-
-  // Ensure testRuntimeClasspath can be resolved for agent injection
-  testRuntimeClasspath {
-    canBeResolved = true
-  }
 }
 
 dockerCompose {
