@@ -2,6 +2,7 @@ package uk.gov.hmcts.cp.integration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
@@ -25,9 +26,8 @@ class SubscriptionControllerIntegrationTest extends IntegrationTestBase {
             .build();
 
     @Test
+    @Transactional
     void save_client_subscription_should_save_subscription() throws Exception {
-        NotificationEndpoint notificationEndpoint1;
-
         String body = new ObjectMapper().writeValueAsString(request);
         mockMvc.perform(post("/clientSubscriptions")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -19,7 +19,8 @@ public class SubscriptionController implements SubscriptionApi {
     @Override
     public ResponseEntity<ClientSubscription> createClientSubscription(final ClientSubscriptionRequest request) {
         log.info("createClientSubscription clientId:{}", "TODO");
-        ClientSubscription response = subscriptionService.saveSubscription(request);
+        final ClientSubscription response = subscriptionService.saveSubscription(request);
+        log.info("createClientSubscription created subscription:{}", response.getClientSubscriptionId());
         return ResponseEntity.ok(response);
     }
 }

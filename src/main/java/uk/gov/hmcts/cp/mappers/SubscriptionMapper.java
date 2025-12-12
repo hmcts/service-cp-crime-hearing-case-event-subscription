@@ -18,12 +18,12 @@ public interface SubscriptionMapper {
     @Mapping(source = "id", target = "clientSubscriptionId")
     ClientSubscription mapEntityToResponse(ClientSubscriptionEntity subscription);
 
-    static String mapFromNotificationEndpoint(NotificationEndpoint notificationEndpoint) {
+    static String mapFromNotificationEndpoint(final NotificationEndpoint notificationEndpoint) {
         return notificationEndpoint.getWebhookUrl().toString();
     }
 
-    static NotificationEndpoint mapToNotificationEndpoint(String endpointUrl) {
-        URI uri = URI.create(endpointUrl);
+    static NotificationEndpoint mapToNotificationEndpoint(final String endpointUrl) {
+        final URI uri = URI.create(endpointUrl);
         return NotificationEndpoint.builder().webhookUrl(uri).build();
     }
 }
