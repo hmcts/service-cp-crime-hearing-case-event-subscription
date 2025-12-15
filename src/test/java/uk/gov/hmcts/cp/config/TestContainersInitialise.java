@@ -12,7 +12,7 @@ public class TestContainersInitialise implements ApplicationContextInitializer<C
 
     private static final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer(
             "postgres")
-            .withDatabaseName("postgres")
+            .withDatabaseName("appdb")
             .withUsername("postgres")
             .withPassword("postgres");
 

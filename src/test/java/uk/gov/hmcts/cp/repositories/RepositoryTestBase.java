@@ -6,11 +6,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ContextConfiguration;
 import uk.gov.hmcts.cp.config.TestContainersInitialise;
-import uk.gov.hmcts.cp.entities.SubscriberEntity;
-import uk.gov.hmcts.cp.entities.SubscriptionEntity;
+import uk.gov.hmcts.cp.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.model.EventType;
 
-import java.util.UUID;
+import java.util.List;
 
 @SpringBootTest
 @ContextConfiguration(initializers = TestContainersInitialise.class)
@@ -19,31 +18,19 @@ import java.util.UUID;
 public abstract class RepositoryTestBase {
 
     @Autowired
-    protected SubscriberRepository subscriberRepository;
-
-    @Autowired
     protected SubscriptionRepository subscriptionRepository;
 
     protected void clearAllTables() {
         log.info("Clearing all tables");
         subscriptionRepository.deleteAll();
-        subscriberRepository.deleteAll();
     }
 
-    protected SubscriberEntity insertSubscriber(String name) {
-        SubscriberEntity subscriber = SubscriberEntity.builder().name(name).build();
-        SubscriberEntity saved = subscriberRepository.save(subscriber);
-        log.info("Inserted subscriber:{}", saved.getId());
-        return saved;
-    }
-
-    protected SubscriptionEntity insertSubscription(UUID subscriberId) {
-        SubscriptionEntity subscription = SubscriptionEntity.builder()
-                .subscriberId(subscriberId)
-                .eventType(EventType.PCR)
-                .notifyUrl("https://example.com/notify")
+    protected ClientSubscriptionEntity insertSubscription(String notificationUri, List<EventType> eventTypes) {
+        ClientSubscriptionEntity subscription = ClientSubscriptionEntity.builder()
+                .eventTypes(eventTypes)
+                .notificationEndpoint(notificationUri)
                 .build();
-        SubscriptionEntity saved = subscriptionRepository.save(subscription);
+        ClientSubscriptionEntity saved = subscriptionRepository.save(subscription);
         log.info("Inserted subscription:{}", saved.getId());
         return saved;
     }

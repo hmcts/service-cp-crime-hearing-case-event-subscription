@@ -29,18 +29,11 @@ apply {
   from("$rootDir/gradle/tasks/apitest.gradle")
 }
 
-springBoot {
-  buildInfo {
-    properties {
-      name = project.name
-      version = project.version.toString()
-    }
-  }
-}
-
 dependencies {
-  implementation('uk.gov.hmcts.cp:api-cp-crime-courthearing-cases-results:0.0.0-a65d290')
+  implementation(group: 'uk.gov.hmcts.cp', name: 'api-cp-crime-hearing-case-event-subscription', version: '0.1.0-724f10f')
 
-  // Lets add this to the api because we need it to prevent its openapi NotNull errors
-  implementation("io.swagger.core.v3:swagger-annotations:2.2.41")
+  // This is proving to be a real puzzle. This is actually included in the api published pom
+  // ( though with scope of "runtime" )
+  // Yet we still need to add it manually. Grrr. TBC.
+  implementation "io.swagger.core.v3:swagger-annotations:2.2.41"
 }
