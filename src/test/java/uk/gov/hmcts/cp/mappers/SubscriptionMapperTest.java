@@ -2,6 +2,7 @@ package uk.gov.hmcts.cp.mappers;
 
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.cp.entities.ClientSubscriptionEntity;
+import uk.gov.hmcts.cp.model.EntityEventType;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static uk.gov.hmcts.cp.model.EventType.CUSTODIAL_RESULT;
+import static uk.gov.hmcts.cp.openapi.model.EventType.CUSTODIAL_RESULT;
 import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
 
 class SubscriptionMapperTest {
@@ -27,18 +28,18 @@ class SubscriptionMapperTest {
     OffsetDateTime updatedAt = OffsetDateTime.now().minusHours(2);
 
     @Test
-    void request_should_map_to_entity() {
+    void request_should_map_to_entity_with_sorted_types() {
         ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
                 .notificationEndpoint(notificationEndpoint)
-                .eventTypes(List.of(PCR))
+                .eventTypes(List.of(PCR, CUSTODIAL_RESULT))
                 .build();
 
         ClientSubscriptionEntity entity = mapper.mapRequestToEntity(request);
 
         assertThat(entity.getId()).isNull();
         assertThat(entity.getNotificationEndpoint()).isEqualTo("https://example.com");
-        assertThat(entity.getEventTypes().toString()).isEqualTo("[PCR]");
-        assertThat(entity.getCreatedAt()).isNull();
+        assertThat(entity.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT, PCR]");
+        assertThat(entity.getCreatedAt()).isNotNull();
         assertThat(entity.getUpdatedAt()).isNull();
     }
 
@@ -47,7 +48,7 @@ class SubscriptionMapperTest {
         ClientSubscriptionEntity clientSubscriptionEntity = ClientSubscriptionEntity.builder()
                 .id(clientNotificationId)
                 .notificationEndpoint(notificationEndpoint.getWebhookUrl().toString())
-                .eventTypes(List.of(CUSTODIAL_RESULT))
+                .eventTypes(List.of(EntityEventType.CUSTODIAL_RESULT, EntityEventType.PCR))
                 .createdAt(createdAt)
                 .updatedAt(updatedAt)
                 .build();
@@ -56,7 +57,7 @@ class SubscriptionMapperTest {
 
         assertThat(subscription.getClientSubscriptionId()).isEqualTo(clientNotificationId);
         assertThat(subscription.getNotificationEndpoint()).isEqualTo(notificationEndpoint);
-        assertThat(subscription.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT]");
+        assertThat(subscription.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT, PCR]");
         assertThat(subscription.getCreatedAt()).isEqualTo(createdAt);
         assertThat(subscription.getUpdatedAt()).isEqualTo(updatedAt);
     }

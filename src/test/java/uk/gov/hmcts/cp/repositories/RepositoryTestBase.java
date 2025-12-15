@@ -7,8 +7,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ContextConfiguration;
 import uk.gov.hmcts.cp.config.TestContainersInitialise;
 import uk.gov.hmcts.cp.entities.ClientSubscriptionEntity;
-import uk.gov.hmcts.cp.model.EventType;
+import uk.gov.hmcts.cp.model.EntityEventType;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @SpringBootTest
@@ -25,10 +26,11 @@ public abstract class RepositoryTestBase {
         subscriptionRepository.deleteAll();
     }
 
-    protected ClientSubscriptionEntity insertSubscription(String notificationUri, List<EventType> eventTypes) {
+    protected ClientSubscriptionEntity insertSubscription(String notificationUri, List<EntityEventType> entityEventTypes) {
         ClientSubscriptionEntity subscription = ClientSubscriptionEntity.builder()
-                .eventTypes(eventTypes)
+                .eventTypes(entityEventTypes)
                 .notificationEndpoint(notificationUri)
+                .createdAt(OffsetDateTime.now())
                 .build();
         ClientSubscriptionEntity saved = subscriptionRepository.save(subscription);
         log.info("Inserted subscription:{}", saved.getId());

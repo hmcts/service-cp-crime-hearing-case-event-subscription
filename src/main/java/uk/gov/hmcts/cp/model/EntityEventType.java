@@ -1,6 +1,6 @@
 package uk.gov.hmcts.cp.model;
 
-public enum EventType {
+public enum EntityEventType {
     PCR,
     CUSTODIAL_RESULT
 }
