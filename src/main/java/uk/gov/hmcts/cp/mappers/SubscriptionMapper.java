@@ -28,7 +28,7 @@ public interface SubscriptionMapper {
 
     @Named("sortedEventTypes")
     static List<EntityEventType> sortedEventTypes(final List<EventType> events) {
-        List<String> sorted = events.stream().map(e -> e.name()).sorted().collect(toList());
+        final List<String> sorted = events.stream().map(e -> e.name()).sorted().collect(toList());
         return sorted.stream().map(e -> EntityEventType.valueOf(e)).toList();
     }
 
