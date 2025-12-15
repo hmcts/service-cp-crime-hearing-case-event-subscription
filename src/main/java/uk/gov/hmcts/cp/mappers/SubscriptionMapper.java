@@ -11,7 +11,6 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.EventType;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 
-import java.net.URI;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
