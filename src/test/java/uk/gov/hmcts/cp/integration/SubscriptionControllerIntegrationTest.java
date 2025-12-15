@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -39,7 +40,7 @@ class SubscriptionControllerIntegrationTest extends IntegrationTestBase {
     @Transactional
     void save_client_subscription_should_save_subscription() throws Exception {
         String body = new ObjectMapper().writeValueAsString(request);
-        mockMvc.perform(post("/clientSubscriptions")
+        mockMvc.perform(post("/client-subscriptions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("client-id-todo", "1234")
                         .content(body))
@@ -50,6 +51,19 @@ class SubscriptionControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.eventTypes.[1]").value("PCR"))
                 .andExpect(jsonPath("$.createdAt").exists());
         assertThatEventTypesAreSortedInDatabase();
+    }
+
+    @Test
+    @Transactional
+    void get_subscription_should_return_expected() throws Exception {
+        ClientSubscriptionEntity entity = insertSubscription("http://example.com/event", List.of(EntityEventType.PCR));
+        mockMvc.perform(get("/client-subscriptions/{id}", entity.getId())
+                        .header("client-id-todo", "1234"))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.clientSubscriptionId").value(entity.getId().toString()))
+                .andExpect(jsonPath("$.eventTypes.[0]").value("PCR"))
+                .andExpect(jsonPath("$.createdAt").exists());
     }
 
     private void assertThatEventTypesAreSortedInDatabase() {

@@ -9,6 +9,8 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -20,5 +22,10 @@ public class SubscriptionService {
     public ClientSubscription saveSubscription(final ClientSubscriptionRequest request) {
         final ClientSubscriptionEntity entity = mapper.mapRequestToEntity(request);
         return mapper.mapEntityToResponse(subscriptionRepository.save(entity));
+    }
+
+    public ClientSubscription getSubscription(final UUID clientSubscriptionId) {
+        final ClientSubscriptionEntity entity = subscriptionRepository.getReferenceById(clientSubscriptionId);
+        return mapper.mapEntityToResponse(entity);
     }
 }
