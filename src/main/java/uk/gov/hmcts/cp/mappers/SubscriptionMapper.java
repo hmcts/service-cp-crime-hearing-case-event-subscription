@@ -38,7 +38,6 @@ public interface SubscriptionMapper {
     }
 
     static NotificationEndpoint mapToNotificationEndpoint(final String endpointUrl) {
-        final URI uri = URI.create(endpointUrl);
-        return NotificationEndpoint.builder().webhookUrl(uri).build();
+        return NotificationEndpoint.builder().webhookUrl(endpointUrl).build();
     }
 }

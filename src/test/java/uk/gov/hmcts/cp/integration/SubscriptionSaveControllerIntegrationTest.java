@@ -11,11 +11,9 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
-import java.net.URI;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,7 +27,7 @@ class SubscriptionSaveControllerIntegrationTest extends IntegrationTestBase {
     SubscriptionRepository subscriptionRepository;
 
     NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
-            .webhookUrl(URI.create("https://my-callback-url"))
+            .webhookUrl("https://my-callback-url")
             .build();
     ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
             .notificationEndpoint(notificationEndpoint)
