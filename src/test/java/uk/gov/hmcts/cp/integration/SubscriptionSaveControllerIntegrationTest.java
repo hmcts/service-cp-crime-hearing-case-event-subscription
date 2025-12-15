@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -22,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static uk.gov.hmcts.cp.openapi.model.EventType.CUSTODIAL_RESULT;
 import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
 
-class SubscriptionControllerIntegrationTest extends IntegrationTestBase {
+class SubscriptionSaveControllerIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     SubscriptionRepository subscriptionRepository;
@@ -39,7 +40,7 @@ class SubscriptionControllerIntegrationTest extends IntegrationTestBase {
     @Transactional
     void save_client_subscription_should_save_subscription() throws Exception {
         String body = new ObjectMapper().writeValueAsString(request);
-        mockMvc.perform(post("/clientSubscriptions")
+        mockMvc.perform(post("/client-subscriptions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("client-id-todo", "1234")
                         .content(body))

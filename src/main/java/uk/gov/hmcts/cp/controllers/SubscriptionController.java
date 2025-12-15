@@ -9,6 +9,8 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.services.SubscriptionService;
 
+import java.util.UUID;
+
 @RestController
 @RequiredArgsConstructor
 @Slf4j
@@ -21,6 +23,14 @@ public class SubscriptionController implements SubscriptionApi {
         log.info("createClientSubscription clientId:{}", "TODO");
         final ClientSubscription response = subscriptionService.saveSubscription(request);
         log.info("createClientSubscription created subscription:{}", response.getClientSubscriptionId());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<ClientSubscription> getClientSubscription(final UUID clientSubscriptionId) {
+        log.info("getClientSubscription clientId:{}", "TODO");
+        final ClientSubscription response = subscriptionService.getSubscription(clientSubscriptionId);
+        log.info("createClientSubscription returning subscription:{}", response.getClientSubscriptionId());
         return ResponseEntity.ok(response);
     }
 }

@@ -12,6 +12,8 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,6 +44,17 @@ class SubscriptionServiceTest {
 
         verify(mapper).mapRequestToEntity(request);
         verify(subscriptionRepository).save(requestEntity);
+        assertThat(result).isEqualTo(response);
+    }
+
+    @Test
+    void request_should_get_entity() {
+        UUID subscriptionId = UUID.fromString("2ca16eb5-3998-4bb7-adce-4bb9b3b7223c");
+        when(subscriptionRepository.getReferenceById(subscriptionId)).thenReturn(savedEntity);
+        when(mapper.mapEntityToResponse(savedEntity)).thenReturn(response);
+
+        ClientSubscription result = subscriptionService.getSubscription(subscriptionId);
+
         assertThat(result).isEqualTo(response);
     }
 }

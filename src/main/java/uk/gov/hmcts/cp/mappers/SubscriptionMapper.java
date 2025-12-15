@@ -21,6 +21,7 @@ public interface SubscriptionMapper {
 
     @Mapping(source = "request.eventTypes", target = "eventTypes", qualifiedByName = "sortedEventTypes")
     @Mapping(target = "createdAt", expression = "java(java.time.OffsetDateTime.now())")
+    @Mapping(target = "updatedAt", expression = "java(java.time.OffsetDateTime.now())")
     ClientSubscriptionEntity mapRequestToEntity(ClientSubscriptionRequest request);
 
     @Mapping(source = "id", target = "clientSubscriptionId")

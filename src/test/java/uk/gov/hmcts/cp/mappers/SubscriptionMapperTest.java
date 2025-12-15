@@ -40,7 +40,7 @@ class SubscriptionMapperTest {
         assertThat(entity.getNotificationEndpoint()).isEqualTo("https://example.com");
         assertThat(entity.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT, PCR]");
         assertThat(entity.getCreatedAt()).isNotNull();
-        assertThat(entity.getUpdatedAt()).isNull();
+        assertThat(entity.getUpdatedAt()).isNotNull();
     }
 
     @Test
