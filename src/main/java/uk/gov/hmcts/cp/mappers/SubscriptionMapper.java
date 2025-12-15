@@ -1,9 +1,15 @@
 package uk.gov.hmcts.cp.mappers;
 
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
+import org.mapstruct.ReportingPolicy;
 import uk.gov.hmcts.cp.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.model.EntityEventType;
-import uk.gov.hmcts.cp.openapi.model.*;
+import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
+import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
+import uk.gov.hmcts.cp.openapi.model.EventType;
+import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 
 import java.net.URI;
 import java.util.List;
