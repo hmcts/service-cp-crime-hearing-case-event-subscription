@@ -9,7 +9,6 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
-import java.net.URI;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -24,7 +23,7 @@ class SubscriptionControllerValidationTest extends IntegrationTestBase {
     SubscriptionRepository subscriptionRepository;
 
     NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
-            .webhookUrl(URI.create("https://my-callback-url"))
+            .webhookUrl("https://my-callback-url")
             .build();
     ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
             .notificationEndpoint(notificationEndpoint)
@@ -42,10 +41,8 @@ class SubscriptionControllerValidationTest extends IntegrationTestBase {
                 .andExpect(content().string(""));
     }
 
-    // TODO - decide how to best validate the incoming url and enable this test once done
     @Test
-    @Disabled
-    void bad_url_should_return_400() throws Exception {
+    void webhook_bad_url_should_return_400() throws Exception {
         String body = new ObjectMapper().writeValueAsString(request)
                 .replace("https://my-callback-url", "not-a-url");
         mockMvc.perform(post("/client-subscriptions")

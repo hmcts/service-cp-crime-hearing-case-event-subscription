@@ -9,7 +9,6 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,7 +26,7 @@ class SubscriptionGetControllerIntegrationTest extends IntegrationTestBase {
     SubscriptionRepository subscriptionRepository;
 
     NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
-            .webhookUrl(URI.create("https://my-callback-url"))
+            .webhookUrl("https://my-callback-url")
             .build();
     ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
             .notificationEndpoint(notificationEndpoint)

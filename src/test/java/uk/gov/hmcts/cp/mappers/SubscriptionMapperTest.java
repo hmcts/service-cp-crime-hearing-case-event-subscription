@@ -7,7 +7,6 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 
-import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -22,7 +21,7 @@ class SubscriptionMapperTest {
 
     UUID clientNotificationId = UUID.fromString("d730c6e1-66ba-4ef0-a3dd-0b9928faa76d");
     NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
-            .webhookUrl(URI.create("https://example.com"))
+            .webhookUrl("https://example.com")
             .build();
     OffsetDateTime createdAt = OffsetDateTime.now().minusDays(2);
     OffsetDateTime updatedAt = OffsetDateTime.now().minusHours(2);

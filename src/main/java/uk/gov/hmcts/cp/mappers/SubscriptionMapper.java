@@ -11,7 +11,6 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.EventType;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 
-import java.net.URI;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -38,7 +37,6 @@ public interface SubscriptionMapper {
     }
 
     static NotificationEndpoint mapToNotificationEndpoint(final String endpointUrl) {
-        final URI uri = URI.create(endpointUrl);
-        return NotificationEndpoint.builder().webhookUrl(uri).build();
+        return NotificationEndpoint.builder().webhookUrl(endpointUrl).build();
     }
 }
