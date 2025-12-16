@@ -12,7 +12,6 @@ import uk.gov.hmcts.cp.subscription.services.SubscriptionService;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,10 +30,20 @@ class SubscriptionControllerTest {
     @Test
     void create_controller_should_call_service() {
         ClientSubscription response = ClientSubscription.builder().clientSubscriptionId(subscriptionId).build();
-        when(subscriptionService.saveSubscription(any())).thenReturn(response);
+        when(subscriptionService.saveSubscription(request)).thenReturn(response);
         var result = subscriptionController.createClientSubscription(request);
         verify(subscriptionService).saveSubscription(request);
         assertThat(result.getStatusCode().value()).isEqualTo(201);
+        assertThat(result.getBody()).isEqualTo(response);
+    }
+
+    @Test
+    void update_controller_should_call_service() {
+        ClientSubscription response = ClientSubscription.builder().clientSubscriptionId(subscriptionId).build();
+        when(subscriptionService.updateSubscription(subscriptionId, request)).thenReturn(response);
+        var result = subscriptionController.updateClientSubscription(subscriptionId, request);
+        verify(subscriptionService).updateSubscription(subscriptionId, request);
+        assertThat(result.getStatusCode().value()).isEqualTo(200);
         assertThat(result.getBody()).isEqualTo(response);
     }
 

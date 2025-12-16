@@ -3,10 +3,10 @@ package uk.gov.hmcts.cp.subscription.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
-import uk.gov.hmcts.cp.subscription.mappers.SubscriptionMapper;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
+import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
+import uk.gov.hmcts.cp.subscription.mappers.SubscriptionMapper;
 import uk.gov.hmcts.cp.subscription.repositories.SubscriptionRepository;
 
 import java.util.UUID;
@@ -20,7 +20,13 @@ public class SubscriptionService {
     private final SubscriptionMapper mapper;
 
     public ClientSubscription saveSubscription(final ClientSubscriptionRequest request) {
-        final ClientSubscriptionEntity entity = mapper.mapRequestToEntity(request);
+        final ClientSubscriptionEntity entity = mapper.mapCreateRequestToEntity(request);
+        return mapper.mapEntityToResponse(subscriptionRepository.save(entity));
+    }
+
+    public ClientSubscription updateSubscription(final UUID clientSubscriptionId, final ClientSubscriptionRequest request) {
+        final ClientSubscriptionEntity existing = subscriptionRepository.getReferenceById(clientSubscriptionId);
+        final ClientSubscriptionEntity entity = mapper.mapUpdateRequestToEntity(existing, request);
         return mapper.mapEntityToResponse(subscriptionRepository.save(entity));
     }
 
