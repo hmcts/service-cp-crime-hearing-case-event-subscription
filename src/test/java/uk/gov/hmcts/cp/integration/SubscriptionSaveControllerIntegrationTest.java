@@ -1,15 +1,12 @@
 package uk.gov.hmcts.cp.integration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.cp.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.model.EntityEventType;
-import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
-import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
-import uk.gov.hmcts.cp.repositories.SubscriptionRepository;
 
 import java.util.List;
 
@@ -18,21 +15,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static uk.gov.hmcts.cp.openapi.model.EventType.CUSTODIAL_RESULT;
-import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
 
 class SubscriptionSaveControllerIntegrationTest extends IntegrationTestBase {
 
-    @Autowired
-    SubscriptionRepository subscriptionRepository;
-
-    NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
-            .webhookUrl("https://my-callback-url")
-            .build();
-    ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
-            .notificationEndpoint(notificationEndpoint)
-            .eventTypes(List.of(PCR, CUSTODIAL_RESULT))
-            .build();
+    @BeforeEach
+    void beforeEach() {
+        clearAllTables();
+    }
 
     @Test
     @Transactional
@@ -43,7 +32,7 @@ class SubscriptionSaveControllerIntegrationTest extends IntegrationTestBase {
                         .header("client-id-todo", "1234")
                         .content(body))
                 .andDo(print())
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.clientSubscriptionId").exists())
                 .andExpect(jsonPath("$.eventTypes.[0]").value("CUSTODIAL_RESULT"))
                 .andExpect(jsonPath("$.eventTypes.[1]").value("PCR"))
