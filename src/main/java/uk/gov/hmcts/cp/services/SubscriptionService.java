@@ -28,4 +28,8 @@ public class SubscriptionService {
         final ClientSubscriptionEntity entity = subscriptionRepository.getReferenceById(clientSubscriptionId);
         return mapper.mapEntityToResponse(entity);
     }
+
+    public void deleteSubscription(final UUID clientSubscriptionId) {
+        subscriptionRepository.deleteById(clientSubscriptionId);
+    }
 }

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cp.entities.ClientSubscriptionEntity;
+import uk.gov.hmcts.cp.integration.IntegrationTestBase;
 
 import java.util.List;
 
@@ -11,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static uk.gov.hmcts.cp.model.EntityEventType.CUSTODIAL_RESULT;
 import static uk.gov.hmcts.cp.model.EntityEventType.PCR;
 
-class SubscriptionRepositoryTest extends RepositoryTestBase {
+class SubscriptionRepositoryTest extends IntegrationTestBase {
 
     @BeforeEach
     void beforeEach() {
@@ -27,5 +28,13 @@ class SubscriptionRepositoryTest extends RepositoryTestBase {
         assertThat(found.getEventTypes()).isEqualTo(List.of(CUSTODIAL_RESULT, PCR));
         assertThat(found.getNotificationEndpoint()).isEqualTo("https://example.com/notify");
         assertThat(found.getCreatedAt()).isNotNull();
+    }
+
+    @Transactional
+    @Test
+    void subscription_should_delete_ok() {
+        ClientSubscriptionEntity saved = insertSubscription("https://example.com/notify", List.of(CUSTODIAL_RESULT, PCR));
+        subscriptionRepository.deleteById(saved.getId());
+        assertThat(subscriptionRepository.findAll()).hasSize(0);
     }
 }

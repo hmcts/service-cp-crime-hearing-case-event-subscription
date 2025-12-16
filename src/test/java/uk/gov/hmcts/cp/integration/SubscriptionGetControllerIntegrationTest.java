@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.integration;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,21 +23,15 @@ import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
 
 class SubscriptionGetControllerIntegrationTest extends IntegrationTestBase {
 
-    @Autowired
-    SubscriptionRepository subscriptionRepository;
-
-    NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
-            .webhookUrl("https://my-callback-url")
-            .build();
-    ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
-            .notificationEndpoint(notificationEndpoint)
-            .eventTypes(List.of(PCR, CUSTODIAL_RESULT))
-            .build();
+    @BeforeEach
+    void beforeEach() {
+        clearAllTables();
+    }
 
     @Test
     @Transactional
     void get_subscription_should_return_expected() throws Exception {
-        ClientSubscriptionEntity entity = insertSubscription("http://example.com/event", List.of(EntityEventType.PCR));
+        ClientSubscriptionEntity entity = insertSubscription("https://example.com/event", List.of(EntityEventType.PCR));
         mockMvc.perform(get("/client-subscriptions/{id}", entity.getId())
                         .header("client-id-todo", "1234"))
                 .andDo(print())
