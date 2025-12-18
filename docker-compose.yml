@@ -12,6 +12,7 @@ services:
     build:
       dockerfile: Dockerfile
     environment:
+      SERVER_PORT: 4500
       DATASOURCE_URL: jdbc:postgresql://db:5432/appdb
       DATASOURCE_USERNAME: postgres
       DATASOURCE_PASSWORD: postgres
