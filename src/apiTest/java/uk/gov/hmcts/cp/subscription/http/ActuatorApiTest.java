@@ -16,7 +16,18 @@ class ActuatorApiTest {
     private final RestTemplate http = new RestTemplate();
 
     @Test
-    void health_is_up() {
+    void root_endpoint_should_be_ok() {
+        final ResponseEntity<String> res = http.exchange(
+                baseUrl + "/", HttpMethod.GET,
+                new HttpEntity<>(new HttpHeaders()),
+                String.class
+        );
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(res.getBody()).contains("DEPRECATED root endpoint");
+    }
+
+    @Test
+    void health_endpoint_should_be_up() {
         final ResponseEntity<String> res = http.exchange(
                 baseUrl + "/actuator/health", HttpMethod.GET,
                 new HttpEntity<>(new HttpHeaders()),
