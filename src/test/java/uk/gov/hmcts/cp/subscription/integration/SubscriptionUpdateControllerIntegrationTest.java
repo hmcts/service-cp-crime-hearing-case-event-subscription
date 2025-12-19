@@ -3,7 +3,6 @@ package uk.gov.hmcts.cp.subscription.integration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.model.EntityEventType;
@@ -23,7 +22,6 @@ class SubscriptionUpdateControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Transactional
     void update_client_subscription_should_update_subscription() throws Exception {
         ClientSubscriptionEntity existing = insertSubscription("https://oldendpoint", List.of(EntityEventType.PCR));
         String body = new ObjectMapper().writeValueAsString(request);

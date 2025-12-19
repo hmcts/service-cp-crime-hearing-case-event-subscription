@@ -3,7 +3,6 @@ package uk.gov.hmcts.cp.subscription.integration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.model.EntityEventType;
@@ -24,7 +23,6 @@ class SubscriptionSaveControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Transactional
     void save_client_subscription_should_save_subscription() throws Exception {
         String body = new ObjectMapper().writeValueAsString(request);
         mockMvc.perform(post("/client-subscriptions")
