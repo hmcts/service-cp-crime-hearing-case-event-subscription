@@ -10,19 +10,19 @@ import org.springframework.web.client.RestTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class ActuatorApiTest {
+class RootApiTest {
 
     private final String baseUrl = System.getProperty("app.baseUrl", "http://localhost:8082");
     private final RestTemplate http = new RestTemplate();
 
     @Test
-    void health_endpoint_should_be_up() {
+    void root_endpoint_should_be_ok() throws InterruptedException {
         final ResponseEntity<String> res = http.exchange(
-                baseUrl + "/actuator/health", HttpMethod.GET,
+                baseUrl + "/", HttpMethod.GET,
                 new HttpEntity<>(new HttpHeaders()),
                 String.class
         );
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(res.getBody()).contains("\"status\":\"UP\"");
+        assertThat(res.getBody()).contains("DEPRECATED root endpoint");
     }
 }
