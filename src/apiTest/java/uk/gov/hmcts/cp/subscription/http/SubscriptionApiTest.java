@@ -24,7 +24,7 @@ class SubscriptionApiTest {
 
     @Test
     void round_trip_subscription_should_work_ok() throws InterruptedException {
-        final String postUrl = java.lang.String.format("%s/client-subscriptions", baseUrl);
+        final String postUrl = String.format("%s/client-subscriptions", baseUrl);
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         final String body = "{\"eventTypes\":[\"PCR\",\"CUSTODIAL_RESULT\"],\n" +
@@ -35,14 +35,12 @@ class SubscriptionApiTest {
                 new HttpEntity<>(body, headers),
                 String.class
         );
-        System.out.println("postResult:" + postResult);
         assertThat(postResult.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(postResult.getBody()).contains("clientSubscriptionId");
         final String subscriptionId = postResult.getBody()
                 .replaceAll(".*clientSubscriptionId\":\"", "")
                 .replaceAll("\".*$", "");
 
-        System.out.println("subscriptionId:" + subscriptionId);
         final String getUrl = String.format("%s/client-subscriptions/%s", baseUrl, subscriptionId);
         final ResponseEntity<String> getResult = http.exchange(
                 getUrl,
@@ -50,7 +48,6 @@ class SubscriptionApiTest {
                 new HttpEntity<>(new HttpHeaders()),
                 String.class
         );
-        System.out.println("getres:" + getResult.getBody());
         assertThat(getResult.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(getResult.getBody()).contains("clientSubscriptionId\":\"" + subscriptionId);
     }
