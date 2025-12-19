@@ -24,10 +24,10 @@ class SubscriptionApiTest {
 
     @Test
     void round_trip_subscription_should_work_ok() throws InterruptedException {
-        String postUrl = String.format("%s/client-subscriptions", baseUrl);
-        HttpHeaders headers = new HttpHeaders();
+        final String postUrl = java.lang.String.format("%s/client-subscriptions", baseUrl);
+        final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String body = "{\"eventTypes\":[\"PCR\",\"CUSTODIAL_RESULT\"],\n" +
+        final String body = "{\"eventTypes\":[\"PCR\",\"CUSTODIAL_RESULT\"],\n" +
                 "\"notificationEndpoint\":{\"webhookUrl\":\"https://my-callback-url\"}}";
         final ResponseEntity<String> postResult = http.exchange(
                 postUrl,
@@ -38,12 +38,12 @@ class SubscriptionApiTest {
         System.out.println("postResult:" + postResult);
         assertThat(postResult.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(postResult.getBody()).contains("clientSubscriptionId");
-        String subscriptionId = postResult.getBody()
+        final String subscriptionId = postResult.getBody()
                 .replaceAll(".*clientSubscriptionId\":\"", "")
                 .replaceAll("\".*$", "");
 
         System.out.println("subscriptionId:" + subscriptionId);
-        String getUrl = String.format("%s/client-subscriptions/%s", baseUrl, subscriptionId);
+        final String getUrl = String.format("%s/client-subscriptions/%s", baseUrl, subscriptionId);
         final ResponseEntity<String> getResult = http.exchange(
                 getUrl,
                 HttpMethod.GET,
