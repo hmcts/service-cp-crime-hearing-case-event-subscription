@@ -14,7 +14,7 @@ import java.time.ZoneOffset;
  */
 public class ClockService {
 
-    Clock clock;
+    private Clock clock;
 
     public OffsetDateTime now() {
         return clock.instant().atOffset(ZoneOffset.UTC);

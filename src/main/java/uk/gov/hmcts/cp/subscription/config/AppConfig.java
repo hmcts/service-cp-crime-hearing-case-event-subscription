@@ -10,7 +10,7 @@ import java.time.Clock;
 public class AppConfig {
 
     @Bean
-    ClockService clockService() {
+    public ClockService clockService() {
         return new ClockService(Clock.systemDefaultZone());
     }
 }
