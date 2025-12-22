@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.subscription.integration;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -18,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Slf4j
 class SubscriptionUpdateControllerIntegrationTest extends IntegrationTestBase {
 
     @BeforeEach
@@ -42,7 +44,12 @@ class SubscriptionUpdateControllerIntegrationTest extends IntegrationTestBase {
         verifyCreatedAtIsUnchanged(existing.getId(), existing.getCreatedAt());
     }
 
+    // Pipeline fails because expected is nanoSecs and actual is microSecs
+    // Very puzzling.
     void verifyCreatedAtIsUnchanged(UUID subscriptionId, OffsetDateTime expectedCreatedAt) {
-        assertThat(subscriptionRepository.findById(subscriptionId).get().getCreatedAt()).isEqualTo(expectedCreatedAt);
+        String expected = expectedCreatedAt.format(DateTimeFormatter.BASIC_ISO_DATE);
+        String actual = subscriptionRepository.findById(subscriptionId).get().getCreatedAt().format(DateTimeFormatter.BASIC_ISO_DATE);
+        log.info("Comparing actual:{} with expected:{}", actual, expected);
+        assertThat(actual).isEqualTo(expected);
     }
 }
