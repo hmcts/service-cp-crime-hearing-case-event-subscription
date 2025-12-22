@@ -23,7 +23,6 @@ class SubscriptionGetControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Transactional
     void get_subscription_should_return_expected() throws Exception {
         ClientSubscriptionEntity entity = insertSubscription("https://example.com/event", List.of(EntityEventType.PCR));
         mockMvc.perform(get("/client-subscriptions/{id}", entity.getId())
@@ -36,7 +35,6 @@ class SubscriptionGetControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Transactional
     void get_no_subscription_should_return_404() throws Exception {
         mockMvc.perform(get("/client-subscriptions/{id}", UUID.randomUUID())
                         .header("client-id-todo", "1234"))

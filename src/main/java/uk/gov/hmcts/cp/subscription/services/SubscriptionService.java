@@ -16,17 +16,18 @@ import java.util.UUID;
 @Slf4j
 public class SubscriptionService {
 
+    private final ClockService clockService;
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionMapper mapper;
 
     public ClientSubscription saveSubscription(final ClientSubscriptionRequest request) {
-        final ClientSubscriptionEntity entity = mapper.mapCreateRequestToEntity(request);
+        final ClientSubscriptionEntity entity = mapper.mapCreateRequestToEntity(clockService, request);
         return mapper.mapEntityToResponse(subscriptionRepository.save(entity));
     }
 
     public ClientSubscription updateSubscription(final UUID clientSubscriptionId, final ClientSubscriptionRequest request) {
         final ClientSubscriptionEntity existing = subscriptionRepository.getReferenceById(clientSubscriptionId);
-        final ClientSubscriptionEntity entity = mapper.mapUpdateRequestToEntity(existing, request);
+        final ClientSubscriptionEntity entity = mapper.mapUpdateRequestToEntity(clockService, existing, request);
         return mapper.mapEntityToResponse(subscriptionRepository.save(entity));
     }
 

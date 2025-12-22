@@ -3,7 +3,6 @@ package uk.gov.hmcts.cp.subscription.integration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.model.EntityEventType;
 
@@ -22,7 +21,6 @@ class SubscriptionDeleteControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    @Transactional
     void delete_client_subscription_should_delete_subscription() throws Exception {
         ClientSubscriptionEntity entity = insertSubscription("https://example.com/event", List.of(EntityEventType.PCR));
         mockMvc.perform(delete("/client-subscriptions/{id}", entity.getId())

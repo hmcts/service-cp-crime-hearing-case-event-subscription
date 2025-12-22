@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SubscriptionServiceTest {
 
+    @Mock ClockService clockService;
     @Mock
     SubscriptionRepository subscriptionRepository;
     @Mock
@@ -38,13 +39,13 @@ class SubscriptionServiceTest {
 
     @Test
     void save_request_should_save_new_entity() {
-        when(mapper.mapCreateRequestToEntity(request)).thenReturn(requestEntity);
+        when(mapper.mapCreateRequestToEntity(clockService, request)).thenReturn(requestEntity);
         when(subscriptionRepository.save(requestEntity)).thenReturn(savedEntity);
         when(mapper.mapEntityToResponse(savedEntity)).thenReturn(response);
 
         ClientSubscription result = subscriptionService.saveSubscription(request);
 
-        verify(mapper).mapCreateRequestToEntity(request);
+        verify(mapper).mapCreateRequestToEntity(clockService, request);
         verify(subscriptionRepository).save(requestEntity);
         assertThat(result).isEqualTo(response);
     }
@@ -52,7 +53,7 @@ class SubscriptionServiceTest {
     @Test
     void update_request_should_update_existing_entity() {
         when(subscriptionRepository.getReferenceById(subscriptionId)).thenReturn(savedEntity);
-        when(mapper.mapUpdateRequestToEntity(savedEntity, request)).thenReturn(requestEntity);
+        when(mapper.mapUpdateRequestToEntity(clockService, savedEntity, request)).thenReturn(requestEntity);
         when(subscriptionRepository.save(requestEntity)).thenReturn(updatedEntity);
         when(mapper.mapEntityToResponse(updatedEntity)).thenReturn(response);
 

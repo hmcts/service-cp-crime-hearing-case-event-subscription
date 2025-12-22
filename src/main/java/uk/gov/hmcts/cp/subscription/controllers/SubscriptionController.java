@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.cp.openapi.api.SubscriptionApi;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
@@ -22,6 +23,7 @@ public class SubscriptionController implements SubscriptionApi {
     private static final String CLIENT_ID = "TODO";
 
     @Override
+    @Transactional
     public ResponseEntity<ClientSubscription> createClientSubscription(final ClientSubscriptionRequest request) {
         log.info("createClientSubscription clientId:{}", CLIENT_ID);
         final ClientSubscription response = subscriptionService.saveSubscription(request);
@@ -30,6 +32,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<ClientSubscription> updateClientSubscription(final UUID clientSubscriptionId, final ClientSubscriptionRequest request) {
         log.info("updateClientSubscription clientSubscriptionId:{} clientId:{}", clientSubscriptionId, CLIENT_ID);
         final ClientSubscription response = subscriptionService.updateSubscription(clientSubscriptionId, request);
@@ -37,6 +40,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<ClientSubscription> getClientSubscription(final UUID clientSubscriptionId) {
         log.info("getClientSubscription clientSubscriptionId:{} clientId:{}", clientSubscriptionId, CLIENT_ID);
         final ClientSubscription response = subscriptionService.getSubscription(clientSubscriptionId);
@@ -44,6 +48,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<Void> deleteClientSubscription(final UUID clientSubscriptionId) {
         log.info("deleteClientSubscription clientSubscriptionId:{} clientId:{}", clientSubscriptionId, CLIENT_ID);
         subscriptionService.deleteSubscription(clientSubscriptionId);

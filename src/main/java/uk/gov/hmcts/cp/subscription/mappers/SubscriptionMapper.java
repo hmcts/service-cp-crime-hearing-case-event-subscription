@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.subscription.mappers;
 
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -9,6 +10,7 @@ import uk.gov.hmcts.cp.openapi.model.EventType;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.model.EntityEventType;
+import uk.gov.hmcts.cp.subscription.services.ClockService;
 
 import java.util.List;
 
@@ -20,16 +22,16 @@ public interface SubscriptionMapper {
     @Mapping(target = "id", expression = "java(null)")
     @Mapping(source = "request.eventTypes", target = "eventTypes", qualifiedByName = "mapWithSortedEventTypes")
     @Mapping(source = "request.notificationEndpoint", target = "notificationEndpoint", qualifiedByName = "mapFromNotificationEndpoint")
-    @Mapping(target = "createdAt", expression = "java(java.time.OffsetDateTime.now())")
-    @Mapping(target = "updatedAt", expression = "java(java.time.OffsetDateTime.now())")
-    ClientSubscriptionEntity mapCreateRequestToEntity(ClientSubscriptionRequest request);
+    @Mapping(target = "createdAt", expression = "java(clockService.now())")
+    @Mapping(target = "updatedAt", expression = "java(clockService.now())")
+    ClientSubscriptionEntity mapCreateRequestToEntity(@Context ClockService clockService, ClientSubscriptionRequest request);
 
     @Mapping(source = "existing.id", target = "id")
     @Mapping(source = "request.eventTypes", target = "eventTypes", qualifiedByName = "mapWithSortedEventTypes")
     @Mapping(source = "request.notificationEndpoint", target = "notificationEndpoint", qualifiedByName = "mapFromNotificationEndpoint")
     @Mapping(source = "existing.createdAt", target = "createdAt")
-    @Mapping(expression = "java(java.time.OffsetDateTime.now())", target = "updatedAt")
-    ClientSubscriptionEntity mapUpdateRequestToEntity(ClientSubscriptionEntity existing, ClientSubscriptionRequest request);
+    @Mapping(expression = "java(clockService.now())", target = "updatedAt")
+    ClientSubscriptionEntity mapUpdateRequestToEntity(@Context ClockService clockService, ClientSubscriptionEntity existing, ClientSubscriptionRequest request);
 
     @Mapping(source = "id", target = "clientSubscriptionId")
     ClientSubscription mapEntityToResponse(ClientSubscriptionEntity entity);
