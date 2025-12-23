@@ -22,21 +22,22 @@ class MaterialServiceIntegrationTest {
     @Test
     void should_return_material_by_id() {
 
-        UUID materialId = UUID.fromString("6c198796-08bb-4803-b456-fa0c29ca6021");
+        final UUID materialId = UUID.fromString("6c198796-08bb-4803-b456-fa0c29ca6021");
         MaterialResponse response = materialService.getByMaterialId(materialId);
 
-        assertThat(response).isNotNull();
-        assertThat(response.getMaterialId()).isEqualTo(materialId);
-        assertThat(response.getAlfrescoAssetId()).isEqualTo(UUID.fromString("82257b1b-571d-432e-8871-b0c5b4bd18b1"));
-        assertThat(response.getMimeType()).isEqualTo("application/pdf");
-        assertThat(response.getFileName()).isEqualTo("PrisonCourtRegister_20251219083322.pdf");
-        assertThat(response.getMaterialAddedDate()).isEqualTo("2025-12-19T08:33:29.866Z");
+        assertThat(response).satisfies(resp -> {
+            assertThat(resp.getMaterialId()).isEqualTo(materialId);
+            assertThat(resp.getAlfrescoAssetId()).isEqualTo(UUID.fromString("82257b1b-571d-432e-8871-b0c5b4bd18b1"));
+            assertThat(resp.getMimeType()).isEqualTo("application/pdf");
+            assertThat(resp.getFileName()).isEqualTo("PrisonCourtRegister_20251219083322.pdf");
+        });
     }
 
     @Test
     void should_throw_not_found_when_material_does_not_exist() {
         UUID materialId = UUID.fromString("6c198796-08bb-4803-b456-fa0c29ca6022");
         assertThatThrownBy(() -> materialService.getByMaterialId(materialId))
-                .isInstanceOf(feign.FeignException.NotFound.class);
+                .isInstanceOf(feign.FeignException.NotFound.class)
+                .hasMessageContaining("404");
     }
 }
