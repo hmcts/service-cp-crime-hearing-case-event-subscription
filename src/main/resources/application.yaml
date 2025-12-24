@@ -1,6 +1,9 @@
 server:
   port: ${SERVER_PORT:4550}
 
+material-client:
+  url: ${MATERIAL_CLIENT_URL:http://localhost:8081}
+
 spring:
   application:
     name: service-hmcts-springboot-demo-postgres
