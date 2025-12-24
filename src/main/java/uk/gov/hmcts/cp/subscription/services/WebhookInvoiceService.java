@@ -13,13 +13,13 @@ public class WebhookInvoiceService {
 
     private final DocumentServiceClient client;
 
-    public void processInvoiceEvent(final PcrEventPayload payload) {
+    public void processPcrEvent(final PcrEventPayload payload) {
         log.info("Processing invoice webhook event: {}", payload);
 
         try {
             client.updateDocumentMetadata(payload);
             log.info("Successfully updated document metadata for invoice event");
-        }catch (FeignException ex) {
+        } catch (FeignException ex) {
             log.error("Failed to update document metadata for invoice event", ex);
             throw ex;
         }

@@ -60,7 +60,7 @@ class WebhookInvoiceServiceTest {
         PcrEventPayload payload = new PcrEventPayload();
         payload.setEventId(UUID.randomUUID());
 
-        webhookInvoiceService.processInvoiceEvent(payload);
+        webhookInvoiceService.processPcrEvent(payload);
 
         wireMockServer.verify(postRequestedFor(
                 urlEqualTo("/document-service/api/rest/document/metadata"))
