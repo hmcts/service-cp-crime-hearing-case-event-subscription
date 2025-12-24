@@ -8,10 +8,10 @@ import uk.gov.hmcts.cp.subscription.clients.model.MaterialResponse;
 import java.util.UUID;
 
 @FeignClient(
-        name = "material-service",
-        url = "${material-service.url}"
+        name = "material-client",
+        url = "${material-client.url}"
 )
-public interface MaterialService {
+public interface MaterialClient {
 
     @GetMapping("/material-query-api/query/api/rest/material/material/{materialId}/metadata")
     MaterialResponse getByMaterialId(@PathVariable UUID materialId);
