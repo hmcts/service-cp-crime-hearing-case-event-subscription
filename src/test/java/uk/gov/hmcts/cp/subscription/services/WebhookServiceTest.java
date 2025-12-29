@@ -54,7 +54,7 @@ class WebhookServiceTest {
     }
 
     @Autowired
-    private WebhookService webhookInvoiceService;
+    private WebhookService webhookService;
 
     @Test
     void should_call_document_service_to_update_metadata() {
@@ -65,7 +65,7 @@ class WebhookServiceTest {
         PcrEventPayload payload = new PcrEventPayload();
         payload.setEventId(UUID.randomUUID());
 
-        webhookInvoiceService.processPcrEvent(payload);
+        webhookService.processPcrEvent(payload);
 
         wireMockServer.verify(postRequestedFor(
                 urlEqualTo("/document-service/api/rest/document/metadata"))
