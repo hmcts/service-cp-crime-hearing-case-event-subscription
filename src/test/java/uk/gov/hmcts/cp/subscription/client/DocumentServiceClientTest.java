@@ -16,12 +16,14 @@ import static org.mockito.Mockito.spy;
 class DocumentServiceClientTest {
 
     @InjectMocks
-    private DocumentServiceClient documentServiceClient = spy(DocumentServiceClient.class);
+    private DocumentServiceClient documentServiceClient =
+            spy(DocumentServiceClient.class);
 
     @Test
     void updateDocumentMetadata_should_callFeignClient() {
-        PcrEventPayload payload = new PcrEventPayload();
-        payload.setEventId(UUID.randomUUID());
+        PcrEventPayload payload = PcrEventPayload.builder()
+                .eventId(UUID.randomUUID())
+                .build();
 
         documentServiceClient.updateDocumentMetadata(payload);
 
@@ -31,11 +33,13 @@ class DocumentServiceClientTest {
 
     @Test
     void updateDocumentMetadata_should_handle_multiple_calls() {
-        PcrEventPayload payload1 = new PcrEventPayload();
-        payload1.setEventId(UUID.randomUUID());
+        PcrEventPayload payload1 = PcrEventPayload.builder()
+                .eventId(UUID.randomUUID())
+                .build();
 
-        PcrEventPayload payload2 = new PcrEventPayload();
-        payload2.setEventId(UUID.randomUUID());
+        PcrEventPayload payload2 = PcrEventPayload.builder()
+                .eventId(UUID.randomUUID())
+                .build();
 
         documentServiceClient.updateDocumentMetadata(payload1);
         documentServiceClient.updateDocumentMetadata(payload2);
