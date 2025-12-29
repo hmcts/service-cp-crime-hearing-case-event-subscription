@@ -56,7 +56,7 @@ class DocumentServiceClientTest {
     }
 
     @Test
-    void shouldSendPostRequestToDocumentService() {
+    void generateOpenApiModels_should_create_ErrorResponse() {
         wireMockServer.stubFor(post(urlEqualTo("/document-service/api/rest/document/metadata"))
                 .willReturn(aResponse()
                         .withStatus(204)));
@@ -71,7 +71,7 @@ class DocumentServiceClientTest {
     }
 
     @Test
-    void shouldHandleSuccessfulResponse() {
+    void should_handle_successful_response() {
         wireMockServer.stubFor(post(urlEqualTo("/document-service/api/rest/document/metadata"))
                 .willReturn(aResponse()
                         .withStatus(200)));
@@ -86,7 +86,7 @@ class DocumentServiceClientTest {
     }
 
     @Test
-    void shouldSendCorrectPayloadToDocumentService() {
+    void should_send_correct_payload_to_document_service() {
         UUID eventId = UUID.randomUUID();
 
         wireMockServer.stubFor(post(urlEqualTo("/document-service/api/rest/document/metadata"))
