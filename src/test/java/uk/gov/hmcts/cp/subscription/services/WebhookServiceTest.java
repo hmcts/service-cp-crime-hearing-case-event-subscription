@@ -26,17 +26,17 @@ import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
 @SpringBootTest(
-        classes = WebhookInvoiceServiceTest.TestConfig.class,
+        classes = WebhookServiceTest.TestConfig.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE
 )
-class WebhookInvoiceServiceTest {
+class WebhookServiceTest {
 
     @Configuration
     @EnableFeignClients(clients = DocumentServiceClient.class)
     @Import({
             FeignAutoConfiguration.class,
             HttpMessageConvertersAutoConfiguration.class,
-            WebhookInvoiceService.class
+            WebhookService.class
     })
     static class TestConfig {
     }
@@ -54,7 +54,7 @@ class WebhookInvoiceServiceTest {
     }
 
     @Autowired
-    private WebhookInvoiceService webhookInvoiceService;
+    private WebhookService webhookInvoiceService;
 
     @Test
     void shouldCallDocumentServiceToUpdateMetadata() {

@@ -6,7 +6,7 @@ document-service:
 
 spring:
   application:
-    name: service-hmcts-springboot-demo-postgres
+    name: service-cp-crime-hearing-case-event-subscription
   jpa:
     open-in-view: false
   datasource:

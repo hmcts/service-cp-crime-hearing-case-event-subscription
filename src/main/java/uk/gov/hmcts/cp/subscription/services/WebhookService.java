@@ -9,7 +9,7 @@ import uk.gov.hmcts.cp.subscription.client.DocumentServiceClient;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class WebhookInvoiceService {
+public class WebhookService {
 
     private final DocumentServiceClient client;
 
