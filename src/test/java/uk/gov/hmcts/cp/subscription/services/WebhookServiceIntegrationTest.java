@@ -40,7 +40,7 @@ class WebhookServiceIntegrationTest extends BaseIntegrationTest {
 
     @Test
     void should_call_document_service_to_update_metadata() {
-        wireMockServer.stubFor(post(urlPathMatching("/document-service/api/rest/document/.*"))
+        wireMockServer.stubFor(post(urlPathMatching("/client-webhook-url"))
                 .willReturn(aResponse().withStatus(200)));
 
         PcrEventPayload payload = PcrEventPayload.builder()
@@ -50,7 +50,7 @@ class WebhookServiceIntegrationTest extends BaseIntegrationTest {
         webhookService.processPcrEvent(payload);
 
         wireMockServer.verify(postRequestedFor(
-                urlPathMatching("/document-service/api/rest/document/.*"))
+                urlPathMatching("/client-webhook-url]"))
                 .withHeader("Content-Type", containing("application/json")));
     }
 }

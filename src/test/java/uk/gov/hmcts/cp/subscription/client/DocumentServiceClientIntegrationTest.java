@@ -57,7 +57,7 @@ class DocumentServiceClientIntegrationTest {
 
     @Test
     void generateOpenApiModels_should_create_ErrorResponse() {
-        wireMockServer.stubFor(post(urlEqualTo("//client-webhook-url"))
+        wireMockServer.stubFor(post(urlEqualTo("/client-webhook-url"))
                 .willReturn(aResponse()
                         .withStatus(204)));
 
@@ -66,13 +66,13 @@ class DocumentServiceClientIntegrationTest {
 
         documentServiceClient.updateDocumentMetadata(payload);
 
-        wireMockServer.verify(postRequestedFor(urlEqualTo("//client-webhook-url"))
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/client-webhook-url"))
                 .withHeader("Content-Type", containing("application/json")));
     }
 
     @Test
     void should_handle_successful_response() {
-        wireMockServer.stubFor(post(urlEqualTo("//client-webhook-url"))
+        wireMockServer.stubFor(post(urlEqualTo("/client-webhook-url"))
                 .willReturn(aResponse()
                         .withStatus(200)));
 
@@ -82,14 +82,14 @@ class DocumentServiceClientIntegrationTest {
         documentServiceClient.updateDocumentMetadata(payload);
 
         wireMockServer.verify(1, postRequestedFor(
-                urlEqualTo("//client-webhook-url")));
+                urlEqualTo("/client-webhook-url")));
     }
 
     @Test
     void should_send_correct_payload_to_document_service() {
         UUID eventId = UUID.randomUUID();
 
-        wireMockServer.stubFor(post(urlEqualTo("//client-webhook-url"))
+        wireMockServer.stubFor(post(urlEqualTo("/client-webhook-url"))
                 .willReturn(aResponse()
                         .withStatus(204)));
 
@@ -98,7 +98,7 @@ class DocumentServiceClientIntegrationTest {
 
         documentServiceClient.updateDocumentMetadata(payload);
 
-        wireMockServer.verify(postRequestedFor(urlEqualTo("//client-webhook-url"))
+        wireMockServer.verify(postRequestedFor(urlEqualTo("/client-webhook-url"))
                 .withHeader("Content-Type", containing("application/json"))
                 .withRequestBody(matchingJsonPath("$.eventId", equalTo(eventId.toString()))));
     }

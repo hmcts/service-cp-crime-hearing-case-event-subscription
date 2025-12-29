@@ -11,7 +11,7 @@ import uk.gov.hmcts.cp.openapi.model.PcrEventPayload;
 )
 public interface DocumentServiceClient {
     @PostMapping(
-            value = "//client-webhook-url",
+            value = "/client-webhook-url",
             consumes = "application/json"
     )
     void updateDocumentMetadata(@RequestBody PcrEventPayload request);
