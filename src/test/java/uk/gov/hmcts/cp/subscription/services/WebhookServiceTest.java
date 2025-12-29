@@ -57,7 +57,7 @@ class WebhookServiceTest {
     private WebhookService webhookInvoiceService;
 
     @Test
-    void shouldCallDocumentServiceToUpdateMetadata() {
+    void should_call_document_service_to_update_metadata() {
         wireMockServer.stubFor(post(urlEqualTo("/document-service/api/rest/document/metadata"))
                 .willReturn(aResponse()
                         .withStatus(200)));
