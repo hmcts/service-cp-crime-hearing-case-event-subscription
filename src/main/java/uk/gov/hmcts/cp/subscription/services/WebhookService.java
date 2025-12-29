@@ -15,7 +15,7 @@ public class WebhookService {
     private final DocumentServiceClient client;
 
     public void processPcrEvent(final PcrEventPayload payload) {
-        log.info("Processing  webhook event: {}", payload);
+        log.info("Processing webhook event id : {}", payload.getEventId());
 
         try {
             client.updateDocumentMetadata(payload);

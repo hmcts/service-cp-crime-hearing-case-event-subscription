@@ -20,7 +20,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-class WebhookServiceTest extends BaseIntegrationTest {
+class WebhookServiceIntegrationTest extends BaseIntegrationTest {
 
     @RegisterExtension
     static WireMockExtension wireMockServer = WireMockExtension.newInstance()

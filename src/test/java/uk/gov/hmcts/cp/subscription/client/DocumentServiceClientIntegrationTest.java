@@ -26,10 +26,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
 @SpringBootTest(
-        classes = DocumentServiceIntegrationTest.TestConfig.class,
+        classes = DocumentServiceClientIntegrationTest.TestConfig.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE
 )
-class DocumentServiceIntegrationTest {
+class DocumentServiceClientIntegrationTest {
 
     @Configuration
     @EnableFeignClients(clients = DocumentServiceClient.class)
