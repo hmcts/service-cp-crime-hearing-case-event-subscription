@@ -30,7 +30,6 @@ class WebhookServiceIntegrationTest extends BaseIntegrationTest {
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("document-service.url", wireMockServer::baseUrl);
-
         registry.add("spring.cloud.discovery.enabled", () -> "false");
         registry.add("spring.cloud.service-registry.auto-registration.enabled", () -> "false");
     }
@@ -49,8 +48,7 @@ class WebhookServiceIntegrationTest extends BaseIntegrationTest {
 
         webhookService.processPcrEvent(payload);
 
-        wireMockServer.verify(postRequestedFor(
-                urlPathMatching("/client-webhook-url]"))
+        wireMockServer.verify(postRequestedFor(urlPathMatching("/client-webhook-url"))
                 .withHeader("Content-Type", containing("application/json")));
     }
 }
