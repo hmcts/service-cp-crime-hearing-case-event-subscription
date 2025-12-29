@@ -1,9 +1,6 @@
 server:
   port: ${SERVER_PORT:4550}
 
-document-service:
-  url: ${DOCUMENT_SERVICE_URL:http://localhost:8081}
-
 spring:
   application:
     name: service-cp-crime-hearing-case-event-subscription
