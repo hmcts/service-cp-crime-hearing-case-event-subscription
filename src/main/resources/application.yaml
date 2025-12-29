@@ -1,6 +1,9 @@
 server:
   port: ${SERVER_PORT:4550}
 
+material-client:
+  url: ${MATERIAL_CLIENT_URL:http://localhost:8081}
+
 spring:
   application:
     name: service-cp-crime-hearing-case-event-subscription
@@ -15,6 +18,8 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+document-service:
+  url: ${DOCUMENT_SERVICE_URL:http://localhost:8082}
 
 management:
   endpoints:
