@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import uk.gov.hmcts.cp.openapi.model.PcrEventPayload;
+import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 
 import java.util.UUID;
 
@@ -25,20 +26,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 
-@SpringBootTest(
-        classes = DocumentServiceClientIntegrationTest.TestConfig.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE
-)
-class DocumentServiceClientIntegrationTest {
-
-    @Configuration
-    @EnableFeignClients(clients = DocumentServiceClient.class)
-    @Import({
-            FeignAutoConfiguration.class,
-            HttpMessageConvertersAutoConfiguration.class
-    })
-    static class TestConfig {
-    }
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+class DocumentServiceClientIntegrationTest extends IntegrationTestBase {
 
     @RegisterExtension
     static WireMockExtension wireMockServer = WireMockExtension.newInstance()
@@ -56,7 +45,7 @@ class DocumentServiceClientIntegrationTest {
     }
 
     @Test
-    void generateOpenApiModels_should_create_ErrorResponse() {
+    void should_send_request_when_document_service_returns_no_content() {
         wireMockServer.stubFor(post(urlEqualTo("/client-webhook-url"))
                 .willReturn(aResponse()
                         .withStatus(204)));
