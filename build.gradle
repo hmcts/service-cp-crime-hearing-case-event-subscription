@@ -28,10 +28,11 @@ apply {
   from("$rootDir/gradle/github/jar.gradle")
 
   from("$rootDir/gradle/tasks/apitest.gradle")
+  from("$rootDir/gradle/dependencies/spring-cloud.gradle")
 }
 
 dependencies {
-  implementation(group: 'uk.gov.hmcts.cp', name: 'api-cp-crime-hearing-case-event-subscription', version: '1.0.0-cc7de31')
+  implementation(group: 'uk.gov.hmcts.cp', name: 'api-cp-crime-hearing-case-event-subscription', version: '1.0.2')
 
   // This is proving to be a real puzzle. This is actually included in the api published pom
   // ( though with scope of "runtime" )
