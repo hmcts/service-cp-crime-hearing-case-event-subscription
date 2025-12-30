@@ -14,5 +14,8 @@ import java.util.UUID;
 public interface MaterialClient {
 
     @GetMapping("/material-query-api/query/api/rest/material/material/{materialId}/metadata")
-    MaterialResponse getByMaterialId(@PathVariable UUID materialId);
+    MaterialResponse getMetadataById(@PathVariable UUID materialId);
+
+    @GetMapping("/material-query-api/query/api/rest/material/material/{materialId}/content")
+    byte[] getContentById(@PathVariable UUID materialId);
 }

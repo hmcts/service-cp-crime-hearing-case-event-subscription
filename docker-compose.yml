@@ -20,3 +20,16 @@ services:
       - db
     ports:
       - "8082:8082"
+
+  wiremock:
+    image: wiremock/wiremock:3.6.0
+    container_name: wiremock
+    ports:
+      - "9999:9999"
+    volumes:
+      - ./src/test/resources/mappings:/home/wiremock/mappings
+      - ./src/test/resources/__files:/home/wiremock/__files
+    command:
+      - "--global-response-templating"
+      - "--verbose"
+
