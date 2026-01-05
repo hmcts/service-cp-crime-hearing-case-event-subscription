@@ -1,0 +1,26 @@
+{
+  "eventId": "7c198796-08bb-4803-b456-fa0c29ca6021",
+  "eventType": "PRISON_COURT_REGISTER_GENERATED",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "defendants": [
+    {
+      "masterDefendantId": "7c198796-08bb-4803-b456-fa0c29ca6022",
+      "name": "string",
+      "dateOfBirth": "1990-05-15",
+      "custodyEstablishmentDetails": {
+        "emailAddress": "string@email.com"
+      },
+      "cases": [
+        {
+          "urn": "string",
+          "documents": [
+            {
+              "url": "http://documents/pcr/7c198796-08bb-4803-b456-fa0c29ca6021",
+              "timestamp": "2024-01-15T10:29:55.123Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
