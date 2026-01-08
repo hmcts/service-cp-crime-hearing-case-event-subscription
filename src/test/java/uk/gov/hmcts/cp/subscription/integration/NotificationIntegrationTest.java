@@ -13,7 +13,6 @@ import org.wiremock.spring.EnableWireMock;
 import uk.gov.hmcts.cp.subscription.config.TestContainersInitialise;
 
 import java.nio.file.Files;
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,17 +27,13 @@ class NotificationIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    void shouldReturnCreated_whenPostingFullJson() throws Exception {
-        UUID materialId = UUID.randomUUID();
-
-        // Load request JSON from resources/request/pcr-event.json
+    void should_return_created_when_posting_valid_payload() throws Exception {
         ClassPathResource resource = new ClassPathResource("requests/pcr-request.json");
         String requestJson = Files.readString(resource.getFile().toPath());
 
-        // Perform POST request
-        mockMvc.perform(post("/notifications/pcr/7c198796-08bb-4803-b456-fa0c29ca6021", materialId)
+        mockMvc.perform(post("/notifications/pcr")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
-                .andExpect(status().isCreated());
+                .andExpect(status().isAccepted());
     }
 }

@@ -7,18 +7,18 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
+import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
+import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 import uk.gov.hmcts.cp.subscription.config.TestContainersInitialise;
 import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.model.EntityEventType;
-import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
-import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
 import uk.gov.hmcts.cp.subscription.repositories.SubscriptionRepository;
 
 import java.time.OffsetDateTime;
 import java.util.List;
 
 import static uk.gov.hmcts.cp.openapi.model.EventType.CUSTODIAL_RESULT;
-import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
+import static uk.gov.hmcts.cp.openapi.model.EventType.PRISON_COURT_REGISTER_GENERATED;
 
 @SpringBootTest
 @ContextConfiguration(initializers = TestContainersInitialise.class)
@@ -37,7 +37,7 @@ public abstract class IntegrationTestBase {
             .build();
     ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
             .notificationEndpoint(notificationEndpoint)
-            .eventTypes(List.of(PCR, CUSTODIAL_RESULT))
+            .eventTypes(List.of(PRISON_COURT_REGISTER_GENERATED, CUSTODIAL_RESULT))
             .build();
 
     protected void clearAllTables() {
