@@ -33,7 +33,7 @@ class SubscriptionSaveControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.clientSubscriptionId").exists())
                 .andExpect(jsonPath("$.eventTypes.[0]").value("CUSTODIAL_RESULT"))
-                .andExpect(jsonPath("$.eventTypes.[1]").value("PCR"))
+                .andExpect(jsonPath("$.eventTypes.[1]").value("PRISON_COURT_REGISTER_GENERATED"))
                 .andExpect(jsonPath("$.createdAt").exists());
         assertThatEventTypesAreSortedInDatabase();
     }
@@ -42,6 +42,6 @@ class SubscriptionSaveControllerIntegrationTest extends IntegrationTestBase {
         List<ClientSubscriptionEntity> entities = subscriptionRepository.findAll();
         assertThat(entities).hasSize(1);
         assertThat(entities.get(0).getEventTypes().get(0)).isEqualTo(EntityEventType.CUSTODIAL_RESULT);
-        assertThat(entities.get(0).getEventTypes().get(1)).isEqualTo(EntityEventType.PCR);
+        assertThat(entities.get(0).getEventTypes().get(1)).isEqualTo(EntityEventType.PRISON_COURT_REGISTER_GENERATED);
     }
 }

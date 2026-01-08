@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.subscription.controllers;
 
+import feign.FeignException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -36,5 +37,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(exception.getMessage());
+    }
+
+    @ExceptionHandler(FeignException.class)
+    public ResponseEntity<String> handleFeignException(FeignException ex) {
+        log.error("FeignException from downstream service", ex);
+        HttpStatus status = HttpStatus.resolve(ex.status());
+        if (status == null) {
+            status = HttpStatus.BAD_GATEWAY;
+        }
+        return ResponseEntity
+                .status(status)
+                .body(ex.contentUTF8());
     }
 }

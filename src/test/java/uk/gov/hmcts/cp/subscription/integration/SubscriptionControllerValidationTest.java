@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static uk.gov.hmcts.cp.openapi.model.EventType.CUSTODIAL_RESULT;
-import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
+import static uk.gov.hmcts.cp.openapi.model.EventType.PRISON_COURT_REGISTER_GENERATED;
 
 class SubscriptionControllerValidationTest extends IntegrationTestBase {
 
@@ -26,13 +26,13 @@ class SubscriptionControllerValidationTest extends IntegrationTestBase {
             .build();
     ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
             .notificationEndpoint(notificationEndpoint)
-            .eventTypes(List.of(PCR, CUSTODIAL_RESULT))
+            .eventTypes(List.of(PRISON_COURT_REGISTER_GENERATED, CUSTODIAL_RESULT))
             .build();
 
     @Test
     void bad_event_type_should_return_400() throws Exception {
         String body = new ObjectMapper().writeValueAsString(request)
-                .replace("PCR", "BAD");
+                .replace("PRISON_COURT_REGISTER_GENERATED", "BAD");
         mockMvc.perform(post("/client-subscriptions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))

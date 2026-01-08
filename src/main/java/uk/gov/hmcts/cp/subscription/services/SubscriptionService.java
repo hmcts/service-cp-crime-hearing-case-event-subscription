@@ -22,18 +22,18 @@ public class SubscriptionService {
 
     public ClientSubscription saveSubscription(final ClientSubscriptionRequest request) {
         final ClientSubscriptionEntity entity = mapper.mapCreateRequestToEntity(clockService, request);
-        return mapper.mapEntityToResponse(subscriptionRepository.save(entity));
+        return mapper.mapEntityToResponse(clockService, subscriptionRepository.save(entity));
     }
 
     public ClientSubscription updateSubscription(final UUID clientSubscriptionId, final ClientSubscriptionRequest request) {
         final ClientSubscriptionEntity existing = subscriptionRepository.getReferenceById(clientSubscriptionId);
         final ClientSubscriptionEntity entity = mapper.mapUpdateRequestToEntity(clockService, existing, request);
-        return mapper.mapEntityToResponse(subscriptionRepository.save(entity));
+        return mapper.mapEntityToResponse(clockService, subscriptionRepository.save(entity));
     }
 
     public ClientSubscription getSubscription(final UUID clientSubscriptionId) {
         final ClientSubscriptionEntity entity = subscriptionRepository.getReferenceById(clientSubscriptionId);
-        return mapper.mapEntityToResponse(entity);
+        return mapper.mapEntityToResponse(clockService, entity);
     }
 
     public void deleteSubscription(final UUID clientSubscriptionId) {

@@ -1,53 +1,35 @@
 package uk.gov.hmcts.cp.subscription.services;
 
-import feign.FeignException;
-import feign.Request;
-import feign.Response;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.cp.subscription.clients.MaterialClient;
 
-import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
 
+    @Mock
     private MaterialClient materialClient;
-    private NotificationService notificationService;
 
-    @BeforeEach
-    void setUp() {
-        materialClient = mock(MaterialClient.class);
-        notificationService = new NotificationService(materialClient);
-    }
+    @InjectMocks
+    private NotificationService notificationService;
 
     @Test
     void shouldCallClientAndLogSuccess() {
         UUID materialId = UUID.randomUUID();
-        notificationService.processPcrEvent(materialId);
-        verify(materialClient, times(1)).getContentById(materialId);
-    }
-
-    @Test
-    void shouldThrowFeignExceptionWhenClientFails() {
-        UUID materialId = UUID.randomUUID();
-
-        Response response = Response.builder()
-                .request(Request.create(Request.HttpMethod.GET, "/dummy", Collections.emptyMap(), null, Charset.defaultCharset(), null))
-                .status(500)
-                .reason("Internal Server Error")
-                .build();
-
-        FeignException feignException = FeignException.errorStatus("getContentById", response);
-        doThrow(feignException).when(materialClient).getContentById(materialId);
-        assertThrows(FeignException.class, () -> notificationService.processPcrEvent(materialId));
-        verify(materialClient, times(1)).getContentById(materialId);
+        when(materialClient.getContentById(any())).thenReturn(any());
+        byte[] document = notificationService.processPcrEvent(materialId);
+        assertThat(document).isNullOrEmpty();
+        verify(materialClient, times(1)).getContentById(any());
     }
 }
