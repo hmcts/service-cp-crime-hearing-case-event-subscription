@@ -1,0 +1,99 @@
+// TODO need to delete duplicate code
+plugins {
+  id 'java'
+  id 'com.avast.gradle.docker-compose' version '0.17.20'
+  id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'uk.gov.hmcts.cp'
+version = System.getProperty('ARTEFACT_VERSION') ?: '0.0.999'
+
+// Disable main source set since this module only has tests
+sourceSets {
+  main {
+    java.srcDirs = []
+    resources.srcDirs = []
+  }
+}
+
+// Disable unnecessary tasks for test-only module
+tasks.named('jar') {
+  enabled = false
+}
+
+tasks.named('compileJava') {
+  enabled = false
+}
+
+tasks.named('processResources') {
+  enabled = false
+}
+
+dependencyManagement {
+  imports {
+    mavenBom "org.springframework.boot:spring-boot-dependencies:4.0.1"
+  }
+}
+
+tasks.named('test') {
+  description = "Runs api tests against docker-compose stack"
+  group = "Verification"
+  useJUnitPlatform()
+  dependsOn tasks.composeUp
+  finalizedBy tasks.composeDown
+  
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat = 'full'
+    showStandardStreams = true
+  }
+  
+  reports {
+    junitXml.required.set(true)
+    html.required.set(true)
+  }
+}
+
+tasks.named('build') {
+  dependsOn tasks.named('test')
+}
+
+dockerCompose {
+  useComposeFiles = ['docker-compose.yml']
+  startedServices = ['db', 'app']
+
+  buildBeforeUp = true
+  waitForTcpPorts = true
+  upAdditionalArgs = ['--wait', '--wait-timeout', '120']
+
+  captureContainersOutput = true
+  removeOrphans = true
+  stopContainers = true
+  removeContainers = true
+
+  useDockerComposeV2 = true
+  dockerExecutable = 'docker'
+}
+
+// Build the root project's bootJar before building Docker image
+tasks.register('buildRootBootJar', Exec) {
+  description = "Builds the root project's bootJar"
+  workingDir = projectDir.parent
+  executable = "${projectDir.parent}/gradlew"
+  args = ['bootJar']
+}
+
+tasks.named('composeBuild') {
+  dependsOn tasks.named('buildRootBootJar')
+}
+
+dependencies {
+  testImplementation "org.springframework:spring-web"
+  testImplementation "org.springframework.boot:spring-boot-starter-test"
+  testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
