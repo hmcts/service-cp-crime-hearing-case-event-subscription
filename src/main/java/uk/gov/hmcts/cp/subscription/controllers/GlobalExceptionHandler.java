@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(FeignException.class)
-    public ResponseEntity<String> handleFeignException(FeignException ex) {
+    public ResponseEntity<String> handleFeignException(final FeignException ex) {
         log.error("FeignException from downstream service", ex);
         HttpStatus status = HttpStatus.resolve(ex.status());
         if (status == null) {
