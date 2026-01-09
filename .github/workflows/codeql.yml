@@ -96,6 +96,7 @@ jobs:
 
       - name: DAST - Build and run containerised app
         run: |
+          cd apiTest
           docker compose -f docker-compose.yml up -d
           
           echo "Waiting for health endpoint..."

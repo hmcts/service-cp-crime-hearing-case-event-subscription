@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ActuatorApiTest {
 
     private final String baseUrl = System.getProperty("app.baseUrl", "http://localhost:8082");
+    // TODO remove this client and use FeignClient/RestClient
     private final RestTemplate http = new RestTemplate();
 
     @Test
