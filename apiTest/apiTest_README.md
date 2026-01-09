@@ -40,20 +40,20 @@ Before running the tests, ensure you have the following installed and configured
 cd apiTest
 
 # Run all tests
-../gradlew test
+gradle test
 
 # Run tests with more verbose output
-../gradlew test --info
+gradle test --info
 
 # Run tests with debug output
-../gradlew test --debug
+gradle test --debug
 ```
 
 ### From the apiTest Directory
 
 ```bash
 # If you're already in the apiTest directory
-../gradlew test
+gradle test
 ```
 
 ### What Happens When You Run Tests
@@ -71,10 +71,10 @@ cd apiTest
 
 ```bash
 # Run a specific test class
-../gradlew test --tests "RootApiTest"
+gradle test --tests "RootApiTest"
 
 # Run a specific test method
-../gradlew test --tests "RootApiTest.root_endpoint_should_be_ok"
+gradle test --tests "RootApiTest.root_endpoint_should_be_ok"
 ```
 
 ## Test Reports
@@ -102,15 +102,15 @@ These XML reports are useful for CI/CD integration.
 ### Issue: "Could not start Gradle Test Executor 1: Failed to load JUnit Platform"
 
 **Solution:** This should be resolved with the current configuration. If you see this error:
-1. Clean the build: `../gradlew clean`
-2. Rebuild: `../gradlew build`
+1. Clean the build: `gradle clean`
+2. Rebuild: `gradle build`
 
 ### Issue: "no main manifest attribute, in /app/apiTest-0.0.999.jar"
 
 **Solution:** This means the Docker build context is wrong. Ensure:
 1. The `docker-compose.yml` has `context: ..` (builds from root directory)
 2. The root project's `bootJar` is built before Docker build
-3. Run: `../gradlew buildRootBootJar` manually if needed
+3. Run: `gradle buildRootBootJar` manually if needed
 
 ### Issue: Container exits with code 1
 
