@@ -47,7 +47,7 @@ class SubscriptionMapperTest {
 
     @Test
     void create_request_should_map_to_entity_with_sorted_types() {
-        when(clockService.now()).thenReturn(MOCKCREATED);
+        when(clockService.nowOffsetUTC()).thenReturn(MOCKCREATED);
         ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
                 .notificationEndpoint(notificationEndpoint)
                 .eventTypes(List.of(PRISON_COURT_REGISTER_GENERATED, CUSTODIAL_RESULT))
@@ -71,7 +71,7 @@ class SubscriptionMapperTest {
                 .notificationEndpoint(updatedEndpoint)
                 .eventTypes(List.of(CUSTODIAL_RESULT))
                 .build();
-        when(clockService.now()).thenReturn(MOCKUPDATED);
+        when(clockService.nowOffsetUTC()).thenReturn(MOCKUPDATED);
         ClientSubscriptionEntity entity = mapper.mapUpdateRequestToEntity(clockService, existing, request);
 
         assertThat(entity.getId()).isEqualTo(clientSubscriptionId);
@@ -83,7 +83,7 @@ class SubscriptionMapperTest {
 
     @Test
     void entity_should_map_to_response() {
-        when(clockService.now()).thenReturn(MOCKCREATED).thenReturn(MOCKUPDATED);
+        when(clockService.now()).thenReturn(MOCKCREATED.toInstant()).thenReturn(MOCKUPDATED.toInstant());
         ClientSubscription subscription = mapper.mapEntityToResponse(clockService, existing);
 
         assertThat(subscription.getClientSubscriptionId()).isEqualTo(clientSubscriptionId);
