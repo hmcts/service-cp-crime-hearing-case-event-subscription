@@ -25,10 +25,6 @@ Before running the tests, ensure you have the following installed and configured
    - Docker must be running (check with `docker ps`)
    - Docker Compose V2 must be available: `docker compose version`
 
-3. **Gradle** (or use the Gradle wrapper)
-   - The project includes `gradlew` wrapper, so Gradle installation is optional
-   - Verify wrapper: `./gradlew --version`
-
 ### System Requirements
 
 - At least 4GB of free RAM (Docker containers need memory)
@@ -240,6 +236,6 @@ Tests use the following default configuration:
 
 You can override the application URL:
 ```bash
-../gradlew test -Dapp.baseUrl=http://localhost:8080
+gradle test -Dapp.baseUrl=http://localhost:8080
 ```
 
