@@ -25,20 +25,20 @@ public interface SubscriptionMapper {
     @Mapping(target = "id", expression = "java(null)")
     @Mapping(source = "request.eventTypes", target = "eventTypes", qualifiedByName = "mapWithSortedEventTypes")
     @Mapping(source = "request.notificationEndpoint", target = "notificationEndpoint", qualifiedByName = "mapFromNotificationEndpoint")
-    @Mapping(target = "createdAt", expression = "java(clockService.now())")
-    @Mapping(target = "updatedAt", expression = "java(clockService.now())")
+    @Mapping(target = "createdAt", expression = "java(clockService.nowOffsetUTC())")
+    @Mapping(target = "updatedAt", expression = "java(clockService.nowOffsetUTC())")
     ClientSubscriptionEntity mapCreateRequestToEntity(@Context ClockService clockService, ClientSubscriptionRequest request);
 
     @Mapping(source = "existing.id", target = "id")
     @Mapping(source = "request.eventTypes", target = "eventTypes", qualifiedByName = "mapWithSortedEventTypes")
     @Mapping(source = "request.notificationEndpoint", target = "notificationEndpoint", qualifiedByName = "mapFromNotificationEndpoint")
     @Mapping(source = "existing.createdAt", target = "createdAt")
-    @Mapping(expression = "java(clockService.now())", target = "updatedAt")
+    @Mapping(expression = "java(clockService.nowOffsetUTC())", target = "updatedAt")
     ClientSubscriptionEntity mapUpdateRequestToEntity(@Context ClockService clockService, ClientSubscriptionEntity existing, ClientSubscriptionRequest request);
 
     @Mapping(source = "id", target = "clientSubscriptionId")
-    @Mapping(target = "createdAt", expression = "java(clockService.now().toInstant())")
-    @Mapping(target = "updatedAt", expression = "java(clockService.now().toInstant())")
+    @Mapping(target = "createdAt", expression = "java(clockService.now())")
+    @Mapping(target = "updatedAt", expression = "java(clockService.now())")
     ClientSubscription mapEntityToResponse(@Context ClockService clockService, ClientSubscriptionEntity entity);
 
     @Named("mapWithSortedEventTypes")

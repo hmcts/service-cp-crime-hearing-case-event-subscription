@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
@@ -16,7 +17,11 @@ public class ClockService {
 
     private Clock clock;
 
-    public OffsetDateTime now() {
+    public Instant now() {
+        return clock.instant();
+    }
+
+    public OffsetDateTime nowOffsetUTC() {
         return clock.instant().atOffset(ZoneOffset.UTC);
     }
 }

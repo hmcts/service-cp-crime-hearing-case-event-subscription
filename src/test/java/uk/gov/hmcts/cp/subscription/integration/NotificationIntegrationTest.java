@@ -15,6 +15,7 @@ import uk.gov.hmcts.cp.subscription.config.TestContainersInitialise;
 import java.nio.file.Files;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -31,9 +32,10 @@ class NotificationIntegrationTest {
         ClassPathResource resource = new ClassPathResource("requests/pcr-request.json");
         String requestJson = Files.readString(resource.getFile().toPath());
 
-        mockMvc.perform(post("/notifications/pcr")
+        mockMvc.perform(post("/notification/pcr")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
+                .andDo(print())
                 .andExpect(status().isAccepted());
     }
 }
