@@ -10,7 +10,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 @Slf4j
 public class TestContainersInitialise implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
-    private static final PostgreSQLContainer postgreSQLContainer = new PostgreSQLContainer(
+    private final PostgreSQLContainer<?> postgreSQLContainer = new PostgreSQLContainer(
             "postgres")
             .withDatabaseName("appdb")
             .withUsername("postgres")

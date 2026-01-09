@@ -4,6 +4,7 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+import org.mapstruct.NullValueMappingStrategy;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.EventType;
@@ -16,7 +17,9 @@ import java.util.List;
 
 import static java.util.stream.Collectors.toList;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring",
+        nullValueIterableMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT,
+        nullValueMapMappingStrategy = NullValueMappingStrategy.RETURN_DEFAULT)
 public interface SubscriptionMapper {
 
     @Mapping(target = "id", expression = "java(null)")
@@ -34,7 +37,9 @@ public interface SubscriptionMapper {
     ClientSubscriptionEntity mapUpdateRequestToEntity(@Context ClockService clockService, ClientSubscriptionEntity existing, ClientSubscriptionRequest request);
 
     @Mapping(source = "id", target = "clientSubscriptionId")
-    ClientSubscription mapEntityToResponse(ClientSubscriptionEntity entity);
+    @Mapping(target = "createdAt", expression = "java(clockService.now().toInstant())")
+    @Mapping(target = "updatedAt", expression = "java(clockService.now().toInstant())")
+    ClientSubscription mapEntityToResponse(@Context ClockService clockService, ClientSubscriptionEntity entity);
 
     @Named("mapWithSortedEventTypes")
     static List<EntityEventType> sortedEventTypes(final List<EventType> events) {

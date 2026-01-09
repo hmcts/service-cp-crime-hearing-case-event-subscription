@@ -20,7 +20,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.cp.openapi.model.EventType.CUSTODIAL_RESULT;
-import static uk.gov.hmcts.cp.openapi.model.EventType.PCR;
+import static uk.gov.hmcts.cp.openapi.model.EventType.PRISON_COURT_REGISTER_GENERATED;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriptionMapperTest {
@@ -42,7 +42,7 @@ class SubscriptionMapperTest {
             .notificationEndpoint(notificationEndpoint.getWebhookUrl().toString())
             .eventTypes(mutableLisOfEventTypes())
             .createdAt(MOCKCREATED)
-            .updatedAt(MOCKCREATED)
+            .updatedAt(MOCKUPDATED)
             .build();
 
     @Test
@@ -50,14 +50,14 @@ class SubscriptionMapperTest {
         when(clockService.now()).thenReturn(MOCKCREATED);
         ClientSubscriptionRequest request = ClientSubscriptionRequest.builder()
                 .notificationEndpoint(notificationEndpoint)
-                .eventTypes(List.of(PCR, CUSTODIAL_RESULT))
+                .eventTypes(List.of(PRISON_COURT_REGISTER_GENERATED, CUSTODIAL_RESULT))
                 .build();
 
         ClientSubscriptionEntity entity = mapper.mapCreateRequestToEntity(clockService, request);
 
         assertThat(entity.getId()).isNull();
         assertThat(entity.getNotificationEndpoint()).isEqualTo("https://example.com");
-        assertThat(entity.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT, PCR]");
+        assertThat(entity.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT, PRISON_COURT_REGISTER_GENERATED]");
         assertThat(entity.getCreatedAt()).isNotNull();
         assertThat(entity.getUpdatedAt()).isNotNull();
     }
@@ -83,19 +83,20 @@ class SubscriptionMapperTest {
 
     @Test
     void entity_should_map_to_response() {
-        ClientSubscription subscription = mapper.mapEntityToResponse(existing);
+        when(clockService.now()).thenReturn(MOCKCREATED).thenReturn(MOCKUPDATED);
+        ClientSubscription subscription = mapper.mapEntityToResponse(clockService, existing);
 
         assertThat(subscription.getClientSubscriptionId()).isEqualTo(clientSubscriptionId);
         assertThat(subscription.getNotificationEndpoint()).isEqualTo(notificationEndpoint);
-        assertThat(subscription.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT, PCR]");
-        assertThat(subscription.getCreatedAt()).isEqualTo(MOCKCREATED);
-        assertThat(subscription.getUpdatedAt()).isEqualTo(MOCKCREATED);
+        assertThat(subscription.getEventTypes().toString()).isEqualTo("[CUSTODIAL_RESULT, PRISON_COURT_REGISTER_GENERATED]");
+        assertThat(subscription.getCreatedAt()).isEqualTo(MOCKCREATED.toInstant());
+        assertThat(subscription.getUpdatedAt()).isEqualTo(MOCKUPDATED.toInstant());
     }
 
     private List<EntityEventType> mutableLisOfEventTypes() {
         List<EntityEventType> mutableList = new ArrayList<>();
         mutableList.add(EntityEventType.CUSTODIAL_RESULT);
-        mutableList.add(EntityEventType.PCR);
+        mutableList.add(EntityEventType.PRISON_COURT_REGISTER_GENERATED);
         return mutableList;
     }
 }

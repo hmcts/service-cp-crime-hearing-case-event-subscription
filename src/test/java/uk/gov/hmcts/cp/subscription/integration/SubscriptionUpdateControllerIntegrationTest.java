@@ -29,7 +29,7 @@ class SubscriptionUpdateControllerIntegrationTest extends IntegrationTestBase {
 
     @Test
     void update_client_subscription_should_update_subscription() throws Exception {
-        ClientSubscriptionEntity existing = insertSubscription("https://oldendpoint", List.of(EntityEventType.PCR));
+        ClientSubscriptionEntity existing = insertSubscription("https://oldendpoint", List.of(EntityEventType.PRISON_COURT_REGISTER_GENERATED));
         String body = new ObjectMapper().writeValueAsString(request);
         mockMvc.perform(put("/client-subscriptions/{id}", existing.getId())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -39,7 +39,7 @@ class SubscriptionUpdateControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clientSubscriptionId").value(existing.getId().toString()))
                 .andExpect(jsonPath("$.eventTypes.[0]").value("CUSTODIAL_RESULT"))
-                .andExpect(jsonPath("$.eventTypes.[1]").value("PCR"))
+                .andExpect(jsonPath("$.eventTypes.[1]").value("PRISON_COURT_REGISTER_GENERATED"))
                 .andExpect(jsonPath("$.notificationEndpoint.webhookUrl").value("https://my-callback-url"));
         verifyCreatedAtIsUnchanged(existing.getId(), existing.getCreatedAt());
     }

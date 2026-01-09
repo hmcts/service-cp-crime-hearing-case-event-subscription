@@ -41,7 +41,7 @@ class SubscriptionServiceTest {
     void save_request_should_save_new_entity() {
         when(mapper.mapCreateRequestToEntity(clockService, request)).thenReturn(requestEntity);
         when(subscriptionRepository.save(requestEntity)).thenReturn(savedEntity);
-        when(mapper.mapEntityToResponse(savedEntity)).thenReturn(response);
+        when(mapper.mapEntityToResponse(clockService, savedEntity)).thenReturn(response);
 
         ClientSubscription result = subscriptionService.saveSubscription(request);
 
@@ -55,7 +55,7 @@ class SubscriptionServiceTest {
         when(subscriptionRepository.getReferenceById(subscriptionId)).thenReturn(savedEntity);
         when(mapper.mapUpdateRequestToEntity(clockService, savedEntity, request)).thenReturn(requestEntity);
         when(subscriptionRepository.save(requestEntity)).thenReturn(updatedEntity);
-        when(mapper.mapEntityToResponse(updatedEntity)).thenReturn(response);
+        when(mapper.mapEntityToResponse(clockService, updatedEntity)).thenReturn(response);
 
         ClientSubscription result = subscriptionService.updateSubscription(subscriptionId, request);
 
