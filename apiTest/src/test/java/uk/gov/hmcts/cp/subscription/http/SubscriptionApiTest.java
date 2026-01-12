@@ -27,7 +27,7 @@ class SubscriptionApiTest {
         final String postUrl = String.format("%s/client-subscriptions", baseUrl);
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        final String body = "{\"eventTypes\":[\"PCR\",\"CUSTODIAL_RESULT\"],\n" +
+        final String body = "{\"eventTypes\":[\"PRISON_COURT_REGISTER_GENERATED\",\"CUSTODIAL_RESULT\"],\n" +
                 "\"notificationEndpoint\":{\"webhookUrl\":\"https://my-callback-url\"}}";
         final ResponseEntity<String> postResult = http.exchange(
                 postUrl,

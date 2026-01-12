@@ -2,7 +2,6 @@ package uk.gov.hmcts.cp.subscription.integration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cp.subscription.entities.ClientSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.model.EntityEventType;
 
@@ -24,13 +23,13 @@ class SubscriptionGetControllerIntegrationTest extends IntegrationTestBase {
 
     @Test
     void get_subscription_should_return_expected() throws Exception {
-        ClientSubscriptionEntity entity = insertSubscription("https://example.com/event", List.of(EntityEventType.PCR));
+        ClientSubscriptionEntity entity = insertSubscription("https://example.com/event", List.of(EntityEventType.PRISON_COURT_REGISTER_GENERATED));
         mockMvc.perform(get("/client-subscriptions/{id}", entity.getId())
                         .header("client-id-todo", "1234"))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clientSubscriptionId").value(entity.getId().toString()))
-                .andExpect(jsonPath("$.eventTypes.[0]").value("PCR"))
+                .andExpect(jsonPath("$.eventTypes.[0]").value("PRISON_COURT_REGISTER_GENERATED"))
                 .andExpect(jsonPath("$.createdAt").exists());
     }
 
