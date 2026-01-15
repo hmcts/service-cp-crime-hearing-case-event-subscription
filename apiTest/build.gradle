@@ -79,7 +79,7 @@ dockerCompose {
 tasks.register('buildRootBootJar', Exec) {
   description = "Builds the root project's bootJar"
   workingDir = projectDir.parent
-  executable = "${projectDir.parent}/gradlew"
+  executable = "gradle"
   args = ['bootJar']
 }
 
