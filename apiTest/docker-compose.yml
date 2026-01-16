@@ -9,6 +9,9 @@ services:
       - "5432:5432"
 
   app:
+    # If DOCKER_IMAGE environment variable is set, it will use that image
+    # Otherwise, it will use the build section below
+    image: ${DOCKER_IMAGE}
     build:
       context: ..
       dockerfile: Dockerfile
@@ -33,4 +36,3 @@ services:
     command:
       - "--global-response-templating"
       - "--verbose"
-
