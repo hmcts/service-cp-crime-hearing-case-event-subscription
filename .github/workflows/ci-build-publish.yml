@@ -89,7 +89,7 @@ jobs:
           name: app-jar
           path: build/libs/${{ steps.repo_vars.outputs.artefact_name }}.jar
 
-  api-test:
+  API-Test-PR:
     if: ${{ inputs.run_api_test }}
     needs: [Build]
     runs-on: ubuntu-latest
@@ -120,7 +120,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: api-test-reports
+          name: api-test-pr-reports
           path: |
             apiTest/build/reports/tests/test/
             apiTest/build/test-results/test/
@@ -205,6 +205,73 @@ jobs:
           build-args: |
             BASE_IMAGE=openjdk:21-jdk-slim
             JAR_FILENAME=${{ needs.Build.outputs.artefact_name }}.jar
+
+  API-Test-Main:
+    if: ${{ inputs.trigger_docker }}
+    needs: [Build-Docker, Artefact-Version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: current
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Packages
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run API Tests against published Docker image
+        env:
+          DOCKER_IMAGE: ghcr.io/${{ github.repository }}:${{ needs.Artefact-Version.outputs.artefact_version }}
+        run: |
+          cd apiTest
+          # DOCKER_IMAGE is set via env, so docker-compose will use the image instead of building
+          # Pull the image first to ensure it's available
+          docker pull $DOCKER_IMAGE
+          
+          # Start containers using the published image
+          docker compose up -d
+          
+          echo "Waiting for health endpoint..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8082/actuator/health > /dev/null; then
+              echo "App is healthy"
+              break
+            fi
+            echo "Waiting for app to be healthy ($i)..."
+            sleep 2
+          done
+          
+          # Run tests (containers already running via docker compose)
+          gradle testClasses
+          gradle --no-daemon test --tests "*"
+          
+          # Clean up containers manually
+          docker compose down
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: api-test-main-reports
+          path: |
+            apiTest/build/reports/tests/test/
+            apiTest/build/test-results/test/
 
   Deploy:
     needs: [ Provider-Deploy, Build, Artefact-Version ]
