@@ -40,20 +40,22 @@ Before running the tests, ensure you have the following installed and configured
 cd apiTest
 
 # Run all tests
-gradle test
+../gradlew test
 
 # Run tests with more verbose output
-gradle test --info
+../gradlew test --info
 
 # Run tests with debug output
-gradle test --debug
+../gradlew test --debug
 ```
 
 ### From the apiTest Directory
 
 ```bash
-# If you're already in the apiTest directory
-gradle test
+# If you're already in the apiTest directory, you can use either:
+./gradlew test        # Uses apiTest's own Gradle wrapper
+# or
+../gradlew test       # Uses root project's Gradle wrapper
 ```
 
 ### What Happens When You Run Tests
@@ -71,10 +73,10 @@ gradle test
 
 ```bash
 # Run a specific test class
-gradle test --tests "RootApiTest"
+../gradlew test --tests "RootApiTest"
 
 # Run a specific test method
-gradle test --tests "RootApiTest.root_endpoint_should_be_ok"
+../gradlew test --tests "RootApiTest.root_endpoint_should_be_ok"
 ```
 
 ## Test Reports
@@ -102,15 +104,15 @@ These XML reports are useful for CI/CD integration.
 ### Issue: "Could not start Gradle Test Executor 1: Failed to load JUnit Platform"
 
 **Solution:** This should be resolved with the current configuration. If you see this error:
-1. Clean the build: `gradle clean`
-2. Rebuild: `gradle build`
+1. Clean the build: `../gradlew clean`
+2. Rebuild: `../gradlew build`
 
 ### Issue: "no main manifest attribute, in /app/apiTest-0.0.999.jar"
 
 **Solution:** This means the Docker build context is wrong. Ensure:
 1. The `docker-compose.yml` has `context: ..` (builds from root directory)
 2. The root project's `bootJar` is built before Docker build
-3. Run: `gradle buildRootBootJar` manually if needed
+3. Run: `../gradlew buildRootBootJar` manually if needed
 
 ### Issue: Container exits with code 1
 
@@ -152,26 +154,6 @@ lsof -i :5432
 - Check database logs: `docker-compose -f docker-compose.yml logs db`
 - Verify connection string in `docker-compose.yml` matches database configuration
 
-## Manual Container Management
-
-If you need to manually manage containers:
-
-```bash
-# Start containers without running tests
-docker-compose -f docker-compose.yml up -d
-
-# Stop containers
-docker-compose -f docker-compose.yml down
-
-# View container logs
-docker-compose -f docker-compose.yml logs -f app
-
-# Check container status
-docker-compose -f docker-compose.yml ps
-
-# Rebuild containers
-docker-compose -f docker-compose.yml build --no-cache
-```
 
 ## Test Configuration
 
@@ -186,6 +168,6 @@ Tests use the following default configuration:
 
 You can override the application URL:
 ```bash
-gradle test -Dapp.baseUrl=http://localhost:8080
+../gradlew test -Dapp.baseUrl=http://localhost:8080
 ```
 
