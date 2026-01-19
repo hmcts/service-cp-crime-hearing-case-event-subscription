@@ -74,7 +74,7 @@ jobs:
           ARTEFACT_VERSION: ${{ needs.Artefact-Version.outputs.artefact_version }}
         run: |
           echo "Building with ARTEFACT_VERSION=$ARTEFACT_VERSION"
-          gradle build -DARTEFACT_VERSION=$ARTEFACT_VERSION
+          ./gradlew build -DARTEFACT_VERSION=$ARTEFACT_VERSION
 
       - name: Extract repo name
         id: repo_vars
@@ -114,7 +114,7 @@ jobs:
       - name: Run API Tests
         run: |
           cd apiTest
-          gradle test
+          ../gradlew test
 
       - name: Upload test reports
         if: always()
@@ -162,7 +162,7 @@ jobs:
 
           echo "Publishing artefact for version: $ARTEFACT_VERSION"
           
-          gradle publish \
+          ./gradlew publish \
             -DARTEFACT_VERSION=$ARTEFACT_VERSION \
             -DGITHUB_REPOSITORY=${{ github.repository }} \
             -DGITHUB_ACTOR=${{ github.actor }} \
@@ -258,8 +258,9 @@ jobs:
           done
           
           # Run tests (containers already running via docker compose)
-          gradle testClasses
-          gradle --no-daemon test --tests "*"
+          # Skip composeUp and composeDown since we manage containers manually
+          ../gradlew testClasses
+          ../gradlew --no-daemon test -x composeUp -x composeDown
           
           # Clean up containers manually
           docker compose down
