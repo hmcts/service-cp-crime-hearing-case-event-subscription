@@ -1,7 +1,7 @@
 plugins {
   id 'application'
   id 'java'
-  id 'org.springframework.boot' version '4.0.1'
+  id 'org.springframework.boot' version '4.0.2'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'jacoco'
   id 'maven-publish'
@@ -35,5 +35,5 @@ dependencies {
   // This is proving to be a real puzzle. This is actually included in the api published pom
   // ( though with scope of "runtime" )
   // Yet we still need to add it manually. Grrr. TBC.
-  implementation "io.swagger.core.v3:swagger-annotations:2.2.41"
+  implementation "io.swagger.core.v3:swagger-annotations:2.2.42"
 }
