@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MvcResult;
 import uk.gov.hmcts.cp.filters.UUIDService;
 import uk.gov.hmcts.cp.subscription.entities.ClientEntity;
 import uk.gov.hmcts.cp.subscription.entities.ClientEventEntity;
@@ -23,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class SubscriptionCreateControllerIntegrationTest extends IntegrationTestBase {
 
     private static final String SUBSCRIPTION_REQUEST_VALID = "stubs/requests/subscription/subscription-request-valid.json";
+    private static final String SUBSCRIPTION_REQUEST_VALID_MULTIPLE_EVENTS = "stubs/requests/subscription/subscription-request-valid-multiple-events.json";
 
     @MockitoBean
     UUIDService uuidService;
@@ -50,7 +52,35 @@ class SubscriptionCreateControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.createdAt").exists())
                 .andExpect(jsonPath("$.hmac.keyId", matchesRegex("^kid-v1.*")))
                 .andExpect(jsonPath("$.hmac.secret", matchesRegex("[a-zA-Z0-9/+]*=")));
-        assertDatabaseState();
+        assertClientInDb();
+        assertThat(clientHmacRepository.findAll()).hasSize(1);
+        assertClientEventsInDb();
+    }
+
+    @Test
+    void create_subscription_should_save_subscription_with_hmac_and_multiple_eventTypes() throws Exception {
+        when(uuidService.randomString()).thenReturn(correlationId);
+        String body = loadPayload(SUBSCRIPTION_REQUEST_VALID_MULTIPLE_EVENTS);
+        mockMvc.perform(post("/client-subscriptions")
+                .header("Authorization", AUTHORIZATION_HEADER_VALUE)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(header().stringValues("X-Correlation-Id", correlationId))
+                .andExpect(jsonPath("$.clientSubscriptionId").exists())
+                .andExpect(jsonPath("$.eventTypes.[0]").value("PRISON_COURT_REGISTER_GENERATED"))
+                .andExpect(jsonPath("$.eventTypes.[1]").value("WEE_Layout5"))
+                .andExpect(jsonPath("$.createdAt").exists())
+                .andExpect(jsonPath("$.hmac.keyId", matchesRegex("^kid-v1.*")))
+                .andExpect(jsonPath("$.hmac.secret", matchesRegex("[a-zA-Z0-9/+]*=")));
+
+        assertClientInDb();
+        assertThat(clientHmacRepository.findAll()).hasSize(1);
+        List<ClientEventEntity> clientEventEntities = clientEventRepository.findAll();
+        assertThat(clientEventEntities).hasSize(2);
+        assertThat(clientEventEntities.getFirst().getEventTypeId()).isEqualTo(1);
+        assertThat(clientEventEntities.getLast().getEventTypeId()).isEqualTo(2);
     }
 
     @Test
@@ -76,13 +106,13 @@ class SubscriptionCreateControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.message").value("subscription already exist with " + existingId));
     }
 
-    private void assertDatabaseState() {
+    private void assertClientInDb() {
         List<ClientEntity> clientEntities = clientRepository.findAll();
         assertThat(clientEntities).hasSize(1);
         assertThat(clientEntities.getFirst().getSubscriptionId()).isNotNull();
+    }
 
-        assertThat(clientHmacRepository.findAll()).hasSize(1);
-
+    private void assertClientEventsInDb() {
         List<ClientEventEntity> clientEventEntities = clientEventRepository.findAll();
         assertThat(clientEventEntities).hasSize(1);
         assertThat(clientEventEntities.getFirst().getSubscriptionId()).isNotNull();
