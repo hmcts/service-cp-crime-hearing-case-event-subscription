@@ -4,7 +4,7 @@ The Court Hearing Cases Event Subscription API publishes events relating to crim
 
 ## Architecture overview
 
-The service processes PCR (Pre-Court Record) events from Progression, waits for documents to become available in the Material service, maps them, and delivers notifications to registered subscribers via callback URLs. Azure Service Bus can be enabled to make inbound and outbound processing asynchronous — see [Azure Service Bus](#azure-service-bus) below.
+The service processes PCR (PrisonCourtRegister)/Nows events from Progression and HearingNows, waits for documents to become available in the Material service, maps them, and delivers notifications to registered subscribers via callback URLs. Azure Service Bus can be enabled to make inbound and outbound processing asynchronous — see [Azure Service Bus](#azure-service-bus) below.
 
 ## Software required (macOS)
 
