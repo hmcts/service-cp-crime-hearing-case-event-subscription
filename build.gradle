@@ -91,6 +91,6 @@ dependencies {
   testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
   testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
-  implementation 'com.azure:azure-identity:1.18.2'
+  implementation 'com.azure:azure-identity:1.18.3'
   implementation 'com.azure:azure-security-keyvault-secrets:4.10.6'
 }
