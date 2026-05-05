@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties;
 import uk.gov.hmcts.cp.servicebus.model.ServiceBusWrappedMessage;
@@ -37,38 +38,37 @@ public class ServiceBusProcessorService {
     private final JsonMapper jsonMapper;
     private final ServiceBusHandlers serviceBusHandlers;
 
+    @Value("${service-bus.auto-start-processors:true}")
+    private boolean autoStartProcessors;
+
     private Map<String, ServiceBusProcessorClient> processorClients = new HashMap<>();
 
     @PostConstruct
     public void initialiseServiceBus() {
-        if (properties.isEnabled()) {
-            try {
-                await()
-                        .atMost(Duration.ofSeconds(MAX_WAIT_SECONDS))
-                        .pollInterval(Duration.ofSeconds(POLL_SECONDS))
-                        .until(adminService::isServiceBusReady);
-                log.info("createServiceBusQueues dropping legacy queues");
-                adminService.deleteQueueIfExists("hces.notifications.inbound");
-                adminService.deleteQueueIfExists("hces.notifications.outbound");
-                adminService.deleteQueueIfExists("notifications.inbound");
-                adminService.deleteQueueIfExists("sbqhcesevents");
-                log.info("createServiceBusQueues creating service bus queues");
-                adminService.createQueue(NOTIFICATIONS_INBOUND_QUEUE);
-                startMessageProcessor(NOTIFICATIONS_INBOUND_QUEUE);
-                adminService.createQueue(NOTIFICATIONS_OUTBOUND_QUEUE);
-                startMessageProcessor(NOTIFICATIONS_OUTBOUND_QUEUE);
-            } catch (Exception e) {
-                log.error("Failed to initialise serviceBus. {}", e.getMessage());
-            }
+        if (!autoStartProcessors) {
+            log.info("service-bus.auto-start-processors=false — skipping queue initialisation");
+            return;
+        }
+        try {
+            await()
+                    .atMost(Duration.ofSeconds(MAX_WAIT_SECONDS))
+                    .pollInterval(Duration.ofSeconds(POLL_SECONDS))
+                    .until(adminService::isServiceBusReady);
+            log.info("createServiceBusQueues creating service bus queues");
+            adminService.createQueue(NOTIFICATIONS_INBOUND_QUEUE);
+            startMessageProcessor(NOTIFICATIONS_INBOUND_QUEUE);
+            adminService.createQueue(NOTIFICATIONS_OUTBOUND_QUEUE);
+            startMessageProcessor(NOTIFICATIONS_OUTBOUND_QUEUE);
+        } catch (Exception e) {
+            log.error("Failed to initialise serviceBus. {}", e.getMessage());
         }
     }
 
     public void stopMessageProcessor(final String queueName) {
-        final ServiceBusProcessorClient processorClient = processorClients.get(queueName);
-        if (processorClient != null && processorClient.isRunning()) {
+        final ServiceBusProcessorClient processorClient = processorClients.remove(queueName);
+        if (processorClient != null) {
             log.info("Service Bus Processor {} is being stopped", queueName);
-            processorClient.stop();
-            processorClients.remove(queueName);
+            processorClient.close();
         } else {
             log.info("Service Bus Processor {} is not running", queueName);
         }

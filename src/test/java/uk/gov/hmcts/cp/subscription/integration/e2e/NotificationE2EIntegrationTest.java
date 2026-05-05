@@ -65,12 +65,11 @@ import static uk.gov.hmcts.cp.subscription.model.EventNotificationPayloadWrapper
 })
 @Import(IgnoreSSLCertificatesForWiremockTest.class)
 @TestPropertySource(properties = {
-        "service-bus.enabled=true",
         "service-bus.max-tries=3",
         "service-bus.retry-msecs=0,500,1000"
 })
 @Slf4j
-class NotificationAsyncE2EIntegrationTest extends IntegrationTestBase {
+class NotificationE2EIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     ServiceBusAdminService adminService;
@@ -151,7 +150,7 @@ class NotificationAsyncE2EIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    void callback_client_not_responding_should_try_3_times_in_4_seconds() throws Exception {
+    void callback_client_error_should_try_3_times_in_4_seconds() throws Exception {
         given_i_create_a_new_subscription();
         given_callback_endpoint_returns_server_error();
         given_material_service_returns_document_success();

@@ -16,7 +16,7 @@ class ServiceBusPropertiesTest {
     private static final UUID CLIENT_ID = UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     private ServiceBusAdminInterface adminClientFor(String adminConnection, String connection) {
-        final ServiceBusProperties configService = new ServiceBusProperties(false, adminConnection, connection, 5);
+        final ServiceBusProperties configService = new ServiceBusProperties(adminConnection, connection, 5);
         final VaultServiceProperties vaultProperties = new VaultServiceProperties(false, "", CLIENT_ID);
         return new ServiceBusAdminConfiguration(configService, vaultProperties).serviceBusAdmin();
     }
@@ -33,15 +33,13 @@ class ServiceBusPropertiesTest {
 
     @Test
     void emulator_connection_string_is_detected_as_emulator() {
-        final ServiceBusProperties configService = new ServiceBusProperties(false, EMULATOR_ADMIN_CONNECTION, EMULATOR_CONNECTION, 5);
+        final ServiceBusProperties configService = new ServiceBusProperties(EMULATOR_ADMIN_CONNECTION, EMULATOR_CONNECTION, 5);
         assertThat(configService.isEmulator()).isTrue();
-        assertThat(configService.isEnabled()).isFalse();
     }
 
     @Test
     void azure_connection_string_is_detected_as_not_emulator() {
-        final ServiceBusProperties configService = new ServiceBusProperties(true, EMULATOR_ADMIN_CONNECTION, HTTPS_ENDPOINT, 5);
+        final ServiceBusProperties configService = new ServiceBusProperties(EMULATOR_ADMIN_CONNECTION, HTTPS_ENDPOINT, 5);
         assertThat(configService.isEmulator()).isFalse();
-        assertThat(configService.isEnabled()).isTrue();
     }
 }

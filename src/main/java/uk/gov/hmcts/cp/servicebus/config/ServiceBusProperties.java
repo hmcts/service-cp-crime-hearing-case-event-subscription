@@ -14,22 +14,18 @@ public class ServiceBusProperties {
     public static final String NOTIFICATIONS_OUTBOUND_QUEUE = "hrds.notifications.outbound";
     public static final String HTTPS = "https";
 
-    private boolean enabled;
     private String adminConnectionString;
     private String connectionString;
     private int maxTries;
 
     public ServiceBusProperties(
-            final @Value("${service-bus.enabled}") boolean enabled,
             final @Value("${service-bus.admin-connection}") String adminConnectionString,
             final @Value("${service-bus.connection}") String connectionString,
             final @Value("${service-bus.max-tries}") int maxTries
     ) {
-        log.info("ServiceBusProperties initialised with enabled {}", enabled);
         log.info("ServiceBusProperties initialised with adminConnectionString starting:\"{}\"", adminConnectionString.substring(0, 20));
         log.info("ServiceBusProperties initialised with connectionString starting:\"{}\"", connectionString.substring(0, 20));
         log.info("ServiceBusProperties initialised with maxTries \"{}\"", maxTries);
-        this.enabled = enabled;
         this.adminConnectionString = adminConnectionString;
         this.connectionString = connectionString;
         this.maxTries = maxTries;

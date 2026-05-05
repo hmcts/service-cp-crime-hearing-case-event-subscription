@@ -58,13 +58,6 @@ class ServiceBusProcessorServiceTest {
     private String callbackUrl = "http://callback";
 
     @Test
-    void initialise_do_nothing_if_not_enabled() {
-        when(properties.isEnabled()).thenReturn(false);
-        serviceBusProcessorService.initialiseServiceBus();
-        verify(adminService, never()).isServiceBusReady();
-    }
-
-    @Test
     void initialise_should_wait_60_secs_for_service_bus() {
         // its tricky to mock the buildProcessClient so we need to rely on our integrations tests here
         // And actually we only use stop for int tests so that we can cleanup so we dont need unit test

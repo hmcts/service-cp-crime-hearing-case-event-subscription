@@ -22,7 +22,7 @@ class ServiceBusClientFactoryTest {
 
     @Test
     void senderClient_buildsNonNullClientUsingEmulatorConnectionString() {
-        final ServiceBusProperties properties = new ServiceBusProperties(false, EMULATOR_ADMIN, EMULATOR_MESSAGING, 5);
+        final ServiceBusProperties properties = new ServiceBusProperties(EMULATOR_ADMIN, EMULATOR_MESSAGING, 5);
         final ServiceBusClientFactory factory = new ServiceBusClientFactory(properties, vaultProperties());
         try (ServiceBusSenderClient sender = factory.senderClient("test-queue")) {
             assertThat(sender).isNotNull();
@@ -31,14 +31,14 @@ class ServiceBusClientFactoryTest {
 
     @Test
     void processorClientBuilder_returnsNonNullBuilderForEmulatorQueue() {
-        final ServiceBusProperties properties = new ServiceBusProperties(false, EMULATOR_ADMIN, EMULATOR_MESSAGING, 5);
+        final ServiceBusProperties properties = new ServiceBusProperties(EMULATOR_ADMIN, EMULATOR_MESSAGING, 5);
         final ServiceBusClientFactory factory = new ServiceBusClientFactory(properties, vaultProperties());
         assertThat(factory.processorClientBuilder("processor-queue")).isNotNull();
     }
 
     @Test
     void processorClientBuilder_returnsNonNullBuilderForAzureQueue() {
-        final ServiceBusProperties properties = new ServiceBusProperties(false, EMULATOR_ADMIN, AZURE_MESSAGING, 5);
+        final ServiceBusProperties properties = new ServiceBusProperties(EMULATOR_ADMIN, AZURE_MESSAGING, 5);
         final ServiceBusClientFactory factory = new ServiceBusClientFactory(properties, vaultProperties());
         assertThat(factory.processorClientBuilder("processor-queue")).isNotNull();
     }

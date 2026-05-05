@@ -29,7 +29,7 @@ class ServiceBusAdminConfigurationTest {
     }
 
     private ServiceBusAdminConfiguration configFor(String adminConnection, String connection) {
-        final ServiceBusProperties properties = new ServiceBusProperties(false, adminConnection, connection, 5);
+        final ServiceBusProperties properties = new ServiceBusProperties(adminConnection, connection, 5);
         final VaultServiceProperties vaultProperties = new VaultServiceProperties(false, "", CLIENT_ID);
         return new ServiceBusAdminConfiguration(properties, vaultProperties);
     }

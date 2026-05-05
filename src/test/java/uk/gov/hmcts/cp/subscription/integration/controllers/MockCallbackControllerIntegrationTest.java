@@ -22,7 +22,6 @@ import static uk.gov.hmcts.cp.subscription.integration.stubs.SubscriptionStub.js
 
 @TestPropertySource(properties = {
         "vault.enabled=false",
-        "service-bus.enabled=false",
         "environment.name=DEV"
 })
 class MockCallbackControllerIntegrationTest extends IntegrationTestBase {

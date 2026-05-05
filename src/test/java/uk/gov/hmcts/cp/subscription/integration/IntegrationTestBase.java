@@ -39,7 +39,7 @@ import java.util.UUID;
 @ContextConfiguration(initializers = TestContainersInitialise.class)
 @TestPropertySource(properties = {
         "vault.enabled=false",
-        "service-bus.enabled=false"
+        "service-bus.auto-start-processors=false"
 })
 public abstract class IntegrationTestBase {
 

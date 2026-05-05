@@ -43,10 +43,8 @@ CallbackDeliveryService.submitOutboundPcrEvents()
 
 ### Critical Design Decisions
 
-1. **Async vs Sync**: Service Bus (Azure) integration toggles async processing. When disabled, same-thread processing. See `application.yaml` `service-bus.enabled`.
-2. **MaterialService polling**: Uses `awaitility` library with configurable retry intervals/timeouts (not exponential backoff). See `src/main/java/uk/gov/hmcts/cp/subscription/config/AppProperties.java`.
-3. **Manager pattern**: Orchestration logic in `NotificationManager` keeps controllers thin and services focused.
-4. **Multi-tenant subscriptions**: Each client has multiple subscriptions; each subscription filters event types. Enforce client ID in all queries via MDC (`ClientIdResolutionFilter.MDC_CLIENT_ID`).
+1**Manager pattern**: Orchestration logic in `NotificationManager` keeps controllers thin and services focused.
+2**Multi-tenant subscriptions**: Each client has multiple subscriptions; each subscription filters event types. Enforce client ID in all queries via MDC (`ClientIdResolutionFilter.MDC_CLIENT_ID`).
 
 ## Build & Test Workflows
 
@@ -110,7 +108,6 @@ curl http://localhost:4550/actuator/health
 
 ### Azure Service Bus (Optional)
 
-- **Enable**: Set `AZURE_SERVICE_BUS_ENABLED=true`
 - **Config**: `AZURE_SERVICEBUS_URI` (connection string), `AZURE_SERVICE_BUS_ADMIN_URI`
 - **Topics**: `PCR_INBOUND_TOPIC` (inbound), `PCR_OUTBOUND_TOPIC` (outbound notifications)
 - **Queuing**: When enabled, inbound PCR events and outbound notifications are queued separately
@@ -238,7 +235,6 @@ curl http://localhost:4550/actuator/health
 - **Material API timeout**: Adjust `MATERIAL_CLIENT_TIMEOUT_MSECS`, `MATERIAL_CLIENT_INTERVAL_MSECS`
 - **PMD failures**: Check `.github/pmd-ruleset.xml` rules; common: cyclomatic complexity, method naming
 - **Test failures**: Run with `-i` flag for interactive debugging; check MDC setup in filters
-- **Service Bus issues**: Enable/disable via `AZURE_SERVICE_BUS_ENABLED`; check connection strings in logs
 
 ## Resources
 
