@@ -25,10 +25,11 @@ public class NotificationMapper {
         final String prisonEmailAddress = defendant.getCustodyEstablishmentDetails().getEmailAddress();
         return EventNotificationPayload.builder()
                 .eventType(eventPayload.getEventType())
-                .cases(cases)
+                .hearingId(eventPayload.getHearingId())
                 .masterDefendantId(defendant.getMasterDefendantId())
                 .documentId(documentId)
                 .documentGeneratedTimestamp(eventPayload.getTimestamp())
+                .cases(cases)
                 .prisonEmailAddress(prisonEmailAddress)
                 .build();
     }

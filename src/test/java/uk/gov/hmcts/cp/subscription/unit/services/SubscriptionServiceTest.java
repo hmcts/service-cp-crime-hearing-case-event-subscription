@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.subscription.unit.services;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -10,7 +11,9 @@ import uk.gov.hmcts.cp.hmac.managers.HmacManager;
 import uk.gov.hmcts.cp.hmac.model.KeyPair;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
+import uk.gov.hmcts.cp.openapi.model.HmacCredentials;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
+import uk.gov.hmcts.cp.openapi.model.RotateSecretRequest;
 import uk.gov.hmcts.cp.subscription.entities.ClientEntity;
 import uk.gov.hmcts.cp.subscription.entities.ClientEventEntity;
 import uk.gov.hmcts.cp.subscription.entities.ClientHmacEntity;
@@ -25,12 +28,12 @@ import uk.gov.hmcts.cp.subscription.services.ClockService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionValidationService;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -168,6 +171,40 @@ class SubscriptionServiceTest {
 
         boolean result = subscriptionService.hasAccess(subscriptionId, "PRISON_COURT_REGISTER_GENERATED");
         assertThat(result).isTrue();
+    }
+
+    @Test
+    void rotate_should_return_hmac_credentials_with_same_key_id_and_new_secret() {
+        final String existingKeyId = "kid-v1-existing";
+        final String newEncodedSecret = "bmV3U2VjcmV0";
+        final ClientHmacEntity hmacEntity = ClientHmacEntity.builder().keyId(existingKeyId).build();
+        final RotateSecretRequest request = RotateSecretRequest.builder().keyId(existingKeyId).build();
+        final OffsetDateTime now = OffsetDateTime.now();
+        final ClientEntity clientWithUpdatedAt = clientEntity.toBuilder().updatedAt(now).build();
+
+        when(clientRepository.findByClientIdAndSubscriptionId(clientId, subscriptionId)).thenReturn(Optional.of(clientEntity));
+        when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(hmacEntity));
+        when(hmacManager.rotateSecret(existingKeyId)).thenReturn(newEncodedSecret);
+        when(clockService.nowOffsetUTC()).thenReturn(now);
+
+        HmacCredentials result = subscriptionService.rotateSubscriptionSecret(clientId, subscriptionId, request);
+
+        assertThat(result.getKeyId()).isEqualTo(existingKeyId);
+        assertThat(result.getSecret()).isEqualTo(newEncodedSecret);
+        verify(hmacManager).rotateSecret(existingKeyId);
+        verify(clientRepository).save(clientWithUpdatedAt);
+    }
+
+    @Test
+    void rotate_should_throw_not_found_when_key_id_does_not_match() {
+        final ClientHmacEntity hmacEntity = ClientHmacEntity.builder().keyId("kid-v1-real").build();
+        final RotateSecretRequest request = RotateSecretRequest.builder().keyId("kid-v1-wrong").build();
+
+        when(clientRepository.findByClientIdAndSubscriptionId(clientId, subscriptionId)).thenReturn(Optional.of(clientEntity));
+        when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(hmacEntity));
+
+        assertThatThrownBy(() -> subscriptionService.rotateSubscriptionSecret(clientId, subscriptionId, request))
+                .isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test

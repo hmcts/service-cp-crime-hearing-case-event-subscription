@@ -10,7 +10,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.MDC;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
+import uk.gov.hmcts.cp.openapi.model.HmacCredentials;
 import uk.gov.hmcts.cp.openapi.model.NotificationEndpoint;
+import uk.gov.hmcts.cp.openapi.model.RotateSecretRequest;
 import uk.gov.hmcts.cp.subscription.controllers.SubscriptionController;
 import uk.gov.hmcts.cp.filters.ClientIdResolutionFilter;
 import uk.gov.hmcts.cp.subscription.services.EventTypeService;
@@ -22,6 +24,8 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
+
+import jakarta.persistence.EntityNotFoundException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -134,6 +138,20 @@ class SubscriptionControllerTest {
         verify(subscriptionValidationService).validateClientSubscriptionExists(TEST_CLIENT_UUID, subscriptionId);
         verify(subscriptionService).deleteClientSubscription(TEST_CLIENT_UUID, subscriptionId);
         assertThat(result.getStatusCode().value()).isEqualTo(204);
+    }
+
+    @Test
+    void rotate_controller_should_return_200_with_hmac_credentials() {
+        final RotateSecretRequest request = RotateSecretRequest.builder().keyId("kid-v1-existing").build();
+        final HmacCredentials credentials = HmacCredentials.builder().keyId("kid-v1-existing").secret("bmV3U2VjcmV0").build();
+        when(subscriptionService.rotateSubscriptionSecret(TEST_CLIENT_UUID, subscriptionId, request)).thenReturn(credentials);
+
+        var result = subscriptionController.rotateClientSubscriptionSecret(subscriptionId, request, null);
+
+        verify(subscriptionValidationService).validateClientSubscriptionExists(TEST_CLIENT_UUID, subscriptionId);
+        verify(subscriptionService).rotateSubscriptionSecret(TEST_CLIENT_UUID, subscriptionId, request);
+        assertThat(result.getStatusCode().value()).isEqualTo(200);
+        assertThat(result.getBody()).isEqualTo(credentials);
     }
 
     @Test

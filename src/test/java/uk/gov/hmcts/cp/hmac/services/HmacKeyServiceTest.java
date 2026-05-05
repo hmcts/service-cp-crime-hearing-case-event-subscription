@@ -39,6 +39,12 @@ class HmacKeyServiceTest {
     }
 
     @Test
+    void generateSecretBytes_should_return_32_bytes() {
+        byte[] bytes = service.generateSecretBytes();
+        assertThat(bytes).hasSize(32);
+    }
+
+    @Test
     void generateKey_should_return_distinct_when_vault_enabled() {
         PrintStream originalStdOut = System.out;
         captureStdOut();

@@ -37,3 +37,4 @@ applicationinsights-agent-*.jar
 */.DS_Store
 
 pmd-output.txt
+ARCHITECTURE_REVIEW.md

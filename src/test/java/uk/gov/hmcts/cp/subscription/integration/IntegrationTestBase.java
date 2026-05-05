@@ -92,6 +92,10 @@ public abstract class IntegrationTestBase {
     }
 
     protected UUID insertSubscription(UUID clientId, List<String> entityEventTypes, String notificationUri) {
+        return insertSubscription(clientId, entityEventTypes, notificationUri, "kid-v1-keyid");
+    }
+
+    protected UUID insertSubscription(UUID clientId, List<String> entityEventTypes, String notificationUri, String keyId) {
         OffsetDateTime now = clockService.now().atOffset(ZoneOffset.UTC);
         UUID subscriptionId = UUID.randomUUID();
 
@@ -113,7 +117,7 @@ public abstract class IntegrationTestBase {
 
         clientHmacRepository.save(ClientHmacEntity.builder()
                 .subscriptionId(subscriptionId)
-                .keyId("kid-v1-keyid")
+                .keyId(keyId)
                 .build());
 
         return subscriptionId;

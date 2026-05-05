@@ -30,6 +30,14 @@ public class HmacManager {
         return keyPair;
     }
 
+    public String rotateSecret(final String keyId) {
+        log.info("rotateSecret keyId:{}", keyId);
+        final byte[] newSecretBytes = hmacKeyService.generateSecretBytes();
+        final String encodedSecret = encodingService.encodeWithBase64(newSecretBytes);
+        secretStoreService.setSecret(keyId, encodedSecret);
+        return encodedSecret;
+    }
+
     public String calculateSignature(final String keyId, final String payload) {
         log.info("calculateSignature for keyId:{}", keyId);
         final String encodedSecret = secretStoreService.getSecret(keyId).

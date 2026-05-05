@@ -44,6 +44,17 @@ class HmacManagerTest {
     }
 
     @Test
+    void rotate_secret_should_store_new_secret_bytes_under_existing_key_id() {
+        when(hmacKeyService.generateSecretBytes()).thenReturn("new-bytes".getBytes());
+        when(encodingService.encodeWithBase64("new-bytes".getBytes())).thenReturn("encoded-new-secret");
+
+        String result = hmacManager.rotateSecret(keyId);
+
+        assertThat(result).isEqualTo("encoded-new-secret");
+        verify(secretStoreService).setSecret(keyId, "encoded-new-secret");
+    }
+
+    @Test
     void get_signature_should_return_signature() {
         when(secretStoreService.getSecret(keyId)).thenReturn(Optional.of("encodedSecret"));
         when(encodingService.decodeFromBase64("encodedSecret")).thenReturn("secret".getBytes());

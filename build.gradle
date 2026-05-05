@@ -3,7 +3,7 @@ plugins {
   id 'java'
   id 'org.springframework.boot' version '4.0.6'
   id 'io.spring.dependency-management' version '1.1.7'
-  id 'org.openapi.generator' version '7.21.0'
+  id 'org.openapi.generator' version '7.22.0'
   id 'jacoco'
   id 'maven-publish'
   id 'com.github.ben-manes.versions' version '0.54.0'
@@ -32,8 +32,8 @@ apply {
 // Sadly, dependabot does not track dependencies in the apply-from files
 dependencies {
   // Api spec
-  implementation('uk.gov.hmcts.cp:api-cp-crime-hearing-results-document-subscription:2.0.6')
-  implementation('io.swagger.core.v3:swagger-annotations:2.2.48')
+  implementation('uk.gov.hmcts.cp:api-cp-crime-hearing-results-document-subscription:2.0.8')
+  implementation('io.swagger.core.v3:swagger-annotations:2.2.49')
 
 
   // Java core

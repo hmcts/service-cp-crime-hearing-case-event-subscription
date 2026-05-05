@@ -1,5 +1,6 @@
 {
   "eventId": "11111111-2222-3333-4444-555555555555",
+  "hearingId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
   "materialId": "22222222-2222-2222-2222-222222222222",
   "eventType": "PRISON_COURT_REGISTER_GENERATED",
   "timestamp": "2024-01-15T10:30:00Z",

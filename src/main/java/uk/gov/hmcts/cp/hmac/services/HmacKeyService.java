@@ -27,4 +27,11 @@ public class HmacKeyService {
         secureRandom.nextBytes(secretBytes);
         return KeyPair.builder().keyId(keyId).secret(secretBytes).build();
     }
+
+    public byte[] generateSecretBytes() {
+        log.info("Generating secrets bytes.");
+        final byte[] secretBytes = new byte[SECRET_BYTES_LENGTH];
+        secureRandom.nextBytes(secretBytes);
+        return secretBytes;
+    }
 }

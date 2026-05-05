@@ -13,6 +13,8 @@ import uk.gov.hmcts.cp.openapi.api.SubscriptionApi;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.EventTypeResponse;
+import uk.gov.hmcts.cp.openapi.model.HmacCredentials;
+import uk.gov.hmcts.cp.openapi.model.RotateSecretRequest;
 import uk.gov.hmcts.cp.subscription.services.EventTypeService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionValidationService;
@@ -76,6 +78,18 @@ public class SubscriptionController implements SubscriptionApi {
         subscriptionValidationService.validateClientSubscriptionExists(clientId, clientSubscriptionId);
         subscriptionService.deleteClientSubscription(clientId, clientSubscriptionId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @Override
+    public ResponseEntity<HmacCredentials> rotateClientSubscriptionSecret(
+            final UUID clientSubscriptionId,
+            final RotateSecretRequest rotateSecretRequest,
+            @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
+        final UUID clientId = UUID.fromString(MDC.get(MDC_CLIENT_ID));
+        log.info("rotateClientSubscriptionSecret clientSubscriptionId:{} clientId:{}", clientSubscriptionId, clientId);
+        subscriptionValidationService.validateClientSubscriptionExists(clientId, clientSubscriptionId);
+        final HmacCredentials response = subscriptionService.rotateSubscriptionSecret(clientId, clientSubscriptionId, rotateSecretRequest);
+        return ResponseEntity.ok(response);
     }
 
     @Override
