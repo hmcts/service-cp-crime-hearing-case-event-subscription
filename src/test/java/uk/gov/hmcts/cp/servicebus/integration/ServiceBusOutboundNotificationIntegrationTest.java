@@ -15,7 +15,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.cp.subscription.clients.CallbackClient;
-import uk.gov.hmcts.cp.subscription.integration.config.TestContainersInitialise;
+import uk.gov.hmcts.cp.subscription.integration.config.PostgresAvailabilityCheck;
 import uk.gov.hmcts.cp.subscription.model.EventNotificationPayloadWrapper;
 
 import java.util.UUID;
@@ -31,7 +31,7 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 
 @Slf4j
 @SpringBootTest
-@ContextConfiguration(initializers = TestContainersInitialise.class)
+@ContextConfiguration(initializers = PostgresAvailabilityCheck.class)
 @TestPropertySource(properties = {
         "vault.enabled=false",
         "service-bus.max-tries=2",
