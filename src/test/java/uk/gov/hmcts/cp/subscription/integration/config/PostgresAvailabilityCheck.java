@@ -13,6 +13,9 @@ public class PostgresAvailabilityCheck implements ApplicationContextInitializer<
     public void initialize(ConfigurableApplicationContext ctx) {
         assertPostgresReachable("jdbc:postgresql://localhost:5432/appdb", "postgres", "postgres");
         TestPropertyValues.of(
+                "spring.datasource.url=jdbc:postgresql://localhost:5432/appdb",
+                "spring.datasource.username=postgres",
+                "spring.datasource.password=postgres",
                 "subscription.oauth-enabled=true",
                 "material-client.cjscppuid=11111111-2222-3333-4444-666666666666",
                 "material-client.retry.intervalMilliSecs=100",
@@ -21,8 +24,8 @@ public class PostgresAvailabilityCheck implements ApplicationContextInitializer<
     }
 
     static void assertPostgresReachable(String url, String user, String password) {
-        try {
-            DriverManager.getConnection(url, user, password).close();
+        try (var conn = DriverManager.getConnection(url, user, password)) {
+            /* probe only */
         } catch (SQLException e) {
             throw new IllegalStateException(
                     "\n\n*** Integration tests require PostgreSQL on localhost:5432 (database: appdb) ***\n"
