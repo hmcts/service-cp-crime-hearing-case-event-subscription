@@ -25,7 +25,7 @@ public class PostgresAvailabilityCheck implements ApplicationContextInitializer<
             DriverManager.getConnection(url, user, password).close();
         } catch (SQLException e) {
             throw new IllegalStateException(
-                    "\n\n*** Integration tests require PostgreSQL on localhost:5432 ***\n"
+                    "\n\n*** Integration tests require PostgreSQL on localhost:5432 (database: appdb) ***\n"
                     + "Start the full stack:\n"
                     + "  docker compose -f docker/docker-compose.yml up -d\n"
                     + "Or start postgres only:\n"
