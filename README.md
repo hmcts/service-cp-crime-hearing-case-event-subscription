@@ -2,6 +2,10 @@
 
 The Court Hearing Cases Event Subscription API publishes events relating to criminal court cases and manages client subscriptions for notifications.
 
+## Architecture overview
+
+The service processes PCR (PrisonCourtRegister)/Nows events from Progression and HearingNows, waits for documents to become available in the Material service, maps them, and delivers notifications to registered subscribers via callback URLs. Azure Service Bus can be enabled to make inbound and outbound processing asynchronous — see [Azure Service Bus](#azure-service-bus) below.
+
 ## Software required (macOS)
 
 - **Java 25** – required to build and run the service.  
@@ -77,6 +81,26 @@ If you don’t use direnv, you can still export these variables in your shell be
 
 - Health: `curl http://localhost:4550/actuator/health`
 - Build/version info: `curl http://localhost:4550/actuator/info`
+
+---
+
+## Azure Service Bus
+
+The service runs in synchronous mode by default. Set `AZURE_SERVICE_BUS_ENABLED=true` to enable async processing via Azure Service Bus.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AZURE_SERVICE_BUS_ENABLED` | `false` | Enable async Service Bus processing |
+| `AZURE_SERVICEBUS_URI` | _(none)_ | Service Bus connection string |
+| `AZURE_SERVICE_BUS_ADMIN_URI` | _(none)_ | Service Bus admin URI |
+| `PCR_INBOUND_TOPIC` | _(none)_ | Topic for inbound PCR events |
+| `PCR_OUTBOUND_TOPIC` | _(none)_ | Topic for outbound subscriber notifications |
+| `SERVICE_BUS_RETRY_SECONDS` | _(none)_ | Comma-separated retry delays, e.g. `"0,1000,2000,10000"` |
+| `SERVICE_BUS_MAX_TRIES` | _(none)_ | Maximum delivery attempts |
+
+When enabled:
+- Inbound PCR events are queued immediately so Progression gets a fast HTTP response; a consumer then polls the Material service and maps the document.
+- Outbound notifications are queued with one message per subscriber and processed independently.
 
 ---
 
