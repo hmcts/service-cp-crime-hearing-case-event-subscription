@@ -14,7 +14,7 @@ class PostgresAvailabilityCheckTest {
                         "jdbc:postgresql://localhost:9/appdb", "postgres", "postgres"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("appdb")
-                .hasMessageContaining("localhost:5432")
+                .hasMessageContaining("localhost:5433")
                 .hasMessageContaining("docker compose -f docker/docker-compose.yml up -d");
     }
 }
