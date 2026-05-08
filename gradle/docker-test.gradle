@@ -1,5 +1,5 @@
 tasks.register('dockerTest', Test) {
-    description = "Runs integration tests — requires docker-compose stack to be up first"
+    description = "Spins up the full docker-compose stack, runs all *Integration* tests, then tears down"
     group = "Verification"
 
     testClassesDirs = sourceSets.test.output.classesDirs
@@ -10,4 +10,24 @@ tasks.register('dockerTest', Test) {
     filter {
         includeTestsMatching '*Integration*'
     }
+
+    dependsOn tasks.composeUp
+    finalizedBy tasks.composeDown
+}
+
+dockerCompose {
+    useComposeFiles = ['docker/docker-compose.yml']
+    startedServices = ['postgres', 'sqledge', 'servicebus-emulator']
+
+    buildBeforeUp = false
+    waitForTcpPorts = true
+    upAdditionalArgs = ['--wait', '--wait-timeout', '120']
+
+    captureContainersOutput = true
+    removeOrphans = true
+    stopContainers = true
+    removeContainers = true
+
+    useDockerComposeV2 = true
+    dockerExecutable = 'docker'
 }
