@@ -45,7 +45,7 @@ public class IgnoreSSLCertificatesForWiremockTest {
 
     @PostConstruct
     public void trustAllSsl() throws Exception {
-        var ssl = SSLContext.getInstance("TLS");
+        SSLContext ssl = SSLContext.getInstance("TLS");
         ssl.init(null, new TrustManager[]{TRUST_ALL}, new SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(ssl.getSocketFactory());
         HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);

@@ -23,7 +23,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.cp.openapi.model.EventTypeResponse;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -75,7 +77,7 @@ class SubscriptionControllerTest {
         ClientSubscription response = ClientSubscription.builder().clientSubscriptionId(subscriptionId).build();
         when(subscriptionService.createClientSubscription(createRequest, TEST_CLIENT_UUID)).thenReturn(response);
 
-        var result = subscriptionController.createClientSubscription(createRequest, null);
+        ResponseEntity<ClientSubscription> result = subscriptionController.createClientSubscription(createRequest, null);
 
         verify(subscriptionValidationService).validateClientDoesNotExist(TEST_CLIENT_UUID);
         verify(subscriptionService).createClientSubscription(createRequest, TEST_CLIENT_UUID);
@@ -110,7 +112,7 @@ class SubscriptionControllerTest {
         ClientSubscription response = ClientSubscription.builder().clientSubscriptionId(subscriptionId).build();
         when(subscriptionService.updateClientSubscription(TEST_CLIENT_UUID, subscriptionId, updateRequest)).thenReturn(response);
 
-        var result = subscriptionController.updateClientSubscription(subscriptionId, updateRequest, null);
+        ResponseEntity<ClientSubscription> result = subscriptionController.updateClientSubscription(subscriptionId, updateRequest, null);
 
         verify(subscriptionValidationService).validateClientSubscriptionExists(TEST_CLIENT_UUID, subscriptionId);
         verify(subscriptionService).updateClientSubscription(TEST_CLIENT_UUID, subscriptionId, updateRequest);
@@ -123,7 +125,7 @@ class SubscriptionControllerTest {
         ClientSubscription response = ClientSubscription.builder().clientSubscriptionId(subscriptionId).build();
         when(subscriptionService.getClientSubscription(TEST_CLIENT_UUID, subscriptionId)).thenReturn(response);
 
-        var result = subscriptionController.getClientSubscription(subscriptionId, null);
+        ResponseEntity<ClientSubscription> result = subscriptionController.getClientSubscription(subscriptionId, null);
 
         verify(subscriptionValidationService).validateClientSubscriptionExists(TEST_CLIENT_UUID, subscriptionId);
         verify(subscriptionService).getClientSubscription(TEST_CLIENT_UUID, subscriptionId);
@@ -133,7 +135,7 @@ class SubscriptionControllerTest {
 
     @Test
     void delete_controller_should_call_service() {
-        var result = subscriptionController.deleteClientSubscription(subscriptionId, null);
+        ResponseEntity<Void> result = subscriptionController.deleteClientSubscription(subscriptionId, null);
 
         verify(subscriptionValidationService).validateClientSubscriptionExists(TEST_CLIENT_UUID, subscriptionId);
         verify(subscriptionService).deleteClientSubscription(TEST_CLIENT_UUID, subscriptionId);
@@ -146,7 +148,7 @@ class SubscriptionControllerTest {
         final HmacCredentials credentials = HmacCredentials.builder().keyId("kid-v1-existing").secret("bmV3U2VjcmV0").build();
         when(subscriptionService.rotateSubscriptionSecret(TEST_CLIENT_UUID, subscriptionId, request)).thenReturn(credentials);
 
-        var result = subscriptionController.rotateClientSubscriptionSecret(subscriptionId, request, null);
+        ResponseEntity<HmacCredentials> result = subscriptionController.rotateClientSubscriptionSecret(subscriptionId, request, null);
 
         verify(subscriptionValidationService).validateClientSubscriptionExists(TEST_CLIENT_UUID, subscriptionId);
         verify(subscriptionService).rotateSubscriptionSecret(TEST_CLIENT_UUID, subscriptionId, request);
@@ -156,7 +158,7 @@ class SubscriptionControllerTest {
 
     @Test
     void get_event_types_controller_should_call_event_type_service() {
-        var result = subscriptionController.getEventTypes();
+        ResponseEntity<EventTypeResponse> result = subscriptionController.getEventTypes();
         verify(eventTypeService).getAllEventTypes();
         assertThat(result.getStatusCode().value()).isEqualTo(200);
     }

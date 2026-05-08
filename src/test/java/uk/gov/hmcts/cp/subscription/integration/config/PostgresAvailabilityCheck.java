@@ -4,6 +4,7 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
@@ -24,8 +25,7 @@ public class PostgresAvailabilityCheck implements ApplicationContextInitializer<
     }
 
     static void assertPostgresReachable(String url, String user, String password) {
-        try (var conn = DriverManager.getConnection(url, user, password)) {
-            /* probe only */
+        try (Connection conn = DriverManager.getConnection(url, user, password)) {
         } catch (SQLException e) {
             throw new IllegalStateException(
                     "\n\n*** Integration tests require PostgreSQL on localhost:5433 (database: appdb) ***\n"
