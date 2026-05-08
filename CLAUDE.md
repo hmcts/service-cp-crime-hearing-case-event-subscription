@@ -17,14 +17,40 @@ Keep replies extremely concise. No filler. No long code snippets.
 
 ## Rules
 
-- **Client ID is mandatory in every query** — extract with `UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID))`. Every repository call must include client ID.
-- **Controllers are thin** — delegate to `NotificationManager` or services; return HTTP responses only.
+**Architecture**
 - **Service layering**: Controller → Manager → Service → Client/Repository. No skipping layers.
+- **Controllers are thin** — delegate to `NotificationManager` or services; return HTTP responses only.
 - **MapStruct mappers** in `src/main/java/.../mappers/` handle entity ↔ DTO. Never edit generated `*Impl` classes.
-- **Error handling**: `EntityNotFoundException` for 404s, `ResponseStatusException` for business errors. `GlobalExceptionHandler` maps the rest.
+
+**Data & Config**
+- **Client ID mandatory in every query** — `UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID))`. Every repository call must include it.
 - **Config**: `application.yaml` uses `${VAR:default}`. All new vars must be documented in `.envrc.example`.
-- **Logging**: `@Slf4j` — INFO for business events, DEBUG for tracing.
-- **Migrations**: Flyway naming `V<VERSION>__<description>.sql` in `src/main/resources/db/migration/`. Auto-runs on `bootRun`.
+- **Migrations**: Flyway naming `V<VERSION>__<description>.sql` in `src/main/resources/db/migration/`.
+
+**Code Quality**
+- No comments unless the WHY is genuinely non-obvious. Never explain WHAT.
+- No code beyond what the task requires. No TODOs, no future-proofing, no dead code. Bug fix = fix the bug only.
+- **Immutability**: builders not setters; `final` on fields (PMD enforces in main code).
+- **Methods**: ideally < 20 lines; extract private methods for readability.
+- **Ordering**: fields, params, dependencies, mapper fields — by importance → chronology → dependency.
+- No `@Transactional(readOnly = true)` on read-only services — no benefit, adds noise.
+
+**Error Handling & Validation**
+- `EntityNotFoundException` for 404s, `ResponseStatusException` for business errors. `GlobalExceptionHandler` maps the rest.
+- No error handling for impossible scenarios. Validate only at real boundaries (user input, external APIs).
+- Prefer typed params (UUID, long, datetime) over plain String; validate before business logic.
+
+**Logging**
+- `@Slf4j` — INFO for business events, DEBUG for tracing.
+- `Encode.forJava(url)` before logging any URL/URI.
+
+**Testing**
+- AssertJ only; naming `<function>_should_<outcome>`; common objects at class level.
+- Don't verify `when().thenReturn()` calls where the return value is already asserted.
+- Use integration tests to prove acceptance criteria, not unit tests.
+
+**Feature Toggles**
+- Env var properties only; remove toggle as soon as enabled; avoid overuse (4 toggles = 16 test paths).
 
 ## Event Processing Pipeline
 

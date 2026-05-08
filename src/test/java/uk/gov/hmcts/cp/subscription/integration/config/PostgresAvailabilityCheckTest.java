@@ -8,7 +8,6 @@ class PostgresAvailabilityCheckTest {
 
     @Test
     void throwsIllegalStateException_withHelpfulMessage_whenPostgresUnreachable() {
-        // OS-reserved port 9 — connection refused immediately, no wait
         assertThatThrownBy(() ->
                 PostgresAvailabilityCheck.assertPostgresReachable(
                         "jdbc:postgresql://localhost:9/appdb", "postgres", "postgres"))
