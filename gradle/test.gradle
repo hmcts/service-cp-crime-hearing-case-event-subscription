@@ -1,9 +1,6 @@
 tasks.named('test') {
   useJUnitPlatform {
   }
-  filter {
-    excludeTestsMatching '*Integration*'
-  }
   systemProperty 'API_SPEC_VERSION', project.version
   failFast = true
   // Mockito must be added as an agent, see:

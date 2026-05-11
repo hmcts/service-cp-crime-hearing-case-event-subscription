@@ -6,9 +6,8 @@ Keep replies extremely concise. No filler. No long code snippets.
 
 ```bash
 ./gradlew clean build
-./gradlew test                                                                           # unit tests only — no docker required
+./gradlew test                                                                           # all tests — integration tests fail fast if stack not running
 ./gradlew test --tests "uk.gov.hmcts.cp.subscription.services.NotificationServiceTest"
-./gradlew dockerTest          # auto-starts postgres + Service Bus emulator + SQL Edge, runs *Integration* tests, tears down
 ./gradlew bootRun             # requires PostgreSQL on localhost:5432
 ./gradlew pmdMain
 ./gradlew jacocoTestReport    # → build/reports/jacoco/

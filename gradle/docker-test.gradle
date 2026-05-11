@@ -1,20 +1,3 @@
-tasks.register('dockerTest', Test) {
-    description = "Spins up the full docker-compose stack, runs all *Integration* tests, then tears down"
-    group = "Verification"
-
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-    useJUnitPlatform()
-    failFast = true
-
-    filter {
-        includeTestsMatching '*Integration*'
-    }
-
-    dependsOn tasks.composeUp
-    finalizedBy tasks.composeDown
-}
-
 dockerCompose {
     useComposeFiles = ['docker/docker-compose.yml']
     startedServices = ['postgres', 'sqledge', 'servicebus-emulator']
