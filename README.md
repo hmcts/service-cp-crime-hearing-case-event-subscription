@@ -14,7 +14,7 @@ The service processes PCR (PrisonCourtRegister)/Nows events from Progression and
 - **Docker** – required to run PostgreSQL locally.  
   Install from [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/). Check with `docker --version`.
 
-- **PostgreSQL 15** – the service uses it for subscriptions and migrations.  
+- **PostgreSQL 18** – the service uses it for subscriptions and migrations.  
   Run it via Docker (see below).
 
 - **direnv** (optional but recommended) – loads environment variables from `.envrc` when you `cd` into the project.  
@@ -26,7 +26,7 @@ The service processes PCR (PrisonCourtRegister)/Nows events from Progression and
 
 ### 1. Start the local stack
 
-The project includes a `docker/docker-compose.yml` with PostgreSQL 15, Azure SQL Edge, and the Service Bus emulator. Start only what you need:
+The project includes a `docker/docker-compose.yml` with PostgreSQL 18, Azure SQL Edge, and the Service Bus emulator. Start only what you need:
 
 ```bash
 # Full stack — required before starting the app or running integration tests
@@ -83,7 +83,7 @@ If you don’t use direnv, you can still export these variables in your shell be
 | `./gradlew test` | Unit tests only | No |
 | `./gradlew dockerTest` | Integration tests (`*Integration*`) | Yes — auto-starts and tears down the full stack |
 
-`./gradlew dockerTest` manages the compose lifecycle for you: it starts `postgres`, `sqledge`, and `servicebus-emulator` before the tests and stops them after.
+`./gradlew dockerTest` manages the compose lifecycle for you: it starts `db`, `sqledge`, and `servicebus-emulator` before the tests and stops them after.
 
 ---
 
