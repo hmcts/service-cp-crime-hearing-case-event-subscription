@@ -29,10 +29,7 @@ The service processes PCR (PrisonCourtRegister)/Nows events from Progression and
 The project includes a `docker/docker-compose.yml` with PostgreSQL 15, Azure SQL Edge, and the Service Bus emulator. Start only what you need:
 
 ```bash
-# PostgreSQL only (enough for bootRun and unit tests)
-docker compose -f docker/docker-compose.yml up -d postgres
-
-# Full stack (required for Service Bus integration tests)
+# Full stack — required before starting the app or running integration tests
 docker compose -f docker/docker-compose.yml up -d
 
 # Stop everything
