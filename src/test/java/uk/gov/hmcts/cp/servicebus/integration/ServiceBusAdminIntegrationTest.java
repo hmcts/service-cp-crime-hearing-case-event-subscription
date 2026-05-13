@@ -10,7 +10,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.cp.servicebus.admin.ServiceBusAdminInterface;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusAdminService;
-import uk.gov.hmcts.cp.subscription.integration.config.TestContainersInitialise;
+import uk.gov.hmcts.cp.servicebus.integration.config.ServiceBusAvailabilityCheck;
+import uk.gov.hmcts.cp.subscription.integration.config.PostgresAvailabilityCheck;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Slf4j
 @SpringBootTest
-@ContextConfiguration(initializers = TestContainersInitialise.class)
+@ContextConfiguration(initializers = {PostgresAvailabilityCheck.class, ServiceBusAvailabilityCheck.class})
 @TestPropertySource(properties = {
         "vault.enabled=false"
 })
