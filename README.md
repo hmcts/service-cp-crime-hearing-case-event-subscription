@@ -36,7 +36,7 @@ docker compose -f docker/docker-compose.yml up -d
 docker compose -f docker/docker-compose.yml down
 ```
 
-The app expects PostgreSQL on `localhost:5432` with database `appdb`, user `postgres`, password `postgres` — these are the compose defaults.
+The app expects PostgreSQL on `localhost:5432` (database `appdb`, user `postgres`, password `postgres`) and the Service Bus emulator on `localhost:5672` — these are the compose defaults.
 
 ### 2. Build and run the service
 
