@@ -22,7 +22,5 @@ COPY docker/* /app/
 COPY build/libs/*.jar /app/
 COPY lib/applicationinsights.json /app/
 
-ENV AZURE_VAULT_ENABLED=true
-
 USER app
 ENTRYPOINT ["/bin/sh","./startup.sh"]
