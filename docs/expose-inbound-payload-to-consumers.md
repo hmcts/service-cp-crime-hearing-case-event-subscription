@@ -17,6 +17,24 @@ Should `raw_payload` be stored as `JSONB` (structured, queryable) or encrypted `
 
 ---
 
+### c) Endpoint resource name — `<resource-tbd>`
+
+The endpoint follows the existing subscription-scoped pattern:
+
+```
+GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}
+```
+
+What should `<resource-tbd>` be? Options to discuss:
+
+| Option | Notes |
+|--------|-------|
+| `notifications` | Matches the table name |
+| `events` | Reflects the upstream origin |
+| `payloads` | Describes what's being returned |
+
+---
+
 ### b) Encrypt payload at rest — **Colin says yes**
 
 The payload contains `DefendantName` and `DefendantDateOfBirth`, which are personal data. Storing in plaintext means anyone with database access can read it.
@@ -58,7 +76,7 @@ Switch on in tests via `application-test.yaml` or `@TestPropertySource(propertie
 | 2 | Track which subscribers received which events | `notification_subscriptions` table — one row per subscriber per event |
 | 3 | Stable consumer-facing ID | `notificationId` (UUID) generated per subscriber on `notification_subscriptions` |
 | 4 | Block new subscribers from older events | Rows only created for subscribers active at event time — no back-fill |
-| 5 | Consumer access | New `GET /notifications/{notificationId}/payload` endpoint |
+| 5 | Consumer access | New `GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}` endpoint |
 
 ---
 
@@ -176,7 +194,7 @@ The existing `EventNotificationPayload` (delivered to subscribers via callback) 
 
 | ID | Retrieval endpoint | Returns |
 |----|-------------------|---------|
-| `notificationId` | `GET /notifications/{notificationId}/payload` | Raw JSON payload (this feature) |
+| `notificationId` | `GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}` | Raw JSON payload (this feature) |
 | `documentId` | `GET /getDocument/{clientSubscriptionId}/{documentId}` | Document PDF (existing) |
 
 ### API spec change (OpenAPI)
@@ -202,8 +220,10 @@ EventNotificationPayload:
 ## New Endpoint
 
 ```
-GET /notifications/{notificationId}/payload
+GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}
 ```
+
+> **To discuss:** what should `<resource-tbd>` be called? e.g. `notifications`, `events`, `payloads`. Agree with team before implementing.
 
 - **Auth**: `ClientIdResolutionFilter` supplies `clientId` via MDC; resolve to `subscriptionId` via `ClientRepository`.
 - **Query**: `findByNotificationIdAndSubscriptionId(notificationId, subscriptionId)` on `notification_subscriptions` → 404 if no row.
