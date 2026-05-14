@@ -17,21 +17,27 @@ Should `raw_payload` be stored as `JSONB` (structured, queryable) or encrypted `
 
 ---
 
-### c) Endpoint resource name — `<resource-tbd>`
+### c) Resource and ID naming
 
 The endpoint follows the existing subscription-scoped pattern:
 
 ```
-GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}
+GET /subscription/{subscriptionId}/<resource-tbd>/{<id-tbd>}
 ```
 
-What should `<resource-tbd>` be? Options to discuss:
+**Context:** Samir has raised that `notification`/`notificationId` is the wrong language — this is an inbound event payload from Progression or HearingNows (e.g. a PCR), not a notification we generated. The name should reflect what it actually is.
 
-| Option | Notes |
-|--------|-------|
-| `notifications` | Matches the table name |
-| `events` | Reflects the upstream origin |
-| `payloads` | Describes what's being returned |
+Options to discuss:
+
+| Resource | ID | Notes |
+|----------|----|-------|
+| `pcr-events` | `pcrEventId` | Domain-specific — accurate for PCR but excludes HearingNows event types |
+| `hearing-events` | `hearingEventId` | Broader — covers PCR and other hearing-related events |
+| `inbound-events` | `inboundEventId` | Technical/neutral — clearly distinguishes from our outbound |
+| `progression-events` | `progressionEventId` | Names the upstream system — may not suit HearingNows events |
+| `source-events` | `sourceEventId` | Neutral, signals origin without naming the system |
+
+Note: whatever name is chosen should also be applied to the DB tables (`notification_payload` → `<name>`, `notification_subscriptions` → `<name>_subscriptions`) and the entity/service class names.
 
 ---
 
