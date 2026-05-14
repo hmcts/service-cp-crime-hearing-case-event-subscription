@@ -8,7 +8,7 @@ apiTest/.gradle/
 !gradle/wrapper/gradle-wrapper.properties
 *.class
 bin/main/application.yaml
-.claude/
+.claude/CLAUDE.md
 
 ### STS ###
 .apt_generated
@@ -37,4 +37,4 @@ applicationinsights-agent-*.jar
 */.DS_Store
 
 pmd-output.txt
-ARCHITECTURE_REVIEW.md.claude/CLAUDE.md
+ARCHITECTURE_REVIEW.md
