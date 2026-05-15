@@ -107,9 +107,7 @@ uk.gov.hmcts.cp/
 ## Repo-Specific Architecture Rules
 
 - **Client ID mandatory in every query**: `ClientIdResolutionFilter` stores the resolved client UUID in MDC as `CLIENT_ID`. Every repository call must include it — `UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID))`.
-- **Controller → Manager → Service → Client/Repository**: no layer skipping. Controllers delegate to `NotificationManager` or services; no business logic in controllers.
-- **MapStruct mappers**: never edit generated `*Impl` classes. All entity ↔ DTO mapping goes through typed `@Mapper` interfaces.
-- **Flyway migrations**: naming `V<VERSION>__<description>.sql` in `src/main/resources/db/migration/`. Auto-runs on boot.
+- **Controller → Manager → Service → Client/Repository**: this service has an extra `Manager` layer — `NotificationManager` sits between controllers and services. No business logic in controllers.
 - **Service Bus toggle**: `AZURE_SERVICE_BUS_AUTO_START_PROCESSORS=false` makes all event processing synchronous — useful for integration tests without a running emulator.
 - **HMAC signing**: `HmacSigningService` signs callback payloads; keys stored per client via `ClientHmacEntity`. Key Vault implementation switches via `AZURE_VAULT_ENABLED`.
 - **Immutability**: builders not setters; `final` fields (PMD enforces in main code).
