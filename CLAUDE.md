@@ -1,55 +1,19 @@
-# CLAUDE.md
+## Repo: service-cp-crime-hearing-results-document-subscription
 
-Keep replies extremely concise. No filler. No long code snippets.
+Spring Boot service that manages webhook subscriptions for Crime Hearing Results document events — receives inbound PCR events from Service Bus, fetches document metadata from a material service, stores subscriber state in PostgreSQL, and delivers signed callbacks to registered subscriber URLs.
 
-## Commands
+**Pattern**: DB-backed event subscription service
+**Spring Boot version**: 4.0.6 (current — target 4.0.6+ per upgrade cycle)
+**Implements**: `api-cp-crime-hearing-results-document-subscription`
 
-```bash
-./gradlew clean build
-./gradlew test                                                                           # all tests — integration tests fail fast if stack not running
-./gradlew test --tests "uk.gov.hmcts.cp.subscription.services.NotificationServiceTest"
-./gradlew bootRun             # requires PostgreSQL on localhost:5432
-./gradlew pmdMain
-./gradlew jacocoTestReport    # → build/reports/jacoco/
-./gradlew openApiGenerate     # regenerate from OpenAPI spec — never edit build/generated/ manually
-```
+## Infrastructure
 
-## Rules
-
-**Architecture**
-- **Service layering**: Controller → Manager → Service → Client/Repository. No skipping layers.
-- **Controllers are thin** — delegate to `NotificationManager` or services; return HTTP responses only.
-- **MapStruct mappers** in `src/main/java/.../mappers/` handle entity ↔ DTO. Never edit generated `*Impl` classes.
-
-**Data & Config**
-- **Client ID mandatory in every query** — `UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID))`. Every repository call must include it.
-- **Config**: `application.yaml` uses `${VAR:default}`. All new vars must be documented in `.envrc.example`.
-- **Migrations**: Flyway naming `V<VERSION>__<description>.sql` in `src/main/resources/db/migration/`.
-
-**Code Quality**
-- No comments unless the WHY is genuinely non-obvious. Never explain WHAT.
-- No code beyond what the task requires. No TODOs, no future-proofing, no dead code. Bug fix = fix the bug only.
-- **Immutability**: builders not setters; `final` on fields (PMD enforces in main code).
-- **Methods**: ideally < 20 lines; extract private methods for readability.
-- **Ordering**: fields, params, dependencies, mapper fields — by importance → chronology → dependency.
-- No `@Transactional(readOnly = true)` on read-only services — no benefit, adds noise.
-
-**Error Handling & Validation**
-- `EntityNotFoundException` for 404s, `ResponseStatusException` for business errors. `GlobalExceptionHandler` maps the rest.
-- No error handling for impossible scenarios. Validate only at real boundaries (user input, external APIs).
-- Prefer typed params (UUID, long, datetime) over plain String; validate before business logic.
-
-**Logging**
-- `@Slf4j` — INFO for business events, DEBUG for tracing.
-- `Encode.forJava(url)` before logging any URL/URI.
-
-**Testing**
-- AssertJ only; naming `<function>_should_<outcome>`; common objects at class level.
-- Don't verify `when().thenReturn()` calls where the return value is already asserted.
-- Use integration tests to prove acceptance criteria, not unit tests.
-
-**Feature Toggles**
-- Env var properties only; remove toggle as soon as enabled; avoid overuse (4 toggles = 16 test paths).
+| Component | Technology | Purpose |
+|---|---|---|
+| PostgreSQL 15 | Primary database (port 5433) | Subscriber entities, event tracking, HMAC keys, document mappings |
+| Azure Service Bus | Emulator (ports 5672, 5300) | Inbound PCR event queue + outbound per-subscriber notification topics |
+| Flyway | Auto-runs on boot | Schema migrations in `src/main/resources/db/migration/` |
+| Azure Key Vault | Optional (`AZURE_VAULT_ENABLED`) | HMAC signing secrets; stub/debug/Azure implementations switchable |
 
 ## Event Processing Pipeline
 
@@ -57,7 +21,7 @@ Keep replies extremely concise. No filler. No long code snippets.
 PCR Inbound Event (from Progression/HearingNows)
     ↓
 NotificationController.createNotification()
-    ↓ [ServiceBus enabled → queue to PCR_INBOUND_TOPIC]
+    ↓ [AZURE_SERVICE_BUS_AUTO_START_PROCESSORS=true → queue to inbound topic]
     ↓ [else → synchronous]
 NotificationManager.processPcrNotification()
     ↓
@@ -66,33 +30,102 @@ NotificationService.processInboundEvent()
     └→ DocumentService.saveDocumentMapping()
     ↓
 CallbackDeliveryService.submitOutboundPcrEvents()
-    └→ [ServiceBus enabled → queue to PCR_OUTBOUND_TOPIC per subscriber]
-       [else → CallbackService.sendToSubscriber()]
+    └→ [Service Bus enabled → queue to outbound topic per subscriber]
+       [else → CallbackClient.sendToSubscriber()]
 ```
 
-## Service Bus (Azure)
+## Source Structure
 
-Toggle with `AZURE_SERVICE_BUS_ENABLED=true`. When off, all processing is synchronous.
+```
+uk.gov.hmcts.cp/
+  Application.java                              @SpringBootApplication
+  PostStartup                                   @Service — initialises subscriptions on startup
+  filters/
+    ClientIdResolutionFilter                    Resolves client ID from JWT; stores in MDC (CLIENT_ID key)
+    TracingFilter                               Reads/generates X-Correlation-Id; propagates via MDC
+    UUIDService                                 Generates UUIDs for correlation
+  hmac/
+    HmacManager                                 Orchestrates HMAC key lifecycle
+    EncodingService / HmacKeyService / HmacSigningService   HMAC-SHA256 signing for callbacks
+  servicebus/
+    ServiceBusAdminAzureImpl / EmulatorImpl     Service Bus admin (topic/subscription creation)
+    ServiceBusClientFactory / ClientService     Client lifecycle management
+    ServiceBusHandlers / ProcessorService       Message receive and dispatch
+    ServiceBusRetryService                      Retry with configurable backoff delays
+  subscription/
+    clients/
+      CallbackClient                            HTTP POST to subscriber webhook URLs
+      MaterialClient / MaterialDocumentClient   Fetch document metadata from material service
+    controllers/
+      SubscriptionController                    POST /client-subscriptions
+      NotificationController                    Inbound PCR notification endpoint
+      MockCallbackController                    Test webhook receiver (non-production)
+    entities/ (JPA, UUID PKs)
+      ClientEntity / ClientEventEntity / ClientHmacEntity
+      DocumentMappingEntity / EventTypeEntity
+    mappers/ (MapStruct)
+      ClientEntityMapper / ClientEventEntityMapper / ClientHmacMapper
+      ClientSubscriptionMapper / DocumentMapper / EventTypeMapper
+    repositories/
+      ClientRepository / ClientEventRepository / ClientHmacRepository
+      DocumentMappingRepository / EventTypeRepository
+    services/
+      SubscriptionService                       Client registration and management
+      NotificationService                       Inbound event processing
+      CallbackDeliveryService                   Outbound callback dispatch
+      EventTypeService / DocumentService / MaterialService / SubscriptionValidationService
+  vault/
+    SecretStoreServiceAzureImpl                 Production: reads secrets from Azure Key Vault
+    SecretStoreServiceStubImpl                  Local dev: returns hardcoded values
+    SecretStoreServiceDebug                     Debug: logs secret lookups
+```
 
-| Var                          | Purpose                                            |
-|------------------------------|----------------------------------------------------|
-| `AZURE_SERVICEBUS_URI`       | Connection string                                  |
-| `AZURE_SERVICE_BUS_ADMIN_URI` | Admin URI                                         |
-| `PCR_INBOUND_TOPIC`          | Inbound PCR events                                 |
-| `PCR_OUTBOUND_TOPIC`         | Outbound per-subscriber notifications              |
-| `SERVICE_BUS_RETRY_SECONDS`  | Comma-separated delays e.g. `"0,1000,2000,10000"` |
-| `SERVICE_BUS_MAX_TRIES`      | Max delivery attempts                              |
+## Environment Variables
 
-Message body is a JSON string wrapped in `ServiceBusMessage` (fields: `correlationId`, `failureCount`, `targetUrl`).
+| Variable | Purpose | Default |
+|---|---|---|
+| `SERVER_PORT` | HTTP port | `4550` |
+| `DATASOURCE_URL` | PostgreSQL JDBC URL | `jdbc:postgresql://localhost:5432/appdb` |
+| `DATASOURCE_USERNAME` | DB username | `postgres` |
+| `DATASOURCE_PASSWORD` | DB password | `postgres` |
+| `HIKARI_MAX_POOL_SIZE` | Connection pool size | `8` |
+| `MATERIAL_CLIENT_URL` | Material metadata service URL | `http://localhost:8081` |
+| `DOCUMENT_SERVICE_URL` | Document store service URL | `http://localhost:8082` |
+| `AZURE_SERVICE_BUS_URI` | Service Bus AMQP URI | `sb://localhost` (emulator) |
+| `AZURE_SERVICE_BUS_ADMIN_URI` | Service Bus admin URI | `sb://localhost:5300` |
+| `AZURE_SERVICE_BUS_AUTO_START_PROCESSORS` | Enable async Service Bus processing | `true` |
+| `SERVICE_BUS_RETRY_SECONDS` | Comma-separated retry delays (ms) | `0,1000,2000,10000,30000,60000` |
+| `SERVICE_BUS_MAX_TRIES` | Max delivery attempts | `5` |
+| `SUBSCRIPTION_OAUTH_ENABLED` | Enforce OAuth on subscription endpoints | `true` |
+| `AZURE_VAULT_ENABLED` | Use Azure Key Vault for HMAC secrets | `false` |
+| `AZURE_VAULT_URI` | Key Vault URI (when enabled) | — |
+| `AZURE_CLIENT_ID` | Azure managed identity client ID | `00000000-0000-0000-0000-000000000000` |
+| `CJSCPPUID` | User UUID header on all backend calls | `00000000-0000-0000-0000-000000000000` |
+| `ENVIRONMENT_NAME` | Environment label in logs | `UNKNOWN` |
+| `rpe.AppInsightsInstrumentationKey` | Azure Application Insights key | `00000000-0000-0000-0000-000000000000` |
 
-## Database
+## Repo-Specific Architecture Rules
 
-PostgreSQL 15. Flyway migrations auto-run. All entities use UUID PKs (`@GeneratedValue(strategy = GenerationType.UUID)`).
+- **Client ID mandatory in every query**: `ClientIdResolutionFilter` stores the resolved client UUID in MDC as `CLIENT_ID`. Every repository call must include it — `UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID))`.
+- **Controller → Manager → Service → Client/Repository**: this service has an extra `Manager` layer — `NotificationManager` sits between controllers and services. No business logic in controllers.
+- **Service Bus toggle**: `AZURE_SERVICE_BUS_AUTO_START_PROCESSORS=false` makes all event processing synchronous — useful for integration tests without a running emulator.
+- **HMAC signing**: `HmacSigningService` signs callback payloads; keys stored per client via `ClientHmacEntity`. Key Vault implementation switches via `AZURE_VAULT_ENABLED`.
+- **Immutability**: builders not setters; `final` fields (PMD enforces in main code).
 
 ## Debugging
 
-- **Won't start**: PostgreSQL running? Env vars set? Port 4550 free?
-- **Material timeout**: Tune `MATERIAL_CLIENT_TIMEOUT_MSECS` / `MATERIAL_CLIENT_INTERVAL_MSECS`.
-- **PMD failures**: Check `.github/pmd-ruleset.xml` — common: cyclomatic complexity, method naming.
-- **Test failures**: Run with `-i`; check MDC setup in filters.
-- **Service Bus**: Toggle `AZURE_SERVICE_BUS_ENABLED`; inspect connection strings in logs.
+| Symptom | Cause / Fix |
+|---|---|
+| Service won't start | PostgreSQL running on correct port? `DATASOURCE_URL` set? Port 4550 free? |
+| Material timeout on notification | Tune `MATERIAL_CLIENT_URL`; check material service reachable; awaitility polling interval |
+| Callbacks not delivered | Check `AZURE_SERVICE_BUS_AUTO_START_PROCESSORS`; inspect Service Bus connection string in logs |
+| Missing client ID in queries | Check `ClientIdResolutionFilter` is registered; JWT present and parseable; MDC not cleared early |
+| PMD build failures | Check `.github/pmd-ruleset.xml` — common: cyclomatic complexity, method length, naming |
+| Test failures | Run with `-i`; check MDC setup in filters; Testcontainers requires Docker running |
+
+## Repo-Specific Notes
+
+- `auto-merge-dependabot.yml` present — auto-merges Dependabot PRs on minor/patch bumps.
+- `ci-build-publish.yml` present alongside standard `ci-draft.yml` / `ci-released.yml`.
+- No `WireMock` in docker-compose — uses PostgreSQL + Service Bus emulator instead; API tests require Docker.
+- All entities use `@GeneratedValue(strategy = GenerationType.UUID)` — UUID primary keys throughout.
