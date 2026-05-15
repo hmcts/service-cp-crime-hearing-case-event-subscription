@@ -17,27 +17,15 @@ Should `raw_payload` be stored as `JSONB` (structured, queryable) or encrypted `
 
 ---
 
-### c) Resource and ID naming
+### c) Resource and ID naming — **Agreed: `hearing-events` / `hearingEventId`**
 
-The endpoint follows the existing subscription-scoped pattern:
+The endpoint uses the existing subscription-scoped pattern:
 
 ```
-GET /subscription/{subscriptionId}/<resource-tbd>/{<id-tbd>}
+GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}
 ```
 
-**Context:** Samir has raised that `notification`/`notificationId` is the wrong language — this is an inbound event payload from Progression or HearingNows (e.g. a PCR), not a notification we generated. The name should reflect what it actually is.
-
-Options to discuss:
-
-| Resource | ID | Notes |
-|----------|----|-------|
-| `pcr-events` | `pcrEventId` | Domain-specific — accurate for PCR but excludes HearingNows event types |
-| `hearing-events` | `hearingEventId` | Broader — covers PCR and other hearing-related events |
-| `inbound-events` | `inboundEventId` | Technical/neutral — clearly distinguishes from our outbound |
-| `progression-events` | `progressionEventId` | Names the upstream system — may not suit HearingNows events |
-| `source-events` | `sourceEventId` | Neutral, signals origin without naming the system |
-
-Note: whatever name is chosen should also be applied to the DB tables (`notification_payload` → `<name>`, `notification_subscriptions` → `<name>_subscriptions`) and the entity/service class names.
+`hearing-events` was chosen over `notifications` (Samir's objection — this is an inbound event from Progression/HearingNows, not an internal notification) and over `pcr-events` (too narrow — covers HearingNows events too).
 
 ---
 
@@ -53,13 +41,13 @@ The payload contains `DefendantName` and `DefendantDateOfBirth`, which are perso
 
 ## Overview
 
-When Progression or HearingNows sends us an inbound event (`EventPayload`), we currently process it and deliver a trimmed `EventNotificationPayload` to subscribers. This change persists the **raw inbound payload** and exposes it to consumers via a stable per-subscriber `notificationId`.
+When Progression or HearingNows sends us an inbound event (`EventPayload`), we currently process it and deliver a trimmed `EventNotificationPayload` to subscribers. This change persists the **raw inbound payload** and exposes it to consumers via a stable per-subscriber `hearingEventId`.
 
 ---
 
 ## Feature Toggle
 
-The entire feature is gated by `NOTIFICATION_JSON_ENABLED` (default `false`). When off: no rows are written to `notification_payload` or `notification_subscriptions`, `notificationId` is omitted from the outbound payload, and the GET endpoint returns 404.
+The entire feature is gated by `NOTIFICATION_JSON_ENABLED` (default `false`). When off: no rows are written to `notification_payload` or `notification_subscriptions`, `hearingEventId` is omitted from the outbound payload, and the GET endpoint returns 404.
 
 ```yaml
 # application.yaml
@@ -80,9 +68,9 @@ Switch on in tests via `application-test.yaml` or `@TestPropertySource(propertie
 |---|---------|----------|
 | 1 | Persist raw payload once per event | `notification_payload` table |
 | 2 | Track which subscribers received which events | `notification_subscriptions` table — one row per subscriber per event |
-| 3 | Stable consumer-facing ID | `notificationId` (UUID) generated per subscriber on `notification_subscriptions` |
+| 3 | Stable consumer-facing ID | `hearingEventId` (UUID) generated per subscriber on `notification_subscriptions` |
 | 4 | Block new subscribers from older events | Rows only created for subscribers active at event time — no back-fill |
-| 5 | Consumer access | New `GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}` endpoint |
+| 5 | Consumer access | New `GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}` endpoint |
 
 ---
 
@@ -120,7 +108,7 @@ One row per subscriber per event. This is where access control lives.
 ```sql
 -- V1.014__add_notification_subscriptions.sql
 CREATE TABLE notification_subscriptions (
-    notification_id  UUID        PRIMARY KEY,
+    hearing_event_id  UUID        PRIMARY KEY,
     subscription_id  UUID        NOT NULL REFERENCES client(subscription_id),
     event_id         VARCHAR     NOT NULL REFERENCES notification_payload(event_id),
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -132,7 +120,7 @@ CREATE INDEX idx_ns_event_id         ON notification_subscriptions (event_id);
 
 | Column | Notes |
 |--------|-------|
-| `notification_id` | UUID we generate — unique per subscriber, this is what consumers use |
+| `hearing_event_id` | UUID we generate — unique per subscriber, this is what consumers use |
 | `subscription_id` | FK to `client.subscription_id` |
 | `event_id` | FK to `notification_payload.event_id` |
 | `created_at` | When this subscriber was notified |
@@ -155,7 +143,7 @@ fields: eventType (String), rawPayload (String, columnDefinition="jsonb"), creat
 ### `NotificationSubscriptionEntity`
 ```
 table: notification_subscriptions
-pk: notificationId (UUID, @GeneratedValue UUID strategy)
+pk: hearingEventId (UUID, @GeneratedValue UUID strategy)
 fields: subscriptionId (UUID), eventId (String), createdAt (OffsetDateTime)
 ```
 
@@ -168,7 +156,7 @@ fields: subscriptionId (UUID), eventId (String), createdAt (OffsetDateTime)
 boolean existsByEventId(String eventId);
 
 // NotificationSubscriptionRepository extends JpaRepository<NotificationSubscriptionEntity, UUID>
-Optional<NotificationSubscriptionEntity> findByNotificationIdAndSubscriptionId(UUID notificationId, UUID subscriptionId);
+Optional<NotificationSubscriptionEntity> findByHearingEventIdAndSubscriptionId(UUID hearingEventId, UUID subscriptionId);
 boolean existsBySubscriptionIdAndEventId(UUID subscriptionId, String eventId);
 ```
 
@@ -186,8 +174,8 @@ CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId)
 
 For each subscribed client:
     2. Skip if existsBySubscriptionIdAndEventId(subscriptionId, eventId)  ← idempotency
-    3. Generate notificationId = UUID.randomUUID()
-    4. Persist NotificationSubscriptionEntity (notificationId, subscriptionId, eventId)
+    3. Generate hearingEventId = UUID.randomUUID()
+    4. Persist NotificationSubscriptionEntity (hearingEventId, subscriptionId, eventId)
     5. [existing] Map EventPayload → EventNotificationPayload
     6. [existing] Queue/send to subscriber
 ```
@@ -196,21 +184,21 @@ For each subscribed client:
 
 ## Outbound Payload API Spec Change
 
-The existing `EventNotificationPayload` (delivered to subscribers via callback) must be updated to include `notificationId` alongside the existing `documentId`. Subscribers then have two retrieval paths:
+The existing `EventNotificationPayload` (delivered to subscribers via callback) must be updated to include `hearingEventId` alongside the existing `documentId`. Subscribers then have two retrieval paths:
 
 | ID | Retrieval endpoint | Returns |
 |----|-------------------|---------|
-| `notificationId` | `GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}` | Raw JSON payload (this feature) |
+| `hearingEventId` | `GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}` | Raw JSON payload (this feature) |
 | `documentId` | `GET /getDocument/{clientSubscriptionId}/{documentId}` | Document PDF (existing) |
 
 ### API spec change (OpenAPI)
 
-Add `notificationId` (string, UUID format, required) to the `EventNotificationPayload` schema in the OpenAPI spec, then run `./gradlew openApiGenerate`.
+Add `hearingEventId` (string, UUID format, required) to the `EventNotificationPayload` schema in the OpenAPI spec, then run `./gradlew openApiGenerate`.
 
 ```yaml
 EventNotificationPayload:
   properties:
-    notificationId:
+    hearingEventId:
       type: string
       format: uuid
     documentId:
@@ -219,28 +207,26 @@ EventNotificationPayload:
     # ... existing fields
 ```
 
-`notificationId` is populated in `CallbackDeliveryService` at the point the `NotificationSubscriptionEntity` is persisted (step 3 of the processing flow above).
+`hearingEventId` is populated in `CallbackDeliveryService` at the point the `NotificationSubscriptionEntity` is persisted (step 3 of the processing flow above).
 
 ---
 
 ## New Endpoint
 
 ```
-GET /subscription/{subscriptionId}/<resource-tbd>/{notificationId}
+GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}
 ```
 
-> **To discuss:** what should `<resource-tbd>` be called? e.g. `notifications`, `events`, `payloads`. Agree with team before implementing.
-
 - **Auth**: `ClientIdResolutionFilter` supplies `clientId` via MDC; resolve to `subscriptionId` via `ClientRepository`.
-- **Query**: `findByNotificationIdAndSubscriptionId(notificationId, subscriptionId)` on `notification_subscriptions` → 404 if no row.
+- **Query**: `findByHearingEventIdAndSubscriptionId(hearingEventId, subscriptionId)` on `notification_subscriptions` → 404 if no row.
 - **Payload**: join to `notification_payload` via `eventId`, deserialise `rawPayload`.
-- **Layer**: `NotificationController` → `NotificationManager.getInboundPayload(clientId, notificationId)` → `NotificationPayloadService`.
+- **Layer**: `NotificationController` → `NotificationManager.getInboundPayload(clientId, hearingEventId)` → `NotificationPayloadService`.
 
 ### Response shape (draft)
 
 ```json
 {
-  "notificationId": "...",
+  "hearingEventId": "...",
   "eventId": "...",
   "eventType": "PRISON_COURT_REGISTER_GENERATED",
   "createdAt": "2026-05-13T10:00:00Z",
@@ -265,12 +251,12 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 - [ ] `NotificationPayloadEntity` + `NotificationSubscriptionEntity`
 - [ ] `NotificationPayloadRepository` + `NotificationSubscriptionRepository`
 - [ ] `EventPayloadConverter` (JPA `AttributeConverter`)
-- [ ] `NotificationPayloadService` — `save()` + `getByNotificationId(clientId, notificationId)`
+- [ ] `NotificationPayloadService` — `save()` + `getByHearingEventId(clientId, hearingEventId)`
 - [ ] `NotificationManager.getInboundPayload()` — thin orchestration
 - [ ] `NotificationController` — new GET endpoint
 - [ ] `InboundPayloadResponse` DTO (OpenAPI spec update → `openApiGenerate`)
-- [ ] Add `notificationId` to `EventNotificationPayload` in OpenAPI spec → `openApiGenerate`
-- [ ] Populate `notificationId` on outbound payload in `CallbackDeliveryService`
+- [ ] Add `hearingEventId` to `EventNotificationPayload` in OpenAPI spec → `openApiGenerate`
+- [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService`
 - [ ] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
 - [ ] `NOTIFICATION_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`
 - [ ] Add `NOTIFICATION_JSON_ENABLED` to `.envrc.example`
