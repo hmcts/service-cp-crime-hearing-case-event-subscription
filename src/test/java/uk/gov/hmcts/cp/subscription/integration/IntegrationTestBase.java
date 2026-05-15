@@ -16,7 +16,7 @@ import uk.gov.hmcts.cp.subscription.entities.ClientEventEntity;
 import uk.gov.hmcts.cp.subscription.entities.ClientHmacEntity;
 import uk.gov.hmcts.cp.subscription.entities.DocumentMappingEntity;
 import uk.gov.hmcts.cp.subscription.entities.EventTypeEntity;
-import uk.gov.hmcts.cp.subscription.integration.config.TestContainersInitialise;
+import uk.gov.hmcts.cp.subscription.integration.config.PostgresAvailabilityCheck;
 import uk.gov.hmcts.cp.subscription.integration.helpers.JwtHelper;
 import uk.gov.hmcts.cp.subscription.repositories.ClientEventRepository;
 import uk.gov.hmcts.cp.subscription.repositories.ClientHmacRepository;
@@ -36,7 +36,7 @@ import java.util.UUID;
 @Slf4j
 @SpringBootTest
 @AutoConfigureMockMvc
-@ContextConfiguration(initializers = TestContainersInitialise.class)
+@ContextConfiguration(initializers = PostgresAvailabilityCheck.class)
 @TestPropertySource(properties = {
         "vault.enabled=false",
         "service-bus.auto-start-processors=false"

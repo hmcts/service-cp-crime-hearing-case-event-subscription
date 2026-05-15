@@ -14,7 +14,7 @@ The service processes PCR (PrisonCourtRegister)/Nows events from Progression and
 - **Docker** – required to run PostgreSQL locally.  
   Install from [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/). Check with `docker --version`.
 
-- **PostgreSQL 15** – the service uses it for subscriptions and migrations.  
+- **PostgreSQL 18** – the service uses it for subscriptions and migrations.  
   Run it via Docker (see below).
 
 - **direnv** (optional but recommended) – loads environment variables from `.envrc` when you `cd` into the project.  
@@ -24,25 +24,19 @@ The service processes PCR (PrisonCourtRegister)/Nows events from Progression and
 
 ## Running the service on a local machine
 
-### 1. Start PostgreSQL
+### 1. Start the local stack
 
-The app expects PostgreSQL on `localhost:5432` with database `appdb` and user `postgres` (password `postgres`) unless you override with environment variables.
-
-```bash
-docker run -d --name postgres \
-  -p 5432:5432 \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=appdb \
-  postgres:15
-```
-
-To stop and start the container later:
+The project includes a `docker/docker-compose.yml` with PostgreSQL 18, Azure SQL Edge, and the Service Bus emulator. Start only what you need:
 
 ```bash
-docker stop postgres
-docker start postgres
+# Full stack — required before starting the app or running integration tests
+docker compose -f docker/docker-compose.yml up -d
+
+# Stop everything
+docker compose -f docker/docker-compose.yml down
 ```
+
+The app expects PostgreSQL on `localhost:5432` (database `appdb`, user `postgres`, password `postgres`) and the Service Bus emulator on `localhost:5672` — these are the compose defaults.
 
 ### 2. Build and run the service
 
@@ -81,6 +75,15 @@ If you don’t use direnv, you can still export these variables in your shell be
 
 - Health: `curl http://localhost:4550/actuator/health`
 - Build/version info: `curl http://localhost:4550/actuator/info`
+
+### 5. Running tests
+
+| Command | What it runs | Docker required |
+|---------|-------------|-----------------|
+| `./gradlew test` | Unit tests only | No |
+| `./gradlew dockerTest` | Integration tests (`*Integration*`) | Yes — auto-starts and tears down the full stack |
+
+`./gradlew dockerTest` manages the compose lifecycle for you: it starts `db`, `sqledge`, and `servicebus-emulator` before the tests and stops them after.
 
 ---
 
