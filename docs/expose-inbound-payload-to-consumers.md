@@ -17,18 +17,6 @@ Should `raw_payload` be stored as `JSONB` (structured, queryable) or encrypted `
 
 ---
 
-### c) Resource and ID naming — **Agreed: `hearing-events` / `hearingEventId`**
-
-The endpoint uses the existing subscription-scoped pattern:
-
-```
-GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}
-```
-
-`hearing-events` was chosen over `notifications` (Samir's objection — this is an inbound event from Progression/HearingNows, not an internal notification) and over `pcr-events` (too narrow — covers HearingNows events too).
-
----
-
 ### b) Encrypt payload at rest — **Colin says yes**
 
 The payload contains `DefendantName` and `DefendantDateOfBirth`, which are personal data. Storing in plaintext means anyone with database access can read it.
