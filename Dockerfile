@@ -5,6 +5,9 @@
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE:-eclipse-temurin:25.0.2_10-jre}
 
+# Azure vault is off for local App but on in all real environments
+ENV AZURE_VAULT_ENABLED=true
+
 # install curl for debugging
 RUN apt-get update \
     && apt-get install -y curl \
