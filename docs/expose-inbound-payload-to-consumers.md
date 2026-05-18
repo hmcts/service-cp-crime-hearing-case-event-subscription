@@ -58,7 +58,7 @@ Switch on in tests via `application-test.yaml` or `@TestPropertySource(propertie
 | 2 | Track which subscribers received which events | `notification_subscriptions` table — one row per subscriber per event |
 | 3 | Stable consumer-facing ID | `hearingEventId` (UUID) generated per subscriber on `notification_subscriptions` |
 | 4 | Block new subscribers from older events | Rows only created for subscribers active at event time — no back-fill |
-| 5 | Consumer access | New `GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}` endpoint |
+| 5 | Consumer access | New `GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}` endpoint |
 
 ---
 
@@ -176,7 +176,7 @@ The existing `EventNotificationPayload` (delivered to subscribers via callback) 
 
 | ID | Retrieval endpoint | Returns |
 |----|-------------------|---------|
-| `hearingEventId` | `GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}` | Raw JSON payload (this feature) |
+| `hearingEventId` | `GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}` | Raw JSON payload (this feature) |
 | `documentId` | `GET /getDocument/{clientSubscriptionId}/{documentId}` | Document PDF (existing) |
 
 ### API spec change (OpenAPI)
@@ -202,7 +202,7 @@ EventNotificationPayload:
 ## New Endpoint
 
 ```
-GET /subscription/{subscriptionId}/hearing-events/{hearingEventId}
+GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}
 ```
 
 - **Auth**: `ClientIdResolutionFilter` supplies `clientId` via MDC; resolve to `subscriptionId` via `ClientRepository`.
