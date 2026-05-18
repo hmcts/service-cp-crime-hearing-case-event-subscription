@@ -46,8 +46,6 @@ hearing-event:
 
 Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = "hearing-event.json.enabled=true")`.
 
-`HEARING_EVENT_JSON_ENABLED` must be added to `.envrc.example`.
-
 ---
 
 ## What We Need
@@ -247,7 +245,6 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 - [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService`
 - [ ] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
 - [ ] `HEARING_EVENT_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`
-- [ ] Add `HEARING_EVENT_JSON_ENABLED` to `.envrc.example`
 - [ ] Idempotency guards before each insert
 - [ ] Unit tests for service + idempotency path
 - [ ] Integration test: POST createNotification → GET payload returns same data; new subscriber cannot GET older notification
