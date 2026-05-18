@@ -46,8 +46,6 @@ hearing-event:
 
 Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = "hearing-event.json.enabled=true")`.
 
-`HEARING_EVENT_JSON_ENABLED` must be added to `.envrc.example`.
-
 ---
 
 ## What We Need
@@ -71,19 +69,19 @@ Stores the raw `EventPayload` JSON **once per inbound event**.
 ```sql
 -- V1.013__add_notification_payload.sql
 CREATE TABLE notification_payload (
-    event_id    VARCHAR     PRIMARY KEY,
-    event_type  VARCHAR     NOT NULL,
-    raw_payload JSONB       NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    hearing_event_id  uuid        primary key not null,
+    event_type_id     integer     not null REFERENCES event_type(id),
+    raw_payload       jsonb       not null,
+    created_at        timestamptz not null default now()
 );
 
-CREATE INDEX idx_notification_payload_event_type ON notification_payload (event_type);
+CREATE INDEX idx_notification_payload_event_type ON notification_payload (event_type_id);
 ```
 
 | Column | Notes |
 |--------|-------|
-| `event_id` | The `eventId` from the inbound `EventPayload` — natural PK, ensures one row per event |
-| `event_type` | Denormalised for cheap filtering |
+| `hearing_event_id` | UUID — the `eventId` from the inbound `EventPayload`, natural PK, ensures one row per event |
+| `event_type_id` | FK to `event_type(id)` |
 | `raw_payload` | Full `EventPayload` serialised as JSONB |
 | `created_at` | Ingest timestamp |
 
@@ -96,26 +94,26 @@ One row per subscriber per event. This is where access control lives.
 ```sql
 -- V1.014__add_notification_subscriptions.sql
 CREATE TABLE notification_subscriptions (
-    hearing_event_id  UUID        PRIMARY KEY,
-    subscription_id  UUID        NOT NULL REFERENCES client(subscription_id),
-    event_id         VARCHAR     NOT NULL REFERENCES notification_payload(event_id),
-    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                uuid        primary key not null,
+    subscription_id   uuid        not null REFERENCES client(subscription_id),
+    hearing_event_id  uuid        not null REFERENCES notification_payload(hearing_event_id),
+    created_at        timestamptz not null default now()
 );
 
-CREATE UNIQUE INDEX idx_ns_sub_event ON notification_subscriptions (subscription_id, event_id);
-CREATE INDEX idx_ns_event_id         ON notification_subscriptions (event_id);
+CREATE UNIQUE INDEX idx_ns_sub_event ON notification_subscriptions (subscription_id, hearing_event_id);
+CREATE INDEX idx_ns_hearing_event_id ON notification_subscriptions (hearing_event_id);
 ```
 
 | Column | Notes |
 |--------|-------|
-| `hearing_event_id` | UUID we generate — unique per subscriber, this is what consumers use |
+| `id` | UUID we generate — unique per subscriber, this is the `hearingEventId` exposed to consumers |
 | `subscription_id` | FK to `client.subscription_id` |
-| `event_id` | FK to `notification_payload.event_id` |
+| `hearing_event_id` | FK to `notification_payload.hearing_event_id` |
 | `created_at` | When this subscriber was notified |
 
 **Access control is implicit**: a subscriber can only retrieve a notification if a row exists for their `subscription_id`. New subscribers are never back-filled, so they have no rows for historical events.
 
-The unique index on `(subscription_id, event_id)` also provides idempotency — re-delivery of the same event to the same subscriber is a no-op.
+The unique index on `(subscription_id, hearing_event_id)` also provides idempotency — re-delivery of the same event to the same subscriber is a no-op.
 
 ---
 
@@ -124,15 +122,15 @@ The unique index on `(subscription_id, event_id)` also provides idempotency — 
 ### `NotificationPayloadEntity`
 ```
 table: notification_payload
-pk: eventId (String)
-fields: eventType (String), rawPayload (String, columnDefinition="jsonb"), createdAt (OffsetDateTime)
+pk: hearingEventId (UUID)
+fields: eventTypeId (Long, FK → EventTypeEntity), rawPayload (String, columnDefinition="jsonb"), createdAt (OffsetDateTime)
 ```
 
 ### `NotificationSubscriptionEntity`
 ```
 table: notification_subscriptions
-pk: hearingEventId (UUID, @GeneratedValue UUID strategy)
-fields: subscriptionId (UUID), eventId (String), createdAt (OffsetDateTime)
+pk: id (UUID, @GeneratedValue UUID strategy)
+fields: subscriptionId (UUID), hearingEventId (UUID, FK → NotificationPayloadEntity), createdAt (OffsetDateTime)
 ```
 
 ---
@@ -141,11 +139,11 @@ fields: subscriptionId (UUID), eventId (String), createdAt (OffsetDateTime)
 
 ```java
 // NotificationPayloadRepository extends JpaRepository<NotificationPayloadEntity, String>
-boolean existsByEventId(String eventId);
+boolean existsByHearingEventId(String hearingEventId);
 
 // NotificationSubscriptionRepository extends JpaRepository<NotificationSubscriptionEntity, UUID>
-Optional<NotificationSubscriptionEntity> findByHearingEventIdAndSubscriptionId(UUID hearingEventId, UUID subscriptionId);
-boolean existsBySubscriptionIdAndEventId(UUID subscriptionId, String eventId);
+Optional<NotificationSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);
+boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, String hearingEventId);
 ```
 
 ---
@@ -157,13 +155,13 @@ Both rows are created inside `CallbackDeliveryService.submitOutboundEvents()` �
 ```
 CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId)
     ↓
-1. If !existsByEventId(eventId):
-       Persist NotificationPayloadEntity (eventId, eventType, serialize(eventPayload))
+1. If !existsByHearingEventId(eventId):
+       Persist NotificationPayloadEntity (hearingEventId, eventTypeId, serialize(eventPayload))
 
 For each subscribed client:
-    2. Skip if existsBySubscriptionIdAndEventId(subscriptionId, eventId)  ← idempotency
-    3. Generate hearingEventId = UUID.randomUUID()
-    4. Persist NotificationSubscriptionEntity (hearingEventId, subscriptionId, eventId)
+    2. Skip if existsBySubscriptionIdAndHearingEventId(subscriptionId, eventId)  ← idempotency
+    3. Generate id = UUID.randomUUID()
+    4. Persist NotificationSubscriptionEntity (id, subscriptionId, hearingEventId)
     5. [existing] Map EventPayload → EventNotificationPayload
     6. [existing] Queue/send to subscriber
 ```
@@ -206,8 +204,8 @@ GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}
 ```
 
 - **Auth**: `ClientIdResolutionFilter` supplies `clientId` via MDC; resolve to `subscriptionId` via `ClientRepository`.
-- **Query**: `findByHearingEventIdAndSubscriptionId(hearingEventId, subscriptionId)` on `notification_subscriptions` → 404 if no row.
-- **Payload**: join to `notification_payload` via `eventId`, deserialise `rawPayload`.
+- **Query**: `findByIdAndSubscriptionId(hearingEventId, subscriptionId)` on `notification_subscriptions` → 404 if no row.
+- **Payload**: join to `notification_payload` via `hearing_event_id`, deserialise `rawPayload`.
 - **Layer**: `NotificationController` → `NotificationManager.getInboundPayload(clientId, hearingEventId)` → `NotificationPayloadService`.
 
 ### Response shape (draft)
@@ -247,7 +245,6 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 - [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService`
 - [ ] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
 - [ ] `HEARING_EVENT_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`
-- [ ] Add `HEARING_EVENT_JSON_ENABLED` to `.envrc.example`
 - [ ] Idempotency guards before each insert
 - [ ] Unit tests for service + idempotency path
 - [ ] Integration test: POST createNotification → GET payload returns same data; new subscriber cannot GET older notification
