@@ -1,0 +1,33 @@
+let ContainerIdList = KubePodInventory
+| where Name contains "hearing-result"
+| distinct ContainerID, PodLabel, Namespace, PodIp, Name;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where LogEntry contains 'Getting content URL for material'
+| extend LogJson = parse_json(LogEntry)
+| extend Message = tostring(LogJson.message)
+| project TimeGenerated, Message
+
+
+
+
+// Log Messages
+Received notification request from
+handleMessageType
+handleMessage failureCount:
+Getting metadata for materialId
+handleMessage FAILED FINALLY
+debugSecrets found {} secrets
+
+
+getDocument request
+Sending notification to
+Sending signature
+
+PostStartup Database contains
+
+// Failures
+786 FAILED FINALLY on 05/05
+i.e. 05/05 15:25:30
+
+PostStartup Queue
