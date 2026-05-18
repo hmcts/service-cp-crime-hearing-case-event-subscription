@@ -71,10 +71,10 @@ Stores the raw `EventPayload` JSON **once per inbound event**.
 ```sql
 -- V1.013__add_notification_payload.sql
 CREATE TABLE notification_payload (
-    hearing_event_id  VARCHAR     PRIMARY KEY,
-    event_type_id     BIGINT      NOT NULL REFERENCES event_type(id),
-    raw_payload       JSONB       NOT NULL,
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    hearing_event_id  uuid        primary key not null,
+    event_type_id     integer     not null REFERENCES event_type(id),
+    raw_payload       jsonb       not null,
+    created_at        timestamptz not null default now()
 );
 
 CREATE INDEX idx_notification_payload_event_type ON notification_payload (event_type_id);
@@ -82,7 +82,7 @@ CREATE INDEX idx_notification_payload_event_type ON notification_payload (event_
 
 | Column | Notes |
 |--------|-------|
-| `hearing_event_id` | The `eventId` from the inbound `EventPayload` — natural PK, ensures one row per event |
+| `hearing_event_id` | UUID — the `eventId` from the inbound `EventPayload`, natural PK, ensures one row per event |
 | `event_type_id` | FK to `event_type(id)` |
 | `raw_payload` | Full `EventPayload` serialised as JSONB |
 | `created_at` | Ingest timestamp |
@@ -96,10 +96,10 @@ One row per subscriber per event. This is where access control lives.
 ```sql
 -- V1.014__add_notification_subscriptions.sql
 CREATE TABLE notification_subscriptions (
-    id                UUID        PRIMARY KEY,
-    subscription_id   UUID        NOT NULL REFERENCES client(subscription_id),
-    hearing_event_id  VARCHAR     NOT NULL REFERENCES notification_payload(hearing_event_id),
-    created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id                uuid        primary key not null,
+    subscription_id   uuid        not null REFERENCES client(subscription_id),
+    hearing_event_id  uuid        not null REFERENCES notification_payload(hearing_event_id),
+    created_at        timestamptz not null default now()
 );
 
 CREATE UNIQUE INDEX idx_ns_sub_event ON notification_subscriptions (subscription_id, hearing_event_id);
@@ -124,7 +124,7 @@ The unique index on `(subscription_id, hearing_event_id)` also provides idempote
 ### `NotificationPayloadEntity`
 ```
 table: notification_payload
-pk: hearingEventId (String)
+pk: hearingEventId (UUID)
 fields: eventTypeId (Long, FK → EventTypeEntity), rawPayload (String, columnDefinition="jsonb"), createdAt (OffsetDateTime)
 ```
 
@@ -132,7 +132,7 @@ fields: eventTypeId (Long, FK → EventTypeEntity), rawPayload (String, columnDe
 ```
 table: notification_subscriptions
 pk: id (UUID, @GeneratedValue UUID strategy)
-fields: subscriptionId (UUID), hearingEventId (String, FK → NotificationPayloadEntity), createdAt (OffsetDateTime)
+fields: subscriptionId (UUID), hearingEventId (UUID, FK → NotificationPayloadEntity), createdAt (OffsetDateTime)
 ```
 
 ---
