@@ -37,6 +37,10 @@ document-service:
 subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
 
+hearing-event:
+  json:
+    enabled: ${HEARING_EVENT_JSON_ENABLED:false}
+
 vault:
   enabled: ${AZURE_VAULT_ENABLED:false}
   uri: ${AZURE_VAULT_URI:}
