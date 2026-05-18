@@ -37,9 +37,9 @@ document-service:
 subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
 
-notification:
+hearing-event:
   json:
-    enabled: ${NOTIFICATION_JSON_ENABLED:false}
+    enabled: ${HEARING_EVENT_JSON_ENABLED:false}
 
 vault:
   enabled: ${AZURE_VAULT_ENABLED:false}

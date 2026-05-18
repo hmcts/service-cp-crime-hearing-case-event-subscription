@@ -49,8 +49,8 @@ public class NotificationController implements InternalApi, NotificationApi {
     private final NotificationManager notificationManager;
     private final JsonMapper jsonMapper;
 
-    @Value("${notification.json.enabled:false}")
-    private boolean notificationJsonEnabled;
+    @Value("${hearing-event.json.enabled:false}")
+    private boolean hearingEventJsonEnabled;
 
     @Override
     public Optional<NativeWebRequest> getRequest() {

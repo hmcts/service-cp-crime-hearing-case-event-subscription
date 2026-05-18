@@ -36,8 +36,8 @@ public class CallbackDeliveryService {
     private final ServiceBusClientService clientService;
     private final HmacManager hmacManager;
 
-    @Value("${notification.json.enabled:false}")
-    private boolean notificationJsonEnabled;
+    @Value("${hearing-event.json.enabled:false}")
+    private boolean hearingEventJsonEnabled;
 
     public void submitOutboundEvents(final EventPayload eventPayload, final UUID documentId) {
         final String eventType = eventPayload.getEventType();

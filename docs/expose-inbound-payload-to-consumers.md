@@ -35,18 +35,18 @@ When Progression or HearingNows sends us an inbound event (`EventPayload`), we c
 
 ## Feature Toggle
 
-The entire feature is gated by `NOTIFICATION_JSON_ENABLED` (default `false`). When off: no rows are written to `notification_payload` or `notification_subscriptions`, `hearingEventId` is omitted from the outbound payload, and the GET endpoint returns 404.
+The entire feature is gated by `HEARING_EVENT_JSON_ENABLED` (default `false`). When off: no rows are written to `notification_payload` or `notification_subscriptions`, `hearingEventId` is omitted from the outbound payload, and the GET endpoint returns 404.
 
 ```yaml
 # application.yaml
-notification:
+hearing-event:
   json:
-    enabled: ${NOTIFICATION_JSON_ENABLED:false}
+    enabled: ${HEARING_EVENT_JSON_ENABLED:false}
 ```
 
-Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = "notification.json.enabled=true")`.
+Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = "hearing-event.json.enabled=true")`.
 
-`NOTIFICATION_JSON_ENABLED` must be added to `.envrc.example`.
+`HEARING_EVENT_JSON_ENABLED` must be added to `.envrc.example`.
 
 ---
 
@@ -246,8 +246,8 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 - [ ] Add `hearingEventId` to `EventNotificationPayload` in OpenAPI spec → `openApiGenerate`
 - [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService`
 - [ ] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
-- [ ] `NOTIFICATION_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`
-- [ ] Add `NOTIFICATION_JSON_ENABLED` to `.envrc.example`
+- [ ] `HEARING_EVENT_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`
+- [ ] Add `HEARING_EVENT_JSON_ENABLED` to `.envrc.example`
 - [ ] Idempotency guards before each insert
 - [ ] Unit tests for service + idempotency path
 - [ ] Integration test: POST createNotification → GET payload returns same data; new subscriber cannot GET older notification
