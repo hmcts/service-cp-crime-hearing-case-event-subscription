@@ -3,6 +3,7 @@ package uk.gov.hmcts.cp.subscription.services;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cp.hmac.managers.HmacManager;
 import uk.gov.hmcts.cp.openapi.model.EventNotificationPayload;
@@ -34,6 +35,9 @@ public class CallbackDeliveryService {
     private final JsonMapper jsonMapper;
     private final ServiceBusClientService clientService;
     private final HmacManager hmacManager;
+
+    @Value("${notification.json.enabled:false}")
+    private boolean notificationJsonEnabled;
 
     public void submitOutboundEvents(final EventPayload eventPayload, final UUID documentId) {
         final String eventType = eventPayload.getEventType();

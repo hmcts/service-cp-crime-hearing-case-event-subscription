@@ -1,0 +1,26 @@
+## Why
+
+The full AMP-504 feature (persisting raw PCR payloads and exposing them via a new endpoint) needs to be delivered incrementally behind a flag. This change introduces only the `NOTIFICATION_JSON_ENABLED` feature toggle so the gate is in place before any payload storage or endpoint logic is added.
+
+## What Changes
+
+- Add `notification.json.enabled` property (backed by `NOTIFICATION_JSON_ENABLED` env var, default `false`) to `application.yaml`
+- Wire the toggle into `CallbackDeliveryService` and `NotificationController` so both are toggle-aware from the start
+- Add `NOTIFICATION_JSON_ENABLED` to `.envrc.example`
+
+## Capabilities
+
+### New Capabilities
+
+- `notification-json-feature-toggle`: `NOTIFICATION_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`; when `false` (default) all new AMP-504 behaviour is suppressed — no payload storage, no `hearingEventId` on outbound payloads, GET endpoint returns 404
+
+### Modified Capabilities
+
+(none — no existing requirement changes)
+
+## Impact
+
+- **application.yaml**: new property block
+- **CallbackDeliveryService**: injected boolean flag, no logic change yet
+- **.envrc.example**: new env var entry
+- **NotificationController**: injected boolean flag, no logic change yet

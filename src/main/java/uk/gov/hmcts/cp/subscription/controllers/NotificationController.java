@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -47,6 +48,9 @@ public class NotificationController implements InternalApi, NotificationApi {
     private final EventTypeService eventTypeService;
     private final NotificationManager notificationManager;
     private final JsonMapper jsonMapper;
+
+    @Value("${notification.json.enabled:false}")
+    private boolean notificationJsonEnabled;
 
     @Override
     public Optional<NativeWebRequest> getRequest() {
