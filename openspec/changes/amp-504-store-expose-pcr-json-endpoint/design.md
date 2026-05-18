@@ -9,7 +9,6 @@ AMP-504 introduces payload storage and a new retrieval endpoint for PCR events. 
 **Goals:**
 - Add `hearing-event.json.enabled` Spring property backed by `HEARING_EVENT_JSON_ENABLED` env var (default `false`)
 - Inject the flag into `CallbackDeliveryService` and `NotificationController` as a `boolean` field
-- Document the variable in `.envrc.example`
 
 **Non-Goals:**
 - Any payload persistence logic (future change)
@@ -31,7 +30,7 @@ The toggle is a single boolean. A dedicated properties class (`NotificationJsonP
 ## Migration Plan
 
 1. Merge this change — toggle is off by default, no behaviour change in any environment
-2. Future changes add payload storage/endpoint logic guarded by `notificationJsonEnabled` flag
+2. Future changes add payload storage/endpoint logic guarded by `hearingEventJsonEnabled` flag
 3. Enable in non-prod environments for testing, then prod when ready
 4. No rollback risk — removing the flag injection is a trivial revert
 

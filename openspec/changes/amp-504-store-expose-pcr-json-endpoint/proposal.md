@@ -6,7 +6,6 @@ The full AMP-504 feature (persisting raw PCR payloads and exposing them via a ne
 
 - Add `hearing-event.json.enabled` property (backed by `HEARING_EVENT_JSON_ENABLED` env var, default `false`) to `application.yaml`
 - Wire the toggle into `CallbackDeliveryService` and `NotificationController` so both are toggle-aware from the start
-- Add `HEARING_EVENT_JSON_ENABLED` to `.envrc.example`
 
 ## Capabilities
 
@@ -22,5 +21,4 @@ The full AMP-504 feature (persisting raw PCR payloads and exposing them via a ne
 
 - **application.yaml**: new property block
 - **CallbackDeliveryService**: injected boolean flag, no logic change yet
-- **.envrc.example**: new env var entry
 - **NotificationController**: injected boolean flag, no logic change yet

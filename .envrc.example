@@ -7,4 +7,3 @@ export DATASOURCE_USERNAME=postgres
 export DATASOURCE_PASSWORD=postgres
 export MATERIAL_CLIENT_URL=http://localhost:8081
 export DOCUMENT_SERVICE_URL=http://localhost:8082
-export HEARING_EVENT_JSON_ENABLED=false

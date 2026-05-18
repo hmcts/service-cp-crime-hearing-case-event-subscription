@@ -65,7 +65,7 @@ Switch on in tests via `application-test.yaml` or `@TestPropertySource(propertie
 ## Database
 
 ### Table: `notification_payload`
-
+        
 Stores the raw `EventPayload` JSON **once per inbound event**.
 
 ```sql

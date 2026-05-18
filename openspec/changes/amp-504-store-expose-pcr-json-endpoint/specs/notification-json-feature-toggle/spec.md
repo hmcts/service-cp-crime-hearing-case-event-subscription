@@ -34,10 +34,3 @@ The service SHALL declare `hearing-event.json.enabled` as a Spring property in `
 - **THEN** `NotificationController` is instantiated with `hearingEventJsonEnabled = false` and existing POST endpoint behaviour is unchanged
 
 ---
-
-### Requirement: HEARING_EVENT_JSON_ENABLED documented in .envrc.example
-The `.envrc.example` file SHALL include an entry for `HEARING_EVENT_JSON_ENABLED` with value `false`.
-
-#### Scenario: Developer copies .envrc.example
-- **WHEN** a developer copies `.envrc.example` to `.envrc`
-- **THEN** `HEARING_EVENT_JSON_ENABLED` is present and set to `false` by default
