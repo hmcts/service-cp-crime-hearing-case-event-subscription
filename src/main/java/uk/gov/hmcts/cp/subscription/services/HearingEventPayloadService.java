@@ -5,10 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
-<<<<<<< HEAD
-=======
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
->>>>>>> 377e8aa (AMP-504 Added support to save eventPayload in db.)
 import uk.gov.hmcts.cp.subscription.mappers.HearingEventPayloadMapper;
 import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
