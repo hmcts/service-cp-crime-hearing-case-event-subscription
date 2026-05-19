@@ -6,3 +6,51 @@
 
 - [x] 2.1 Inject `@Value("${hearing-event.json.enabled:false}") boolean hearingEventJsonEnabled` into `CallbackDeliveryService`
 - [x] 2.2 Inject `@Value("${hearing-event.json.enabled:false}") boolean hearingEventJsonEnabled` into `NotificationController`
+
+## 3. Database Migrations
+
+- [x] 3.1 Create `src/main/resources/db/migration/V1.013__add_hearing_event_payload.sql`
+- [x] 3.2 Create `src/main/resources/db/migration/V1.014__add_hearing_event_subscriptions.sql`
+
+## 4. JPA Entities
+
+- [x] 4.1 Create `HearingEventPayloadEntity` (table: `hearing_event_payload`, pk: `hearingEventId UUID` manual, converter on `rawPayload`)
+- [x] 4.2 Create `HearingEventSubscriptionEntity` (table: `hearing_event_subscriptions`, pk: `id UUID @GeneratedValue UUID`)
+
+## 5. Persistence Infrastructure
+
+- [x] 5.1 Create `EventPayloadConverter implements AttributeConverter<EventPayload, String>` — delegates to `JsonMapper`
+- [x] 5.2 Create `HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>`
+- [x] 5.3 Create `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>`
+- [x] 5.4 Create `HearingEventPayloadService` — `saveIfAbsent(EventPayload)` + `saveSubscriptionIfAbsent(UUID, UUID)`
+
+## 6. Processing Flow
+
+- [x] 6.1 Inject `HearingEventPayloadService` into `CallbackDeliveryService`
+- [x] 6.2 In `submitOutboundEvents()`: persist `HearingEventPayloadEntity` when toggle on, guarded by `existsByHearingEventId` check
+- [x] 6.3 In `submitOutboundEvents()`: persist `HearingEventSubscriptionEntity` per client when toggle on, guarded by `existsBySubscriptionIdAndHearingEventId` check
+- [ ] 6.4 Populate `hearingEventId` (from `hearing_event_subscriptions.id`) on per-subscriber `EventNotificationPayload` before queuing
+
+## 7. Unit Tests
+
+- [x] 7.1 Add V1.013 and V1.014 checksums to `FlywayMigrationIntegrityTest`
+- [x] 7.2 Add new-table deletions to `IntegrationTestBase.clearAllTables()`
+- [x] 7.3 `HearingEventPayloadServiceTest` — `saveIfAbsent()` happy path
+- [x] 7.4 `HearingEventPayloadServiceTest` — `saveIfAbsent()` unknown event type throws
+- [x] 7.5 `HearingEventPayloadServiceTest` — `saveSubscriptionIfAbsent()` persists supplied values
+- [x] 7.6 `EventPayloadConverterTest` — round-trip serialise/deserialise via `JsonMapper`
+- [x] 7.7 `CallbackDeliveryServiceTest` — toggle off: no persistence calls
+- [x] 7.8 `CallbackDeliveryServiceTest` — toggle on, `saveIfAbsent()` called
+- [x] 7.9 `CallbackDeliveryServiceTest` — toggle on, payload present: `saveIfAbsent()` skips
+- [x] 7.10 `CallbackDeliveryServiceTest` — toggle on, subscription absent: `saveSubscriptionIfAbsent()` called
+- [x] 7.11 `CallbackDeliveryServiceTest` — toggle on, subscription present: `saveSubscriptionIfAbsent()` skips
+
+## 8. Integration Tests
+
+- [x] 8.1 `HearingEventPayloadRepositoryTest` — `existsByHearingEventId` returns true
+- [x] 8.2 `HearingEventPayloadRepositoryTest` — `existsByHearingEventId` returns false
+- [x] 8.3 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns true
+- [x] 8.4 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns false
+- [x] 8.5 `HearingEventSubscriptionRepositoryTest` — `findByIdAndSubscriptionId` returns entity on match
+- [x] 8.6 `HearingEventSubscriptionRepositoryTest` — `findByIdAndSubscriptionId` returns empty on mismatch
+- [x] 8.7 `HearingEventSubscriptionRepositoryTest` — duplicate insert throws `DataIntegrityViolationException`

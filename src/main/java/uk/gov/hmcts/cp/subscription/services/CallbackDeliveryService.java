@@ -35,6 +35,7 @@ public class CallbackDeliveryService {
     private final JsonMapper jsonMapper;
     private final ServiceBusClientService clientService;
     private final HmacManager hmacManager;
+    private final HearingEventPayloadService hearingEventPayloadService;
 
     @Value("${hearing-event.json.enabled:false}")
     private boolean hearingEventJsonEnabled;
@@ -44,7 +45,16 @@ public class CallbackDeliveryService {
         final List<ClientEntity> clients = clientEventRepository.findClientsByEventType(eventType);
         final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload);
         log.info("sending {} outbound notifications", clients.size());
+
+        if (hearingEventJsonEnabled) {
+            hearingEventPayloadService.saveIfAbsent(eventPayload);
+        }
+
         for (final ClientEntity client : clients) {
+            if (hearingEventJsonEnabled) {
+                hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), eventPayload.getEventId());
+            }
+
             final ClientHmacEntity clientHmac = clientHmacRepository.findBySubscriptionId(client.getSubscriptionId())
                     .orElseThrow(() -> HMAC_NOT_FOUND);
             final String signature = hmacManager.calculateSignature(clientHmac.getKeyId(), jsonMapper.toJson(eventNotificationPayload));

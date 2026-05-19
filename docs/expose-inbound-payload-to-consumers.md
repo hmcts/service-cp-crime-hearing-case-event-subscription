@@ -35,7 +35,7 @@ When Progression or HearingNows sends us an inbound event (`EventPayload`), we c
 
 ## Feature Toggle
 
-The entire feature is gated by `HEARING_EVENT_JSON_ENABLED` (default `false`). When off: no rows are written to `notification_payload` or `notification_subscriptions`, `hearingEventId` is omitted from the outbound payload, and the GET endpoint returns 404.
+The entire feature is gated by `HEARING_EVENT_JSON_ENABLED` (default `false`). When off: no rows are written to `hearing_event_payload` or `hearing_event_subscriptions`, `hearingEventId` is omitted from the outbound payload, and the GET endpoint returns 404.
 
 ```yaml
 # application.yaml
@@ -52,9 +52,9 @@ Switch on in tests via `application-test.yaml` or `@TestPropertySource(propertie
 
 | # | Concern | Approach |
 |---|---------|----------|
-| 1 | Persist raw payload once per event | `notification_payload` table |
-| 2 | Track which subscribers received which events | `notification_subscriptions` table — one row per subscriber per event |
-| 3 | Stable consumer-facing ID | `hearingEventId` (UUID) generated per subscriber on `notification_subscriptions` |
+| 1 | Persist raw payload once per event | `hearing_event_payload` table |
+| 2 | Track which subscribers received which events | `hearing_event_subscriptions` table — one row per subscriber per event |
+| 3 | Stable consumer-facing ID | `hearingEventId` (UUID) generated per subscriber on `hearing_event_subscriptions` |
 | 4 | Block new subscribers from older events | Rows only created for subscribers active at event time — no back-fill |
 | 5 | Consumer access | New `GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}` endpoint |
 
@@ -62,20 +62,20 @@ Switch on in tests via `application-test.yaml` or `@TestPropertySource(propertie
 
 ## Database
 
-### Table: `notification_payload`
+### Table: `hearing_event_payload`
         
 Stores the raw `EventPayload` JSON **once per inbound event**.
 
 ```sql
--- V1.013__add_notification_payload.sql
-CREATE TABLE notification_payload (
+-- V1.013__add_hearing_event_payload.sql
+CREATE TABLE hearing_event_payload (
     hearing_event_id  uuid        primary key not null,
     event_type_id     integer     not null REFERENCES event_type(id),
     raw_payload       jsonb       not null,
     created_at        timestamptz not null default now()
 );
 
-CREATE INDEX idx_notification_payload_event_type ON notification_payload (event_type_id);
+CREATE INDEX idx_hearing_event_payload_event_type ON hearing_event_payload (event_type_id);
 ```
 
 | Column | Notes |
@@ -87,28 +87,28 @@ CREATE INDEX idx_notification_payload_event_type ON notification_payload (event_
 
 ---
 
-### Table: `notification_subscriptions`
+### Table: `hearing_event_subscriptions`
 
 One row per subscriber per event. This is where access control lives.
 
 ```sql
--- V1.014__add_notification_subscriptions.sql
-CREATE TABLE notification_subscriptions (
+-- V1.014__add_hearing_event_subscriptions.sql
+CREATE TABLE hearing_event_subscriptions (
     id                uuid        primary key not null,
     subscription_id   uuid        not null REFERENCES client(subscription_id),
-    hearing_event_id  uuid        not null REFERENCES notification_payload(hearing_event_id),
+    hearing_event_id  uuid        not null REFERENCES hearing_event_payload(hearing_event_id),
     created_at        timestamptz not null default now()
 );
 
-CREATE UNIQUE INDEX idx_ns_sub_event ON notification_subscriptions (subscription_id, hearing_event_id);
-CREATE INDEX idx_ns_hearing_event_id ON notification_subscriptions (hearing_event_id);
+CREATE UNIQUE INDEX idx_ns_sub_event ON hearing_event_subscriptions (subscription_id, hearing_event_id);
+CREATE INDEX idx_ns_hearing_event_id ON hearing_event_subscriptions (hearing_event_id);
 ```
 
 | Column | Notes |
 |--------|-------|
 | `id` | UUID we generate — unique per subscriber, this is the `hearingEventId` exposed to consumers |
 | `subscription_id` | FK to `client.subscription_id` |
-| `hearing_event_id` | FK to `notification_payload.hearing_event_id` |
+| `hearing_event_id` | FK to `hearing_event_payload.hearing_event_id` |
 | `created_at` | When this subscriber was notified |
 
 **Access control is implicit**: a subscriber can only retrieve a notification if a row exists for their `subscription_id`. New subscribers are never back-filled, so they have no rows for historical events.
@@ -119,18 +119,18 @@ The unique index on `(subscription_id, hearing_event_id)` also provides idempote
 
 ## Entities
 
-### `NotificationPayloadEntity`
+### `HearingEventPayloadEntity`
 ```
-table: notification_payload
+table: hearing_event_payload
 pk: hearingEventId (UUID)
 fields: eventTypeId (Long, FK → EventTypeEntity), rawPayload (String, columnDefinition="jsonb"), createdAt (OffsetDateTime)
 ```
 
-### `NotificationSubscriptionEntity`
+### `HearingEventSubscriptionEntity`
 ```
-table: notification_subscriptions
+table: hearing_event_subscriptions
 pk: id (UUID, @GeneratedValue UUID strategy)
-fields: subscriptionId (UUID), hearingEventId (UUID, FK → NotificationPayloadEntity), createdAt (OffsetDateTime)
+fields: subscriptionId (UUID), hearingEventId (UUID, FK → HearingEventPayloadEntity), createdAt (OffsetDateTime)
 ```
 
 ---
@@ -138,12 +138,12 @@ fields: subscriptionId (UUID), hearingEventId (UUID, FK → NotificationPayloadE
 ## Repositories
 
 ```java
-// NotificationPayloadRepository extends JpaRepository<NotificationPayloadEntity, String>
-boolean existsByHearingEventId(String hearingEventId);
+// HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>
+boolean existsByHearingEventId(UUID hearingEventId);
 
-// NotificationSubscriptionRepository extends JpaRepository<NotificationSubscriptionEntity, UUID>
-Optional<NotificationSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);
-boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, String hearingEventId);
+// HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>
+Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);
+boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId);
 ```
 
 ---
@@ -156,26 +156,17 @@ Both rows are created inside `CallbackDeliveryService.submitOutboundEvents()` �
 CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId)
     ↓
 1. If !existsByHearingEventId(eventId):
-       Persist NotificationPayloadEntity (hearingEventId, eventTypeId, serialize(eventPayload))
+       Persist HearingEventPayloadEntity (hearingEventId, eventTypeId, serialize(eventPayload))
 
 For each subscribed client:
     2. Skip if existsBySubscriptionIdAndHearingEventId(subscriptionId, eventId)  ← idempotency
     3. Generate id = UUID.randomUUID()
-    4. Persist NotificationSubscriptionEntity (id, subscriptionId, hearingEventId)
+    4. Persist HearingEventSubscriptionEntity (id, subscriptionId, hearingEventId)
     5. [existing] Map EventPayload → EventNotificationPayload
     6. [existing] Queue/send to subscriber
 ```
 
 ---
-
-## Outbound Payload API Spec Change
-
-The existing `EventNotificationPayload` (delivered to subscribers via callback) must be updated to include `hearingEventId` alongside the existing `documentId`. Subscribers then have two retrieval paths:
-
-| ID | Retrieval endpoint | Returns |
-|----|-------------------|---------|
-| `hearingEventId` | `GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}` | Raw JSON payload (this feature) |
-| `documentId` | `GET /getDocument/{clientSubscriptionId}/{documentId}` | Document PDF (existing) |
 
 ### API spec change (OpenAPI)
 
@@ -193,7 +184,7 @@ EventNotificationPayload:
     # ... existing fields
 ```
 
-`hearingEventId` is populated in `CallbackDeliveryService` at the point the `NotificationSubscriptionEntity` is persisted (step 3 of the processing flow above).
+`hearingEventId` is populated in `CallbackDeliveryService` at the point the `HearingEventSubscriptionEntity` is persisted (step 3 of the processing flow above).
 
 ---
 
@@ -204,9 +195,9 @@ GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}
 ```
 
 - **Auth**: `ClientIdResolutionFilter` supplies `clientId` via MDC; resolve to `subscriptionId` via `ClientRepository`.
-- **Query**: `findByIdAndSubscriptionId(hearingEventId, subscriptionId)` on `notification_subscriptions` → 404 if no row.
-- **Payload**: join to `notification_payload` via `hearing_event_id`, deserialise `rawPayload`.
-- **Layer**: `NotificationController` → `NotificationManager.getInboundPayload(clientId, hearingEventId)` → `NotificationPayloadService`.
+- **Query**: `findByIdAndSubscriptionId(hearingEventId, subscriptionId)` on `hearing_event_subscriptions` → 404 if no row.
+- **Payload**: join to `hearing_event_payload` via `hearing_event_id`, deserialise `rawPayload`.
+- **Layer**: `NotificationController` → `NotificationManager.getInboundPayload(clientId, hearingEventId)` → `HearingEventPayloadService`.
 
 ### Response shape (draft)
 
@@ -232,12 +223,12 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 
 ## Checklist
 
-- [ ] `V1.013__add_notification_payload.sql`
-- [ ] `V1.014__add_notification_subscriptions.sql`
-- [ ] `NotificationPayloadEntity` + `NotificationSubscriptionEntity`
-- [ ] `NotificationPayloadRepository` + `NotificationSubscriptionRepository`
+- [ ] `V1.013__add_hearing_event_payload.sql`
+- [ ] `V1.014__add_hearing_event_subscriptions.sql`
+- [ ] `HearingEventPayloadEntity` + `HearingEventSubscriptionEntity`
+- [ ] `HearingEventPayloadRepository` + `HearingEventSubscriptionRepository`
 - [ ] `EventPayloadConverter` (JPA `AttributeConverter`)
-- [ ] `NotificationPayloadService` — `save()` + `getByHearingEventId(clientId, hearingEventId)`
+- [ ] `HearingEventPayloadService` — `save()` + `getByHearingEventId(clientId, hearingEventId)`
 - [ ] `NotificationManager.getInboundPayload()` — thin orchestration
 - [ ] `NotificationController` — new GET endpoint
 - [ ] `InboundPayloadResponse` DTO (OpenAPI spec update → `openApiGenerate`)
