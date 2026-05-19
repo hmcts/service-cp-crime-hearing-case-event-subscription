@@ -2,22 +2,13 @@
 
 ## Open Decisions
 
-> These need team sign-off before implementation begins.
+### a) Payload storage format — **resolved: JSONB**
 
-### a) Payload storage format — string vs structured data
-
-Should `raw_payload` be stored as `JSONB` (structured, queryable) or encrypted `TEXT` (see decision b)?
-
-| Option | Pros | Cons |
-|--------|------|------|
-| `JSONB` | PostgreSQL JSON path queries; human-readable in DB | PII visible in plaintext to anyone with DB access |
-| Encrypted `TEXT` | PII protected at rest | Cannot query payload fields in SQL; requires app-layer decrypt on every read |
-
-**Note:** if we encrypt (decision b), JSONB is moot — we must use `TEXT`.
+Implemented as `JSONB` in `hearing_event_payload.raw_payload`. Encryption (decision b) is deferred; if adopted, the column type will change to `TEXT` and an `AttributeConverter` (`EventPayloadConverter`) will handle encrypt-before-insert / decrypt-after-select.
 
 ---
 
-### b) Encrypt payload at rest — **Colin says yes**
+### b) Encrypt payload at rest — **Colin says yes — deferred to future **
 
 The payload contains `DefendantName` and `DefendantDateOfBirth`, which are personal data. Storing in plaintext means anyone with database access can read it.
 
@@ -44,6 +35,8 @@ hearing-event:
     enabled: ${HEARING_EVENT_JSON_ENABLED:false}
 ```
 
+The toggle is injected into `NotificationManager` (which has no repository dependencies) and passed as a `boolean` parameter to `CallbackDeliveryService.submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled)`. This keeps persistence-owning classes toggle-blind (T4).
+
 Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = "hearing-event.json.enabled=true")`.
 
 ---
@@ -63,7 +56,7 @@ Switch on in tests via `application-test.yaml` or `@TestPropertySource(propertie
 ## Database
 
 ### Table: `hearing_event_payload`
-        
+
 Stores the raw `EventPayload` JSON **once per inbound event**.
 
 ```sql
@@ -82,7 +75,7 @@ CREATE INDEX idx_hearing_event_payload_event_type ON hearing_event_payload (even
 | Column | Notes |
 |--------|-------|
 | `hearing_event_id` | UUID — service-generated PK (`@GeneratedValue`); FK target in `hearing_event_subscriptions`; opaque to external callers |
-| `event_id` | UUID — the `eventId` from the inbound `EventPayload`; natural key for idempotency; `UNIQUE` enforces one row per inbound event |
+| `event_id` | UUID — the `eventId` from the inbound `EventPayload`; natural key for idempotency; `UNIQUE` enforces one row per inbound event at DB level |
 | `event_type_id` | FK to `event_type(id)` |
 | `raw_payload` | Full `EventPayload` serialised as JSONB |
 | `created_at` | Ingest timestamp |
@@ -144,32 +137,38 @@ fields: subscriptionId (UUID), hearingEventId (UUID, FK → HearingEventPayloadE
 
 ```java
 // HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>
-boolean existsByEventId(UUID eventId);  // idempotency check using the external inbound event identity
+// No application-level existence check — idempotency on event_id is enforced by the DB UNIQUE constraint
 
 // HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>
-Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);
-boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId);
+boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId);  // implemented
+Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);  // future: needed for GET endpoint
 ```
 
 ---
 
 ## Processing Flow
 
-Both rows are created inside `CallbackDeliveryService.submitOutboundEvents()` — at the point where we already have the list of subscribed clients.
+The toggle decision is made in `NotificationManager` and passed as a boolean to `CallbackDeliveryService`. Both payload and subscription rows are created inside `submitOutboundEvents()` — at the point where the list of subscribed clients is available.
 
 ```
-CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId)
+NotificationManager.processNotification(EventPayload)
     ↓
-1. If !existsByEventId(eventPayload.eventId):
-       Persist HearingEventPayloadEntity (eventId, eventTypeId, serialize(eventPayload))
+    hearingEventJsonEnabled = @Value field (default false)
+    ↓
+CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId, hearingEventJsonEnabled)
+    ↓
+1. If hearingEventJsonEnabled:
+       hearingEventPayloadService.saveIfAbsent(eventPayload)
+       → resolves eventTypeId, persists HearingEventPayloadEntity
        → returns service-generated hearingEventId (UUID)
-   Else: returns null (row already exists)
+       → DB UNIQUE constraint on event_id rejects duplicate on re-delivery
 
 For each subscribed client (only when hearingEventId != null):
-    2. Skip if existsBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId)  ← idempotency
-    3. Persist HearingEventSubscriptionEntity (id=@GeneratedValue, subscriptionId, hearingEventId)
-    4. [existing] Map EventPayload → EventNotificationPayload
-    5. [existing] Queue/send to subscriber
+    2. hearingEventPayloadService.saveSubscriptionIfAbsent(subscriptionId, hearingEventId)
+       → skips if existsBySubscriptionIdAndHearingEventId  ← application-level idempotency for subscriptions
+       → else persists HearingEventSubscriptionEntity (id=@GeneratedValue, subscriptionId, hearingEventId)
+    3. [existing] Map EventPayload → EventNotificationPayload
+    4. [existing] Queue/send to subscriber
 ```
 
 ---
@@ -190,7 +189,7 @@ EventNotificationPayload:
     # ... existing fields
 ```
 
-`hearingEventId` is populated in `CallbackDeliveryService` at the point the `HearingEventSubscriptionEntity` is persisted (step 3 of the processing flow above).
+`hearingEventId` is populated in `CallbackDeliveryService` at the point the `HearingEventSubscriptionEntity` is persisted (step 2 of the processing flow above).
 
 ---
 
@@ -223,24 +222,29 @@ GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}
 
 Use `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload` — Hibernate 6 binds the column as `Types.OTHER`, which PostgreSQL accepts for `jsonb` columns without a cast. No separate `AttributeConverter` class is needed.
 
+**Known trade-off**: Hibernate uses its own internal `ObjectMapper`, not the project's `JsonMapper` bean. If `EventPayload.timestamp (Instant)` is populated, it will be serialised as epoch seconds rather than ISO-8601. This is accepted as deferred — `EventPayload.timestamp` is not currently populated by inbound PCR events.
+
 Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 
 ---
 
 ## Checklist
 
-- [ ] `V1.013__add_hearing_event_payload.sql`
-- [ ] `V1.014__add_hearing_event_subscriptions.sql`
-- [ ] `HearingEventPayloadEntity` + `HearingEventSubscriptionEntity`
-- [ ] `HearingEventPayloadRepository` + `HearingEventSubscriptionRepository`
-- [ ] `HearingEventPayloadService` — `saveIfAbsent(EventPayload)` + `saveSubscriptionIfAbsent(UUID, UUID)` + `getByHearingEventId(clientId, hearingEventId)`
-- [ ] `NotificationManager.getInboundPayload()` — thin orchestration
+- [x] `V1.013__add_hearing_event_payload.sql`
+- [x] `V1.014__add_hearing_event_subscriptions.sql`
+- [x] `HearingEventPayloadEntity` + `HearingEventSubscriptionEntity`
+- [x] `HearingEventPayloadRepository` + `HearingEventSubscriptionRepository`
+- [x] `HearingEventPayloadService` — `saveIfAbsent(EventPayload)` + `saveSubscriptionIfAbsent(UUID, UUID)`
+- [x] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
+- [x] `HEARING_EVENT_JSON_ENABLED` property wired into `NotificationManager` (passed as parameter to `CallbackDeliveryService`) and `NotificationController`
+- [x] Idempotency guards — DB UNIQUE constraint on `event_id`; `existsBySubscriptionIdAndHearingEventId` before subscription insert
+- [x] Unit tests for service, mapper, idempotency path, and toggle behaviour
+- [x] Integration tests for repository persistence and unique constraint
+- [ ] `HearingEventPayloadService.getByHearingEventId(clientId, hearingEventId)` — needed for GET endpoint
+- [ ] `findByIdAndSubscriptionId` on `HearingEventSubscriptionRepository` — needed for GET endpoint
+- [ ] `NotificationManager.getInboundPayload()` — thin orchestration for GET endpoint
 - [ ] `NotificationController` — new GET endpoint
 - [ ] `InboundPayloadResponse` DTO (OpenAPI spec update → `openApiGenerate`)
 - [ ] Add `hearingEventId` to `EventNotificationPayload` in OpenAPI spec → `openApiGenerate`
 - [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService`
-- [ ] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
-- [ ] `HEARING_EVENT_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`
-- [ ] Idempotency guards before each insert
-- [ ] Unit tests for service + idempotency path
 - [ ] Integration test: POST createNotification → GET payload returns same data; new subscriber cannot GET older notification

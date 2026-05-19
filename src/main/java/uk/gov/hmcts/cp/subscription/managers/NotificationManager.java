@@ -2,6 +2,7 @@ package uk.gov.hmcts.cp.subscription.managers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -28,10 +29,13 @@ public class NotificationManager {
     private final SubscriptionService subscriptionService;
     private final CallbackDeliveryService callbackDeliveryService;
 
+    @Value("${hearing-event.json.enabled:false}")
+    private boolean hearingEventJsonEnabled;
+
     public void processNotification(final EventPayload eventPayload) {
         log.info("processNotification eventId:{} materialId:{}", eventPayload.getEventId(), eventPayload.getMaterialId());
         final UUID documentId = notificationService.processInboundEvent(eventPayload);
-        callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
+        callbackDeliveryService.submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled);
         log.info("processNotification complete eventId:{} documentId:{}", eventPayload.getEventId(), documentId);
     }
 

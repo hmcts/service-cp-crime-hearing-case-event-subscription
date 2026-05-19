@@ -4,7 +4,7 @@
 
 ## 2. Service Wiring
 
-- [x] 2.1 Inject `@Value("${hearing-event.json.enabled:false}") boolean hearingEventJsonEnabled` into `CallbackDeliveryService`
+- [x] 2.1 Inject `@Value("${hearing-event.json.enabled:false}") boolean hearingEventJsonEnabled` into `NotificationManager`; pass as `boolean` parameter to `CallbackDeliveryService.submitOutboundEvents()` (T4: toggle kept in the orchestrator that has no repository dependencies)
 - [x] 2.2 Inject `@Value("${hearing-event.json.enabled:false}") boolean hearingEventJsonEnabled` into `NotificationController`
 
 ## 3. Database Migrations
@@ -21,14 +21,14 @@
 
 - [x] 5.1 `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload` — Hibernate 6 binds as `Types.OTHER`; no separate converter class needed
 - [x] 5.2 Create `HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>`
-- [x] 5.3 Create `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>`
-- [x] 5.4 Create `HearingEventPayloadService` — `UUID saveIfAbsent(EventPayload)` (returns generated `hearingEventId` or `null` if already exists) + `saveSubscriptionIfAbsent(UUID, UUID)`
+- [x] 5.3 Create `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>` with `existsBySubscriptionIdAndHearingEventId`
+- [x] 5.4 Create `HearingEventPayloadService` — `UUID saveIfAbsent(EventPayload)` (null-checks `eventId`; persists entity and returns generated `hearingEventId`; DB `UNIQUE` constraint on `event_id` enforces idempotency at storage level) + `saveSubscriptionIfAbsent(UUID, UUID)` (guarded by `existsBySubscriptionIdAndHearingEventId`)
 
 ## 6. Processing Flow
 
 - [x] 6.1 Inject `HearingEventPayloadService` into `CallbackDeliveryService`
-- [x] 6.2 In `submitOutboundEvents()`: persist `HearingEventPayloadEntity` when toggle on, guarded by `existsByEventId` check; capture returned `hearingEventId`
-- [x] 6.3 In `submitOutboundEvents()`: persist `HearingEventSubscriptionEntity` per client when toggle on and `hearingEventId != null`, guarded by `existsBySubscriptionIdAndHearingEventId` check
+- [x] 6.2 In `submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled)`: when toggle `true`, call `hearingEventPayloadService.saveIfAbsent(eventPayload)` and capture returned `hearingEventId`
+- [x] 6.3 In `submitOutboundEvents()`: persist `HearingEventSubscriptionEntity` per client when toggle on and `hearingEventId != null`, guarded by `existsBySubscriptionIdAndHearingEventId` check inside `saveSubscriptionIfAbsent`
 
 ## 7. Unit Tests
 
@@ -38,19 +38,17 @@
 - [x] 7.4 `HearingEventPayloadServiceTest` — `saveIfAbsent()` unknown event type throws
 - [x] 7.5 `HearingEventPayloadServiceTest` — `saveSubscriptionIfAbsent()` persists supplied values
 - [x] 7.6 `HearingEventPayloadServiceTest` — `saveSubscriptionIfAbsent()` skips when row already exists
-- [x] 7.7 `CallbackDeliveryServiceTest` — toggle off: no persistence calls
-- [x] 7.8 `CallbackDeliveryServiceTest` — toggle on, `saveIfAbsent()` called
-- [x] 7.9 `CallbackDeliveryServiceTest` — toggle on, payload present: `saveIfAbsent()` skips
+- [x] 7.7 `CallbackDeliveryServiceTest` — toggle off (`false` parameter): no persistence calls
+- [x] 7.8 `CallbackDeliveryServiceTest` — toggle on (`true` parameter), `saveIfAbsent()` called
+- [x] 7.9 `CallbackDeliveryServiceTest` — toggle on, `saveIfAbsent()` returns null (re-delivery): `saveSubscriptionIfAbsent()` never called
 - [x] 7.10 `CallbackDeliveryServiceTest` — toggle on, subscription absent: `saveSubscriptionIfAbsent()` called
 - [x] 7.11 `CallbackDeliveryServiceTest` — toggle on, subscription present: `saveSubscriptionIfAbsent()` skips
-- [x] 7.12 `CallbackDeliveryServiceTest` — toggle on, `saveIfAbsent()` returns null (re-delivery): `saveSubscriptionIfAbsent()` never called
+- [x] 7.12 `HearingEventPayloadMapperTest` — `toEntity` maps all fields; `toSubscriptionEntity` maps all fields
+- [x] 7.13 `NotificationManagerTest` — `processNotification` passes `hearingEventJsonEnabled` (default `false`) to `submitOutboundEvents`
 
 ## 8. Integration Tests
 
-- [x] 8.1 `HearingEventPayloadRepositoryTest` — `existsByEventId` returns true
-- [x] 8.2 `HearingEventPayloadRepositoryTest` — `existsByEventId` returns false
-- [x] 8.3 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns true
-- [x] 8.4 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns false
-- [x] 8.5 `HearingEventSubscriptionRepositoryTest` — `findByIdAndSubscriptionId` returns entity on match
-- [x] 8.6 `HearingEventSubscriptionRepositoryTest` — `findByIdAndSubscriptionId` returns empty on mismatch
-- [x] 8.7 `HearingEventSubscriptionRepositoryTest` — duplicate insert throws `DataIntegrityViolationException`
+- [x] 8.1 `HearingEventPayloadRepositoryTest` — saved entity has service-generated `hearingEventId` (not null) and `eventId` set correctly
+- [x] 8.2 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns true for existing pair
+- [x] 8.3 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns false for unknown pair
+- [x] 8.4 `HearingEventSubscriptionRepositoryTest` — duplicate insert throws `DataIntegrityViolationException`

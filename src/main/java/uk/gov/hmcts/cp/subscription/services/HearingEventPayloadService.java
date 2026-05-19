@@ -27,10 +27,6 @@ public class HearingEventPayloadService {
     @Transactional
     public UUID saveIfAbsent(final EventPayload eventPayload) {
         final UUID eventId = Objects.requireNonNull(eventPayload.getEventId(), "eventId must not be null");
-        if (hearingEventPayloadRepository.existsByEventId(eventId)) {
-            log.info("hearing_event_payload already exists for eventId={}, skipping", eventId);
-            return null;
-        }
         final Long eventTypeId = eventTypeRepository.findByEventName(eventPayload.getEventType())
                 .orElseThrow(() -> new IllegalArgumentException("Unknown event type: " + eventPayload.getEventType()))
                 .getId();

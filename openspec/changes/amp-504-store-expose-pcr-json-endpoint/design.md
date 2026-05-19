@@ -2,13 +2,13 @@
 
 AMP-504 introduces payload storage and a new retrieval endpoint for PCR events. To allow safe incremental delivery, all new behaviour is gated behind `HEARING_EVENT_JSON_ENABLED`. This design covers only the toggle wiring; subsequent changes will add the actual storage and endpoint logic behind it.
 
-`CallbackDeliveryService` and `NotificationController` currently have no feature-flag injection. The toggle must be wired into both before any gated logic is added so that the two classes are toggle-aware from day one.
+`NotificationController` currently has no feature-flag injection. The toggle is injected into `NotificationManager` (the orchestrator with no repository dependencies) and passed as a `boolean` parameter to `CallbackDeliveryService.submitOutboundEvents()`, keeping persistence-owning classes toggle-blind (T4).
 
 ## Goals / Non-Goals
 
 **Goals:**
 - Add `hearing-event.json.enabled` Spring property backed by `HEARING_EVENT_JSON_ENABLED` env var (default `false`)
-- Inject the flag into `CallbackDeliveryService` and `NotificationController` as a `boolean` field
+- Inject the flag into `NotificationManager` and `NotificationController` as a `boolean` field; pass to `CallbackDeliveryService` as a method parameter
 - Create `hearing_event_payload` and `hearing_event_subscriptions` tables via Flyway
 - Persist raw `EventPayload` and per-subscriber subscription rows in `CallbackDeliveryService`, guarded by the toggle
 - Idempotency guards on both inserts
@@ -32,9 +32,9 @@ The toggle is a single boolean. A dedicated properties class would be justified 
 
 `HearingEventPayloadEntity` separates two identities:
 - `hearingEventId (UUID)` — `@Id @GeneratedValue(strategy = GenerationType.UUID)`: service-internal PK, FK target in `hearing_event_subscriptions`. Never supplied by the caller; Hibernate generates it on insert.
-- `eventId (UUID)` — plain field, maps to `event_id UUID NOT NULL UNIQUE`: the external inbound identity from `EventPayload.getEventId()`. Used as the natural key for idempotency checks (`existsByEventId`). This is what callers supply; `hearingEventId` is what consumers receive.
+- `eventId (UUID)` — plain field, maps to `event_id UUID NOT NULL UNIQUE`: the external inbound identity from `EventPayload.getEventId()`. The `UNIQUE` constraint on `event_id` enforces idempotency at the DB level. This is what callers supply; `hearingEventId` is what consumers receive.
 
-`saveIfAbsent` returns the generated `hearingEventId` (or `null` if the row already existed) so `CallbackDeliveryService` can thread it to `saveSubscriptionIfAbsent` without a second lookup.
+`saveIfAbsent` persists the entity and returns the generated `hearingEventId`. On re-delivery the DB `UNIQUE` constraint rejects the duplicate insert. `CallbackDeliveryService` guards `saveSubscriptionIfAbsent` with `hearingEventId != null` for defensive robustness.
 
 ### D3 — `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload`
 
@@ -44,9 +44,11 @@ The toggle is a single boolean. A dedicated properties class would be justified 
 
 **Alternative considered**: `AttributeConverter<EventPayload, String>` — rejected because Hibernate binds the converted `String` as `VARCHAR`, which PostgreSQL rejects for `jsonb` columns without a `@ColumnTransformer(write = "?::jsonb")` workaround.
 
-### D4 — Persistence in `CallbackDeliveryService`, not `NotificationService`
+### D4 — Persistence logic in `CallbackDeliveryService`; toggle decision in `NotificationManager`
 
 Both rows are created in `CallbackDeliveryService.submitOutboundEvents()` because the subscribed client list is only available there. `HearingEventPayloadService` is the persistence abstraction injected into it.
+
+The `hearingEventJsonEnabled` toggle is held by `NotificationManager` (which has no repository dependencies) and passed as a `boolean` parameter to `submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled)`. This keeps `CallbackDeliveryService` toggle-blind at the field level (T4), while preserving the toggle-gated behaviour at the call site.
 
 ### D5 — Per-subscriber `hearingEventId` requires per-client payload instance
 
@@ -66,7 +68,7 @@ Both rows are created in `CallbackDeliveryService.submitOutboundEvents()` becaus
 
 ### D6 — Test strategy: real PostgreSQL, no H2
 
-Repository tests extend `IntegrationTestBase` (PostgreSQL 15 on port 5433 via docker-compose). H2 is not used anywhere in this codebase. `IntegrationTestBase.clearAllTables()` is extended to delete from `hearing_event_subscriptions` then `hearing_event_payload` (child before parent, per FK constraint). Unit tests for `HearingEventPayloadService` use `@ExtendWith(MockitoExtension.class)`. Toggle-sensitive scenarios in `CallbackDeliveryServiceTest` use `ReflectionTestUtils.setField()` to set the non-constructor `@Value` field.
+Repository tests extend `IntegrationTestBase` (PostgreSQL 15 on port 5433 via docker-compose). H2 is not used anywhere in this codebase. `IntegrationTestBase.clearAllTables()` is extended to delete from `hearing_event_subscriptions` then `hearing_event_payload` (child before parent, per FK constraint). Unit tests for `HearingEventPayloadService` use `@ExtendWith(MockitoExtension.class)`. Toggle-sensitive scenarios in `CallbackDeliveryServiceTest` pass `true` or `false` directly as the third argument to `submitOutboundEvents()` — no `ReflectionTestUtils.setField()` needed.
 
 ## Open Questions
 

@@ -47,7 +47,6 @@ class NotificationManagerTest {
     UUID materialId = UUID.randomUUID();
     UUID documentId = UUID.randomUUID();
     UUID subscriptionId = UUID.randomUUID();
-    UUID clientId = UUID.fromString("11111111-2222-3333-4444-555555555555");
     EventPayload payload = EventPayload.builder()
             .materialId(materialId)
             .eventType("PRISON_COURT_REGISTER_GENERATED")
@@ -66,7 +65,7 @@ class NotificationManagerTest {
         notificationManager.processNotification(payload);
 
         verify(notificationService).processInboundEvent(eq(payload));
-        verify(callbackDeliveryService).submitOutboundEvents(payload, documentId);
+        verify(callbackDeliveryService).submitOutboundEvents(payload, documentId, false);
     }
 
     @Test

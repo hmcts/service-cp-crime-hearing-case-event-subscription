@@ -3,7 +3,6 @@ package uk.gov.hmcts.cp.subscription.services;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cp.hmac.managers.HmacManager;
 import uk.gov.hmcts.cp.openapi.model.EventNotificationPayload;
@@ -37,20 +36,17 @@ public class CallbackDeliveryService {
     private final HmacManager hmacManager;
     private final HearingEventPayloadService hearingEventPayloadService;
 
-    @Value("${hearing-event.json.enabled:false}")
-    private boolean hearingEventJsonEnabled;
-
-    public void submitOutboundEvents(final EventPayload eventPayload, final UUID documentId) {
+    public void submitOutboundEvents(final EventPayload eventPayload, final UUID documentId, final boolean hearingEventJsonEnabled) {
         final String eventType = eventPayload.getEventType();
         final List<ClientEntity> clients = clientEventRepository.findClientsByEventType(eventType);
         final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload);
         log.info("sending {} outbound notifications", clients.size());
 
-        final UUID hearingEventId = hearingEventJsonEnabled ? persistEventPayload(eventPayload) : null;
+        final UUID hearingEventId = hearingEventJsonEnabled ? hearingEventPayloadService.saveIfAbsent(eventPayload) : null;
 
         for (final ClientEntity client : clients) {
             if (hearingEventJsonEnabled && hearingEventId != null) {
-                persistEventPayloadAndSubscription(hearingEventId, client);
+                hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), hearingEventId);
             }
 
             final ClientHmacEntity clientHmac = clientHmacRepository.findBySubscriptionId(client.getSubscriptionId())
@@ -64,13 +60,5 @@ public class CallbackDeliveryService {
                 clientService.queueMessage(NOTIFICATIONS_OUTBOUND_QUEUE, client.getCallbackUrl(), payload, 0);
             }
         }
-    }
-
-    private void persistEventPayloadAndSubscription(final UUID hearingEventId, final ClientEntity client) {
-        hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), hearingEventId);
-    }
-
-    private UUID persistEventPayload(final EventPayload eventPayload) {
-        return hearingEventPayloadService.saveIfAbsent(eventPayload);
     }
 }

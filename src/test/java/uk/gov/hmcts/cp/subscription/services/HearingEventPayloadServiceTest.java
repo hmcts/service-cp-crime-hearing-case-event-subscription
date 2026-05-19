@@ -57,7 +57,6 @@ class HearingEventPayloadServiceTest {
                 .eventTypeId(1L)
                 .rawPayload(eventPayload)
                 .build();
-        when(hearingEventPayloadRepository.existsByEventId(eventId)).thenReturn(false);
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.of(eventTypeEntity));
         when(hearingEventPayloadMapper.toEntity(eventId, 1L, eventPayload)).thenReturn(entity);
         when(hearingEventPayloadRepository.save(entity)).thenReturn(entity);
@@ -70,7 +69,6 @@ class HearingEventPayloadServiceTest {
 
     @Test
     void saveIfAbsent_should_skip_when_already_exists() {
-        when(hearingEventPayloadRepository.existsByEventId(eventId)).thenReturn(true);
 
         UUID result = hearingEventPayloadService.saveIfAbsent(eventPayload);
 
@@ -91,7 +89,6 @@ class HearingEventPayloadServiceTest {
 
     @Test
     void saveIfAbsent_should_throw_when_event_type_is_unknown() {
-        when(hearingEventPayloadRepository.existsByEventId(eventId)).thenReturn(false);
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> hearingEventPayloadService.saveIfAbsent(eventPayload))
