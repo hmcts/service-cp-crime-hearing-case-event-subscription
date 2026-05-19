@@ -64,13 +64,13 @@ public class CallbackDeliveryService {
         }
     }
 
-    private void persistEventPayloadAndSubscription(EventPayload eventPayload, ClientEntity client) {
+    private void persistEventPayloadAndSubscription(final EventPayload eventPayload, final ClientEntity client) {
         if (hearingEventJsonEnabled) {
             hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), eventPayload.getEventId());
         }
     }
 
-    private void persistEventPayload(EventPayload eventPayload) {
+    private void persistEventPayload(final EventPayload eventPayload) {
         if (hearingEventJsonEnabled) {
             hearingEventPayloadService.saveIfAbsent(eventPayload);
         }

@@ -23,7 +23,7 @@ The service SHALL have a Flyway migration `V1.014__add_hearing_event_subscriptio
 ---
 
 ### Requirement: HearingEventPayloadEntity exists
-The service SHALL have a JPA entity `HearingEventPayloadEntity` mapping `hearing_event_payload` with: PK `hearingEventId (UUID)` manually assigned (no `@GeneratedValue`), `eventTypeId (Long)` plain field, `rawPayload (String, @Column(columnDefinition="jsonb"))` annotated with `@Convert(converter = EventPayloadConverter.class)`, `createdAt (OffsetDateTime)`. Lombok: `@Getter @Builder @NoArgsConstructor @AllArgsConstructor @EqualsAndHashCode`.
+The service SHALL have a JPA entity `HearingEventPayloadEntity` mapping `hearing_event_payload` with: PK `hearingEventId (UUID)` manually assigned (no `@GeneratedValue`), `eventTypeId (Long)` plain field, `rawPayload (EventPayload)` annotated with `@JdbcTypeCode(SqlTypes.JSON)` and `@Column(columnDefinition = "jsonb")`, `createdAt (OffsetDateTime)`. Lombok: `@Getter @Builder @NoArgsConstructor @AllArgsConstructor @EqualsAndHashCode`.
 
 #### Scenario: Entity maps to correct table
 - **WHEN** `HearingEventPayloadEntity` is persisted
