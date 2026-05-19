@@ -35,16 +35,26 @@ When Progression or HearingNows sends us an inbound event (`EventPayload`), we c
 
 ## Feature Toggle
 
-The entire feature is gated by `HEARING_EVENT_JSON_ENABLED` (default `false`). When off: no rows are written to `notification_payload` or `notification_subscriptions`, `hearingEventId` is omitted from the outbound payload, and the GET endpoint returns 404.
+The entire feature is gated by **two independent checks**, both of which must be true for the feature to be active:
+
+1. `HEARING_EVENT_JSON_ENABLED=true`
+2. `ENVIRONMENT_NAME` is one of: `LOCAL`, `DEV`, `SIT` (or `UNKNOWN`, the local-developer default)
+
+Setting the flag in `PRP` or `PRD` has no effect — the feature stays off. This prevents raw payload exposure reaching production until the encryption decision (see decision b above) is resolved.
 
 ```yaml
 # application.yaml
 hearing-event:
   json:
     enabled: ${HEARING_EVENT_JSON_ENABLED:false}
+
+environment:
+  name: ${ENVIRONMENT_NAME:UNKNOWN}
 ```
 
-Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = "hearing-event.json.enabled=true")`.
+When off (either flag unset or wrong environment): no rows are written to `notification_payload` or `notification_subscriptions`, `hearingEventId` is omitted from the outbound payload, and the GET endpoint returns 404.
+
+Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = {"hearing-event.json.enabled=true", "environment.name=SIT"})`.
 
 ---
 
@@ -244,7 +254,7 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 - [ ] Add `hearingEventId` to `EventNotificationPayload` in OpenAPI spec → `openApiGenerate`
 - [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService`
 - [ ] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
-- [ ] `HEARING_EVENT_JSON_ENABLED` property wired into `CallbackDeliveryService` and `NotificationController`
+- [ ] `HEARING_EVENT_JSON_ENABLED` + `ENVIRONMENT_NAME` guard wired into `CallbackDeliveryService` and `NotificationController` — feature must be disabled in `PRP`/`PRD` even if the flag is set
 - [ ] Idempotency guards before each insert
 - [ ] Unit tests for service + idempotency path
 - [ ] Integration test: POST createNotification → GET payload returns same data; new subscriber cannot GET older notification
