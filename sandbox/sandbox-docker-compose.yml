@@ -1,0 +1,75 @@
+name: hrds-sandbox
+
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  # WARNING - See README.md for running mssql on macbook with apple chip
+  sqledge:
+    image: mcr.microsoft.com/azure-sql-edge:latest
+    platform: linux/amd64
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Str0ngPassword!"
+
+  servicebus:
+    image: mcr.microsoft.com/azure-messaging/servicebus-emulator:latest
+    volumes:
+      - ../docker/service-bus-config.json:/ServiceBus_Emulator/ConfigFiles/Config.json
+    ports:
+      - "5672:5672"
+      - "5300:5300"
+    environment:
+      SQL_SERVER: sqledge
+      MSSQL_SA_PASSWORD: "Str0ngPassword!"
+      ACCEPT_EULA: "Y"
+      SQL_WAIT_INTERVAL: 60
+    depends_on:
+      - sqledge
+
+  wiremock:
+    image: wiremock/wiremock:3.13.2
+    ports:
+      - "8090:8080"
+      - "8443:8443"
+    volumes:
+      - ../stubs/material-client/mappings:/home/wiremock/mappings
+      - ../stubs/material-client/__files:/home/wiremock/__files
+    command:
+      - "--global-response-templating"
+      - "--verbose"
+      - "--https-port=8443"
+
+  hrds-app:
+    image: ghcr.io/hmcts/service-cp-crime-hearing-results-document-subscription:1.2.5-998c446
+    platform: linux/amd64
+    ports:
+      - "4550:4550"
+    environment:
+      SERVER_PORT: 4550
+      DATASOURCE_URL: jdbc:postgresql://db:5432/appdb
+      DATASOURCE_USERNAME: postgres
+      DATASOURCE_PASSWORD: postgres
+      MATERIAL_CLIENT_URL: http://wiremock:8080
+      DOCUMENT_SERVICE_URL: http://wiremock:8080
+      AZURE_SERVICE_BUS_URI: "Endpoint=sb://servicebus;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+      AZURE_SERVICE_BUS_ADMIN_URI: "Endpoint=sb://servicebus:5300;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=SAS_KEY_VALUE;UseDevelopmentEmulator=true;"
+      AZURE_VAULT_ENABLED: "false"
+      SUBSCRIPTION_OAUTH_ENABLED: "false"
+      ENVIRONMENT_NAME: LOCAL
+    depends_on:
+      - db
+      - wiremock
+      - servicebus
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4550/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s

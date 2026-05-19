@@ -236,8 +236,10 @@ jobs:
           context: .
           file: Dockerfile
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/${{ github.repository }}:${{ needs.version.outputs.artefact_version }}
+            ghcr.io/${{ github.repository }}:latest
           build-args: |
             BASE_IMAGE=eclipse-temurin:25
             JAR_FILENAME=${{ needs.build.outputs.artefact_name }}.jar

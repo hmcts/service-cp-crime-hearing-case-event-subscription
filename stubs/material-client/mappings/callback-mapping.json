@@ -1,0 +1,9 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPattern": "/callback"
+  },
+  "response": {
+    "status": 202
+  }
+}

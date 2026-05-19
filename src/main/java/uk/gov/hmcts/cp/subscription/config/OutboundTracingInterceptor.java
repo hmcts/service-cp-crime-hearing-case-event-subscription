@@ -23,7 +23,7 @@ public class OutboundTracingInterceptor implements ClientHttpRequestInterceptor 
         // TODO - discuss with Srivani and preferably throw error if we have no correlationId in MDC ?
         final String correlationId = MDC.get(CORRELATION_ID_KEY);
         request.getHeaders().set(CORRELATION_ID_KEY, correlationId);
-        log.info("intercepted request:{} with correlationId:{}", request.getURI(), correlationId);
+        log.info("intercepted client request:{} with correlationId:{}", request.getURI(), correlationId);
         return execution.execute(request, body);
     }
 }
