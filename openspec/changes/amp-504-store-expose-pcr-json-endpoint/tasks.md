@@ -9,12 +9,12 @@
 
 ## 3. Database Migrations
 
-- [x] 3.1 Create `src/main/resources/db/migration/V1.013__add_hearing_event_payload.sql`
+- [x] 3.1 Create `src/main/resources/db/migration/V1.013__add_hearing_event_payload.sql` — includes `hearing_event_id UUID PRIMARY KEY` (`@GeneratedValue`), `event_id UUID NOT NULL UNIQUE` (inbound event identity), and index on both
 - [x] 3.2 Create `src/main/resources/db/migration/V1.014__add_hearing_event_subscriptions.sql`
 
 ## 4. JPA Entities
 
-- [x] 4.1 Create `HearingEventPayloadEntity` (table: `hearing_event_payload`, pk: `hearingEventId UUID` manual, `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload`)
+- [x] 4.1 Create `HearingEventPayloadEntity` (table: `hearing_event_payload`, pk: `hearingEventId UUID @GeneratedValue`, add `eventId UUID` field mapping `event_id`, `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload`)
 - [x] 4.2 Create `HearingEventSubscriptionEntity` (table: `hearing_event_subscriptions`, pk: `id UUID @GeneratedValue UUID`)
 
 ## 5. Persistence Infrastructure
@@ -22,13 +22,13 @@
 - [x] 5.1 `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload` — Hibernate 6 binds as `Types.OTHER`; no separate converter class needed
 - [x] 5.2 Create `HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>`
 - [x] 5.3 Create `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>`
-- [x] 5.4 Create `HearingEventPayloadService` — `saveIfAbsent(EventPayload)` + `saveSubscriptionIfAbsent(UUID, UUID)`
+- [x] 5.4 Create `HearingEventPayloadService` — `UUID saveIfAbsent(EventPayload)` (returns generated `hearingEventId` or `null` if already exists) + `saveSubscriptionIfAbsent(UUID, UUID)`
 
 ## 6. Processing Flow
 
 - [x] 6.1 Inject `HearingEventPayloadService` into `CallbackDeliveryService`
-- [x] 6.2 In `submitOutboundEvents()`: persist `HearingEventPayloadEntity` when toggle on, guarded by `existsByHearingEventId` check
-- [x] 6.3 In `submitOutboundEvents()`: persist `HearingEventSubscriptionEntity` per client when toggle on, guarded by `existsBySubscriptionIdAndHearingEventId` check
+- [x] 6.2 In `submitOutboundEvents()`: persist `HearingEventPayloadEntity` when toggle on, guarded by `existsByEventId` check; capture returned `hearingEventId`
+- [x] 6.3 In `submitOutboundEvents()`: persist `HearingEventSubscriptionEntity` per client when toggle on and `hearingEventId != null`, guarded by `existsBySubscriptionIdAndHearingEventId` check
 
 ## 7. Unit Tests
 
@@ -46,8 +46,8 @@
 
 ## 8. Integration Tests
 
-- [x] 8.1 `HearingEventPayloadRepositoryTest` — `existsByHearingEventId` returns true
-- [x] 8.2 `HearingEventPayloadRepositoryTest` — `existsByHearingEventId` returns false
+- [x] 8.1 `HearingEventPayloadRepositoryTest` — `existsByEventId` returns true
+- [x] 8.2 `HearingEventPayloadRepositoryTest` — `existsByEventId` returns false
 - [x] 8.3 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns true
 - [x] 8.4 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns false
 - [x] 8.5 `HearingEventSubscriptionRepositoryTest` — `findByIdAndSubscriptionId` returns entity on match

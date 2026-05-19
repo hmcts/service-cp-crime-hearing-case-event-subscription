@@ -25,9 +25,8 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     @BeforeEach
     void beforeEach() {
         clearAllTables();
-        hearingEventId = randomUUID();
         subscriptionId = insertSubscription("https://callback", java.util.List.of("PRISON_COURT_REGISTER_GENERATED"));
-        saveHearingEventPayload(hearingEventId);
+        hearingEventId = saveHearingEventPayload();
     }
 
     @Test
@@ -75,15 +74,16 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    private void saveHearingEventPayload(UUID id) {
+    private UUID saveHearingEventPayload() {
         Long eventTypeId = eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")
                 .orElseThrow().getId();
-        hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
-                .hearingEventId(id)
+        HearingEventPayloadEntity saved = hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
+                .eventId(UUID.randomUUID())
                 .eventTypeId(eventTypeId)
                 .rawPayload(EventPayload.builder().eventType("PRISON_COURT_REGISTER_GENERATED").build())
                 .createdAt(OffsetDateTime.now(ZoneOffset.UTC))
                 .build());
+        return saved.getHearingEventId();
     }
 
     private HearingEventSubscriptionEntity saveSubscription(UUID subId, UUID hearingEvtId) {

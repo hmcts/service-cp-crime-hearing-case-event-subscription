@@ -1,6 +1,5 @@
 package uk.gov.hmcts.cp.subscription.services;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,7 +14,6 @@ import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,7 +52,7 @@ class HearingEventPayloadServiceTest {
 
     @Test
     void saveIfAbsent_should_persist_when_not_exists() {
-        when(hearingEventPayloadRepository.existsByHearingEventId(eventId)).thenReturn(false);
+        when(hearingEventPayloadRepository.existsByEventId(eventId)).thenReturn(false);
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.of(eventTypeEntity));
         when(hearingEventPayloadRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -63,17 +61,18 @@ class HearingEventPayloadServiceTest {
         ArgumentCaptor<HearingEventPayloadEntity> captor = ArgumentCaptor.forClass(HearingEventPayloadEntity.class);
         verify(hearingEventPayloadRepository).save(captor.capture());
         HearingEventPayloadEntity saved = captor.getValue();
-        assertThat(saved.getHearingEventId()).isEqualTo(eventId);
+        assertThat(saved.getEventId()).isEqualTo(eventId);
         assertThat(saved.getEventTypeId()).isEqualTo(1L);
         assertThat(saved.getRawPayload()).isEqualTo(eventPayload);
     }
 
     @Test
     void saveIfAbsent_should_skip_when_already_exists() {
-        when(hearingEventPayloadRepository.existsByHearingEventId(eventId)).thenReturn(true);
+        when(hearingEventPayloadRepository.existsByEventId(eventId)).thenReturn(true);
 
-        hearingEventPayloadService.saveIfAbsent(eventPayload);
+        UUID result = hearingEventPayloadService.saveIfAbsent(eventPayload);
 
+        assertThat(result).isNull();
         verify(hearingEventPayloadRepository, never()).save(any());
     }
 
@@ -90,7 +89,7 @@ class HearingEventPayloadServiceTest {
 
     @Test
     void saveIfAbsent_should_throw_when_event_type_is_unknown() {
-        when(hearingEventPayloadRepository.existsByHearingEventId(eventId)).thenReturn(false);
+        when(hearingEventPayloadRepository.existsByEventId(eventId)).thenReturn(false);
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> hearingEventPayloadService.saveIfAbsent(eventPayload))

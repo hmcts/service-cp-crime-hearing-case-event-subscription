@@ -26,9 +26,15 @@ The toggle is a single boolean. A dedicated properties class would be justified 
 
 **Alternative considered**: `@ConditionalOnProperty` on a `@Bean` — rejected because neither class is a `@Bean` definition; both are `@Service` singletons needing the flag at method call time.
 
-### D2 — FK modelling: plain fields, not `@ManyToOne`
+### D2 — FK modelling: plain fields, not `@ManyToOne`; two-identity design for `hearing_event_payload`
 
 `eventTypeId: Long` in `HearingEventPayloadEntity` and `hearingEventId: UUID` in `HearingEventSubscriptionEntity` are plain fields matching the pattern used by `ClientEventEntity` and `ClientHmacEntity`. Avoids lazy-loading surprises; JPQL `@Query` handles any joins.
+
+`HearingEventPayloadEntity` separates two identities:
+- `hearingEventId (UUID)` — `@Id @GeneratedValue(strategy = GenerationType.UUID)`: service-internal PK, FK target in `hearing_event_subscriptions`. Never supplied by the caller; Hibernate generates it on insert.
+- `eventId (UUID)` — plain field, maps to `event_id UUID NOT NULL UNIQUE`: the external inbound identity from `EventPayload.getEventId()`. Used as the natural key for idempotency checks (`existsByEventId`). This is what callers supply; `hearingEventId` is what consumers receive.
+
+`saveIfAbsent` returns the generated `hearingEventId` (or `null` if the row already existed) so `CallbackDeliveryService` can thread it to `saveSubscriptionIfAbsent` without a second lookup.
 
 ### D3 — `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload`
 

@@ -21,23 +21,32 @@ class HearingEventPayloadRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void existsByHearingEventId_returns_true_for_persisted_entity() {
-        UUID hearingEventId = randomUUID();
-        saveHearingEventPayload(hearingEventId);
+    void existsByEventId_returns_true_for_persisted_entity() {
+        UUID eventId = randomUUID();
+        saveHearingEventPayload(eventId);
 
-        assertThat(hearingEventPayloadRepository.existsByHearingEventId(hearingEventId)).isTrue();
+        assertThat(hearingEventPayloadRepository.existsByEventId(eventId)).isTrue();
     }
 
     @Test
-    void existsByHearingEventId_returns_false_for_unknown_id() {
-        assertThat(hearingEventPayloadRepository.existsByHearingEventId(randomUUID())).isFalse();
+    void existsByEventId_returns_false_for_unknown_id() {
+        assertThat(hearingEventPayloadRepository.existsByEventId(randomUUID())).isFalse();
     }
 
-    private void saveHearingEventPayload(UUID hearingEventId) {
+    @Test
+    void saved_entity_has_generated_hearingEventId() {
+        UUID eventId = randomUUID();
+        HearingEventPayloadEntity saved = saveHearingEventPayload(eventId);
+
+        assertThat(saved.getHearingEventId()).isNotNull();
+        assertThat(saved.getEventId()).isEqualTo(eventId);
+    }
+
+    private HearingEventPayloadEntity saveHearingEventPayload(UUID eventId) {
         Long eventTypeId = eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")
                 .orElseThrow().getId();
-        hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
-                .hearingEventId(hearingEventId)
+        return hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
+                .eventId(eventId)
                 .eventTypeId(eventTypeId)
                 .rawPayload(EventPayload.builder().eventType("PRISON_COURT_REGISTER_GENERATED").build())
                 .createdAt(OffsetDateTime.now(ZoneOffset.UTC))

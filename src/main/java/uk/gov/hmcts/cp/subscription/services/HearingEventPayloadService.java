@@ -25,22 +25,23 @@ public class HearingEventPayloadService {
     private final ClockService clockService;
 
     @Transactional
-    public void saveIfAbsent(final EventPayload eventPayload) {
-        final UUID hearingEventId = Objects.requireNonNull(eventPayload.getEventId(), "eventId must not be null");
-        if (hearingEventPayloadRepository.existsByHearingEventId(hearingEventId)) {
-            log.info("hearing_event_payload already exists for hearingEventId={}, skipping", hearingEventId);
-            return;
+    public UUID saveIfAbsent(final EventPayload eventPayload) {
+        final UUID eventId = Objects.requireNonNull(eventPayload.getEventId(), "eventId must not be null");
+        if (hearingEventPayloadRepository.existsByEventId(eventId)) {
+            log.info("hearing_event_payload already exists for eventId={}, skipping", eventId);
+            return null;
         }
         final Long eventTypeId = eventTypeRepository.findByEventName(eventPayload.getEventType())
                 .orElseThrow(() -> new IllegalArgumentException("Unknown event type: " + eventPayload.getEventType()))
                 .getId();
-        hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
-                .hearingEventId(hearingEventId)
+        final HearingEventPayloadEntity saved = hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
+                .eventId(eventId)
                 .eventTypeId(eventTypeId)
                 .rawPayload(eventPayload)
                 .createdAt(clockService.nowOffsetUTC())
                 .build());
-        log.info("persisted hearing_event_payload for hearingEventId={}", hearingEventId);
+        log.info("persisted hearing_event_payload for eventId={}", eventId);
+        return saved.getHearingEventId();
     }
 
     @Transactional

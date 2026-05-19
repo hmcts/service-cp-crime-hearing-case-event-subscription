@@ -70,6 +70,7 @@ Stores the raw `EventPayload` JSON **once per inbound event**.
 -- V1.013__add_hearing_event_payload.sql
 CREATE TABLE hearing_event_payload (
     hearing_event_id  uuid        primary key not null,
+    event_id          uuid        not null unique,
     event_type_id     integer     not null REFERENCES event_type(id),
     raw_payload       jsonb       not null,
     created_at        timestamptz not null default now()
@@ -80,7 +81,8 @@ CREATE INDEX idx_hearing_event_payload_event_type ON hearing_event_payload (even
 
 | Column | Notes |
 |--------|-------|
-| `hearing_event_id` | UUID — the `eventId` from the inbound `EventPayload`, natural PK, ensures one row per event |
+| `hearing_event_id` | UUID — service-generated PK (`@GeneratedValue`); FK target in `hearing_event_subscriptions`; opaque to external callers |
+| `event_id` | UUID — the `eventId` from the inbound `EventPayload`; natural key for idempotency; `UNIQUE` enforces one row per inbound event |
 | `event_type_id` | FK to `event_type(id)` |
 | `raw_payload` | Full `EventPayload` serialised as JSONB |
 | `created_at` | Ingest timestamp |
@@ -122,8 +124,11 @@ The unique index on `(subscription_id, hearing_event_id)` also provides idempote
 ### `HearingEventPayloadEntity`
 ```
 table: hearing_event_payload
-pk: hearingEventId (UUID)
-fields: eventTypeId (Long, FK → EventTypeEntity), rawPayload (EventPayload, @JdbcTypeCode(SqlTypes.JSON), columnDefinition="jsonb"), createdAt (OffsetDateTime)
+pk: hearingEventId (UUID, @GeneratedValue(strategy = GenerationType.UUID)) — service-generated, not supplied by caller
+fields: eventId (UUID) — EventPayload.getEventId(), natural key for idempotency (maps to event_id UNIQUE column)
+        eventTypeId (Long, FK → EventTypeEntity)
+        rawPayload (EventPayload, @JdbcTypeCode(SqlTypes.JSON), columnDefinition="jsonb")
+        createdAt (OffsetDateTime)
 ```
 
 ### `HearingEventSubscriptionEntity`
@@ -139,7 +144,7 @@ fields: subscriptionId (UUID), hearingEventId (UUID, FK → HearingEventPayloadE
 
 ```java
 // HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>
-boolean existsByHearingEventId(UUID hearingEventId);
+boolean existsByEventId(UUID eventId);  // idempotency check using the external inbound event identity
 
 // HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>
 Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);
@@ -155,15 +160,16 @@ Both rows are created inside `CallbackDeliveryService.submitOutboundEvents()` �
 ```
 CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId)
     ↓
-1. If !existsByHearingEventId(eventId):
-       Persist HearingEventPayloadEntity (hearingEventId, eventTypeId, serialize(eventPayload))
+1. If !existsByEventId(eventPayload.eventId):
+       Persist HearingEventPayloadEntity (eventId, eventTypeId, serialize(eventPayload))
+       → returns service-generated hearingEventId (UUID)
+   Else: returns null (row already exists)
 
-For each subscribed client:
-    2. Skip if existsBySubscriptionIdAndHearingEventId(subscriptionId, eventId)  ← idempotency
-    3. Generate id = UUID.randomUUID()
-    4. Persist HearingEventSubscriptionEntity (id, subscriptionId, hearingEventId)
-    5. [existing] Map EventPayload → EventNotificationPayload
-    6. [existing] Queue/send to subscriber
+For each subscribed client (only when hearingEventId != null):
+    2. Skip if existsBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId)  ← idempotency
+    3. Persist HearingEventSubscriptionEntity (id=@GeneratedValue, subscriptionId, hearingEventId)
+    4. [existing] Map EventPayload → EventNotificationPayload
+    5. [existing] Queue/send to subscriber
 ```
 
 ---

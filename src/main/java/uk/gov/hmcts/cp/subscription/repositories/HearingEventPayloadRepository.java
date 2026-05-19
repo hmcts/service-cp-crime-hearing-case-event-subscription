@@ -9,5 +9,5 @@ import java.util.UUID;
 @Repository
 public interface HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID> {
 
-    boolean existsByHearingEventId(UUID hearingEventId);
+    boolean existsByEventId(UUID eventId);
 }
