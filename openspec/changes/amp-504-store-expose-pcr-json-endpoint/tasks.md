@@ -43,6 +43,7 @@
 - [x] 7.9 `CallbackDeliveryServiceTest` — toggle on, payload present: `saveIfAbsent()` skips
 - [x] 7.10 `CallbackDeliveryServiceTest` — toggle on, subscription absent: `saveSubscriptionIfAbsent()` called
 - [x] 7.11 `CallbackDeliveryServiceTest` — toggle on, subscription present: `saveSubscriptionIfAbsent()` skips
+- [x] 7.12 `CallbackDeliveryServiceTest` — toggle on, `saveIfAbsent()` returns null (re-delivery): `saveSubscriptionIfAbsent()` never called
 
 ## 8. Integration Tests
 

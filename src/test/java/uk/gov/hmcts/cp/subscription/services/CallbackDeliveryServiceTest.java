@@ -120,6 +120,23 @@ class CallbackDeliveryServiceTest {
     }
 
     @Test
+    void submit_should_not_call_saveSubscriptionIfAbsent_when_hearingEventId_is_null() {
+        ReflectionTestUtils.setField(callbackDeliveryService, "hearingEventJsonEnabled", true);
+        when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of(clientEntity));
+        when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
+        when(hearingEventPayloadService.saveIfAbsent(eventPayload)).thenReturn(null);
+        when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(clientHmacEntity));
+        when(jsonMapper.toJson(payload)).thenReturn("{payload}");
+        when(hmacManager.calculateSignature(hmacKeyId, "{payload}")).thenReturn("signature");
+        when(notificationMapper.mapToWrapper(payload, hmacKeyId, "signature")).thenReturn(payloadWrapper);
+        when(jsonMapper.toJson(payloadWrapper)).thenReturn("{payload-wrapper}");
+
+        callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
+
+        verify(hearingEventPayloadService, never()).saveSubscriptionIfAbsent(any(), any());
+    }
+
+    @Test
     void submit_should_call_saveSubscriptionIfAbsent_per_client_when_toggle_on() {
         UUID generatedHearingEventId = randomUUID();
         ReflectionTestUtils.setField(callbackDeliveryService, "hearingEventJsonEnabled", true);
