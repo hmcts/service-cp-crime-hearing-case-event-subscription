@@ -30,11 +30,13 @@ The toggle is a single boolean. A dedicated properties class would be justified 
 
 `eventTypeId: Long` in `HearingEventPayloadEntity` and `hearingEventId: UUID` in `HearingEventSubscriptionEntity` are plain fields matching the pattern used by `ClientEventEntity` and `ClientHmacEntity`. Avoids lazy-loading surprises; JPQL `@Query` handles any joins.
 
-### D3 — `EventPayloadConverter` wraps `JsonMapper`
+### D3 — `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload`
 
-`EventPayloadConverter implements AttributeConverter<EventPayload, String>` delegates to the existing `JsonMapper.toJson()` / `JsonMapper.fromJson()`. Because JPA converters are not Spring-managed by default, use a Spring `@Component` + static self-injection pattern (consistent with postgres-encrypt-demo reference in docs).
+`rawPayload` in `HearingEventPayloadEntity` uses `@JdbcTypeCode(SqlTypes.JSON)` and `@Column(columnDefinition = "jsonb")`. Hibernate 6 binds the parameter as `Types.OTHER` which PostgreSQL accepts for `jsonb` columns.
 
-**Alternative considered**: serialise/deserialise in the service layer without a converter — rejected because it leaks serialisation concern out of the entity layer.
+**ObjectMapper divergence (known, accepted)**: Hibernate's JSON type handling uses its own internal `ObjectMapper` instance, not the project's `JsonMapper` bean. `JsonMapper` registers `JavaTimeModule` and serialises `Instant` as ISO-8601 strings; Hibernate's default `ObjectMapper` serialises `Instant` as numeric epoch seconds. If `EventPayload.timestamp` is populated, the stored representation will differ from what `JsonMapper` would produce. Wiring `JsonMapper` into Hibernate via `HibernatePropertiesCustomizer` + `JacksonJsonFormatMapper` would close this gap but is deferred — `EventPayload.timestamp` is not currently populated by inbound PCR events.
+
+**Alternative considered**: `AttributeConverter<EventPayload, String>` — rejected because Hibernate binds the converted `String` as `VARCHAR`, which PostgreSQL rejects for `jsonb` columns without a `@ColumnTransformer(write = "?::jsonb")` workaround.
 
 ### D4 — Persistence in `CallbackDeliveryService`, not `NotificationService`
 
@@ -48,7 +50,6 @@ Both rows are created in `CallbackDeliveryService.submitOutboundEvents()` becaus
 
 - [Risk] Developer skips toggle guard when adding payload logic → Mitigation: checklist and PR template call it out explicitly
 - [Risk] `hearingEventId` on outbound payload blocked on external API spec library bump → Mitigation: task 6.4 marked BLOCKED; persistence tasks 6.1–6.3 proceed independently
-- [Risk] `EventPayloadConverter` Spring injection complexity in JPA context → Mitigation: follow postgres-encrypt-demo reference; flag in PR description
 
 ## Migration Plan
 
@@ -59,8 +60,8 @@ Both rows are created in `CallbackDeliveryService.submitOutboundEvents()` becaus
 
 ### D6 — Test strategy: real PostgreSQL, no H2
 
-Repository tests extend `IntegrationTestBase` (PostgreSQL 15 on port 5433 via docker-compose). H2 is not used anywhere in this codebase. `IntegrationTestBase.clearAllTables()` is extended to delete from `hearing_event_subscriptions` then `hearing_event_payload` (child before parent, per FK constraint). Unit tests for `HearingEventPayloadService` and `EventPayloadConverter` use `@ExtendWith(MockitoExtension.class)`; the `EventPayloadConverter` static-holder is initialised by calling the `@Autowired` constructor directly (`new EventPayloadConverter(new JsonMapper())`). Toggle-sensitive scenarios in `CallbackDeliveryServiceTest` use `ReflectionTestUtils.setField()` to set the non-constructor `@Value` field.
+Repository tests extend `IntegrationTestBase` (PostgreSQL 15 on port 5433 via docker-compose). H2 is not used anywhere in this codebase. `IntegrationTestBase.clearAllTables()` is extended to delete from `hearing_event_subscriptions` then `hearing_event_payload` (child before parent, per FK constraint). Unit tests for `HearingEventPayloadService` use `@ExtendWith(MockitoExtension.class)`. Toggle-sensitive scenarios in `CallbackDeliveryServiceTest` use `ReflectionTestUtils.setField()` to set the non-constructor `@Value` field.
 
 ## Open Questions
 
-- Decision b (encrypt payload at rest) — deferred; `EventPayloadConverter` is the right hook when ready
+- Decision b (encrypt payload at rest) — deferred; an `AttributeConverter` wrapping `@JdbcTypeCode` is the right hook when ready

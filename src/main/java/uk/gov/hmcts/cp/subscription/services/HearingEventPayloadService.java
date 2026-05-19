@@ -11,6 +11,7 @@ import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -25,7 +26,7 @@ public class HearingEventPayloadService {
 
     @Transactional
     public void saveIfAbsent(final EventPayload eventPayload) {
-        final UUID hearingEventId = eventPayload.getEventId();
+        final UUID hearingEventId = Objects.requireNonNull(eventPayload.getEventId(), "eventId must not be null");
         if (hearingEventPayloadRepository.existsByHearingEventId(hearingEventId)) {
             log.info("hearing_event_payload already exists for hearingEventId={}, skipping", hearingEventId);
             return;
@@ -50,7 +51,6 @@ public class HearingEventPayloadService {
             return;
         }
         hearingEventSubscriptionRepository.save(HearingEventSubscriptionEntity.builder()
-                .id(UUID.randomUUID())
                 .subscriptionId(subscriptionId)
                 .hearingEventId(hearingEventId)
                 .createdAt(clockService.nowOffsetUTC())

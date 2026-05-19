@@ -123,7 +123,7 @@ The unique index on `(subscription_id, hearing_event_id)` also provides idempote
 ```
 table: hearing_event_payload
 pk: hearingEventId (UUID)
-fields: eventTypeId (Long, FK → EventTypeEntity), rawPayload (String, columnDefinition="jsonb"), createdAt (OffsetDateTime)
+fields: eventTypeId (Long, FK → EventTypeEntity), rawPayload (EventPayload, @JdbcTypeCode(SqlTypes.JSON), columnDefinition="jsonb"), createdAt (OffsetDateTime)
 ```
 
 ### `HearingEventSubscriptionEntity`
@@ -215,7 +215,7 @@ GET /client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}
 
 ## Serialisation
 
-Use `ObjectMapper` (Jackson, already on classpath) to serialise `EventPayload → String` on write and deserialise on read. A `@Converter` implementing `AttributeConverter<EventPayload, String>` keeps the entity clean.
+Use `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload` — Hibernate 6 binds the column as `Types.OTHER`, which PostgreSQL accepts for `jsonb` columns without a cast. No separate `AttributeConverter` class is needed.
 
 Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 
@@ -227,8 +227,7 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 - [ ] `V1.014__add_hearing_event_subscriptions.sql`
 - [ ] `HearingEventPayloadEntity` + `HearingEventSubscriptionEntity`
 - [ ] `HearingEventPayloadRepository` + `HearingEventSubscriptionRepository`
-- [ ] `EventPayloadConverter` (JPA `AttributeConverter`)
-- [ ] `HearingEventPayloadService` — `save()` + `getByHearingEventId(clientId, hearingEventId)`
+- [ ] `HearingEventPayloadService` — `saveIfAbsent(EventPayload)` + `saveSubscriptionIfAbsent(UUID, UUID)` + `getByHearingEventId(clientId, hearingEventId)`
 - [ ] `NotificationManager.getInboundPayload()` — thin orchestration
 - [ ] `NotificationController` — new GET endpoint
 - [ ] `InboundPayloadResponse` DTO (OpenAPI spec update → `openApiGenerate`)

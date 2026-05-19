@@ -40,13 +40,12 @@ The service SHALL have a JPA entity `HearingEventSubscriptionEntity` mapping `he
 
 ---
 
-### Requirement: EventPayloadConverter serialises EventPayload to JSONB
-The service SHALL have `EventPayloadConverter implements AttributeConverter<EventPayload, String>` that delegates to `JsonMapper.toJson()` on write and `JsonMapper.fromJson()` on read.
+### Requirement: EventPayload serialised to JSONB via @JdbcTypeCode
+`HearingEventPayloadEntity.rawPayload` SHALL be annotated `@JdbcTypeCode(SqlTypes.JSON)` and `@Column(columnDefinition = "jsonb")`. Hibernate 6 SHALL use the project's `JsonMapper` ObjectMapper (JavaTimeModule + ISO-8601 dates) so that `EventPayload.timestamp (Instant)` serialises consistently with the rest of the codebase.
 
-#### Scenario: Payload round-trips through converter
-- **WHEN** an `EventPayload` is written to the database and read back
-- **THEN** all fields are preserved and equal to the original
-
+#### Scenario: Payload round-trips via @JdbcTypeCode
+- **WHEN** an `EventPayload` (including `timestamp`) is written to the database and read back
+- **THEN** all fields are preserved and equal to the original, including the `Instant` timestamp
 ---
 
 ### Requirement: HearingEventPayloadRepository provides existence check

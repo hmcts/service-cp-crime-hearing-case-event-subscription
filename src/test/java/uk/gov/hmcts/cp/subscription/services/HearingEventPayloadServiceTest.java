@@ -52,11 +52,6 @@ class HearingEventPayloadServiceTest {
             .eventName("PRISON_COURT_REGISTER_GENERATED")
             .build();
 
-    @BeforeEach
-    void setUp() {
-        when(clockService.nowOffsetUTC()).thenReturn(OffsetDateTime.now());
-    }
-
     @Test
     void saveIfAbsent_should_persist_when_not_exists() {
         when(hearingEventPayloadRepository.existsByHearingEventId(eventId)).thenReturn(false);
@@ -83,6 +78,17 @@ class HearingEventPayloadServiceTest {
     }
 
     @Test
+    void saveIfAbsent_should_throw_when_event_id_is_null() {
+        EventPayload nullIdPayload = EventPayload.builder()
+                .eventType("PRISON_COURT_REGISTER_GENERATED")
+                .build();
+
+        assertThatThrownBy(() -> hearingEventPayloadService.saveIfAbsent(nullIdPayload))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("eventId must not be null");
+    }
+
+    @Test
     void saveIfAbsent_should_throw_when_event_type_is_unknown() {
         when(hearingEventPayloadRepository.existsByHearingEventId(eventId)).thenReturn(false);
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.empty());
@@ -106,7 +112,6 @@ class HearingEventPayloadServiceTest {
         HearingEventSubscriptionEntity saved = captor.getValue();
         assertThat(saved.getSubscriptionId()).isEqualTo(subscriptionId);
         assertThat(saved.getHearingEventId()).isEqualTo(hearingEventId);
-        assertThat(saved.getId()).isNotNull();
     }
 
     @Test

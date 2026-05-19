@@ -46,14 +46,10 @@ public class CallbackDeliveryService {
         final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload);
         log.info("sending {} outbound notifications", clients.size());
 
-        if (hearingEventJsonEnabled) {
-            hearingEventPayloadService.saveIfAbsent(eventPayload);
-        }
+        persistEventPayload(eventPayload);
 
         for (final ClientEntity client : clients) {
-            if (hearingEventJsonEnabled) {
-                hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), eventPayload.getEventId());
-            }
+            persistEventPayloadAndSubscription(eventPayload, client);
 
             final ClientHmacEntity clientHmac = clientHmacRepository.findBySubscriptionId(client.getSubscriptionId())
                     .orElseThrow(() -> HMAC_NOT_FOUND);
@@ -65,6 +61,18 @@ public class CallbackDeliveryService {
                 final String payload = jsonMapper.toJson(payloadWrapper);
                 clientService.queueMessage(NOTIFICATIONS_OUTBOUND_QUEUE, client.getCallbackUrl(), payload, 0);
             }
+        }
+    }
+
+    private void persistEventPayloadAndSubscription(EventPayload eventPayload, ClientEntity client) {
+        if (hearingEventJsonEnabled) {
+            hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), eventPayload.getEventId());
+        }
+    }
+
+    private void persistEventPayload(EventPayload eventPayload) {
+        if (hearingEventJsonEnabled) {
+            hearingEventPayloadService.saveIfAbsent(eventPayload);
         }
     }
 }

@@ -14,12 +14,12 @@
 
 ## 4. JPA Entities
 
-- [x] 4.1 Create `HearingEventPayloadEntity` (table: `hearing_event_payload`, pk: `hearingEventId UUID` manual, converter on `rawPayload`)
+- [x] 4.1 Create `HearingEventPayloadEntity` (table: `hearing_event_payload`, pk: `hearingEventId UUID` manual, `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload`)
 - [x] 4.2 Create `HearingEventSubscriptionEntity` (table: `hearing_event_subscriptions`, pk: `id UUID @GeneratedValue UUID`)
 
 ## 5. Persistence Infrastructure
 
-- [x] 5.1 Create `EventPayloadConverter implements AttributeConverter<EventPayload, String>` — delegates to `JsonMapper`
+- [x] 5.1 `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload` — Hibernate 6 binds as `Types.OTHER`; no separate converter class needed
 - [x] 5.2 Create `HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>`
 - [x] 5.3 Create `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>`
 - [x] 5.4 Create `HearingEventPayloadService` — `saveIfAbsent(EventPayload)` + `saveSubscriptionIfAbsent(UUID, UUID)`
@@ -29,7 +29,6 @@
 - [x] 6.1 Inject `HearingEventPayloadService` into `CallbackDeliveryService`
 - [x] 6.2 In `submitOutboundEvents()`: persist `HearingEventPayloadEntity` when toggle on, guarded by `existsByHearingEventId` check
 - [x] 6.3 In `submitOutboundEvents()`: persist `HearingEventSubscriptionEntity` per client when toggle on, guarded by `existsBySubscriptionIdAndHearingEventId` check
-- [ ] 6.4 Populate `hearingEventId` (from `hearing_event_subscriptions.id`) on per-subscriber `EventNotificationPayload` before queuing
 
 ## 7. Unit Tests
 
@@ -38,7 +37,7 @@
 - [x] 7.3 `HearingEventPayloadServiceTest` — `saveIfAbsent()` happy path
 - [x] 7.4 `HearingEventPayloadServiceTest` — `saveIfAbsent()` unknown event type throws
 - [x] 7.5 `HearingEventPayloadServiceTest` — `saveSubscriptionIfAbsent()` persists supplied values
-- [x] 7.6 `EventPayloadConverterTest` — round-trip serialise/deserialise via `JsonMapper`
+- [x] 7.6 `HearingEventPayloadServiceTest` — `saveSubscriptionIfAbsent()` skips when row already exists
 - [x] 7.7 `CallbackDeliveryServiceTest` — toggle off: no persistence calls
 - [x] 7.8 `CallbackDeliveryServiceTest` — toggle on, `saveIfAbsent()` called
 - [x] 7.9 `CallbackDeliveryServiceTest` — toggle on, payload present: `saveIfAbsent()` skips

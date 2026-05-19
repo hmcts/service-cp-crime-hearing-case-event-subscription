@@ -32,7 +32,7 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
 
     @Test
     void existsBySubscriptionIdAndHearingEventId_returns_true_for_existing_pair() {
-        saveSubscription(randomUUID(), subscriptionId, hearingEventId);
+        saveSubscription(subscriptionId, hearingEventId);
 
         assertThat(hearingEventSubscriptionRepository
                 .existsBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId)).isTrue();
@@ -46,34 +46,32 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
 
     @Test
     void findByIdAndSubscriptionId_returns_entity_on_match() {
-        UUID id = randomUUID();
-        saveSubscription(id, subscriptionId, hearingEventId);
+        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
 
         Optional<HearingEventSubscriptionEntity> result =
-                hearingEventSubscriptionRepository.findByIdAndSubscriptionId(id, subscriptionId);
+                hearingEventSubscriptionRepository.findByIdAndSubscriptionId(saved.getId(), subscriptionId);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(id);
+        assertThat(result.get().getId()).isEqualTo(saved.getId());
         assertThat(result.get().getSubscriptionId()).isEqualTo(subscriptionId);
         assertThat(result.get().getHearingEventId()).isEqualTo(hearingEventId);
     }
 
     @Test
     void findByIdAndSubscriptionId_returns_empty_on_subscriptionId_mismatch() {
-        UUID id = randomUUID();
-        saveSubscription(id, subscriptionId, hearingEventId);
+        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
 
         Optional<HearingEventSubscriptionEntity> result =
-                hearingEventSubscriptionRepository.findByIdAndSubscriptionId(id, randomUUID());
+                hearingEventSubscriptionRepository.findByIdAndSubscriptionId(saved.getId(), randomUUID());
 
         assertThat(result).isEmpty();
     }
 
     @Test
     void duplicate_insert_should_violate_unique_constraint() {
-        saveSubscription(randomUUID(), subscriptionId, hearingEventId);
+        saveSubscription(subscriptionId, hearingEventId);
 
-        assertThatThrownBy(() -> saveSubscription(randomUUID(), subscriptionId, hearingEventId))
+        assertThatThrownBy(() -> saveSubscription(subscriptionId, hearingEventId))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -88,9 +86,8 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
                 .build());
     }
 
-    private void saveSubscription(UUID id, UUID subId, UUID hearingEvtId) {
-        hearingEventSubscriptionRepository.saveAndFlush(HearingEventSubscriptionEntity.builder()
-                .id(id)
+    private HearingEventSubscriptionEntity saveSubscription(UUID subId, UUID hearingEvtId) {
+        return hearingEventSubscriptionRepository.saveAndFlush(HearingEventSubscriptionEntity.builder()
                 .subscriptionId(subId)
                 .hearingEventId(hearingEvtId)
                 .createdAt(OffsetDateTime.now(ZoneOffset.UTC))
