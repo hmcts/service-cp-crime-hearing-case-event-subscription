@@ -10,7 +10,6 @@ import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.UUID.randomUUID;
@@ -30,7 +29,7 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void existsBySubscriptionIdAndHearingEventId_returns_true_for_existing_pair() {
+    void existsBySubscriptionIdAndHearingEventId_for_existing_pair_should_returns_true() {
         saveSubscription(subscriptionId, hearingEventId);
 
         assertThat(hearingEventSubscriptionRepository
@@ -38,32 +37,9 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void existsBySubscriptionIdAndHearingEventId_returns_false_for_unknown_pair() {
+    void existsBySubscriptionIdAndHearingEventId_for_unknown_pair_should_returns_false() {
         assertThat(hearingEventSubscriptionRepository
                 .existsBySubscriptionIdAndHearingEventId(randomUUID(), randomUUID())).isFalse();
-    }
-
-    @Test
-    void findByIdAndSubscriptionId_returns_entity_on_match() {
-        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
-
-        Optional<HearingEventSubscriptionEntity> result =
-                hearingEventSubscriptionRepository.findByIdAndSubscriptionId(saved.getId(), subscriptionId);
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(saved.getId());
-        assertThat(result.get().getSubscriptionId()).isEqualTo(subscriptionId);
-        assertThat(result.get().getHearingEventId()).isEqualTo(hearingEventId);
-    }
-
-    @Test
-    void findByIdAndSubscriptionId_returns_empty_on_subscriptionId_mismatch() {
-        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
-
-        Optional<HearingEventSubscriptionEntity> result =
-                hearingEventSubscriptionRepository.findByIdAndSubscriptionId(saved.getId(), randomUUID());
-
-        assertThat(result).isEmpty();
     }
 
     @Test

@@ -5,8 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
-import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
-import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
+import uk.gov.hmcts.cp.subscription.mappers.HearingEventPayloadMapper;
 import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
@@ -22,7 +21,7 @@ public class HearingEventPayloadService {
     private final HearingEventPayloadRepository hearingEventPayloadRepository;
     private final HearingEventSubscriptionRepository hearingEventSubscriptionRepository;
     private final EventTypeRepository eventTypeRepository;
-    private final ClockService clockService;
+    private final HearingEventPayloadMapper hearingEventPayloadMapper;
 
     @Transactional
     public UUID saveIfAbsent(final EventPayload eventPayload) {
@@ -34,12 +33,8 @@ public class HearingEventPayloadService {
         final Long eventTypeId = eventTypeRepository.findByEventName(eventPayload.getEventType())
                 .orElseThrow(() -> new IllegalArgumentException("Unknown event type: " + eventPayload.getEventType()))
                 .getId();
-        final HearingEventPayloadEntity saved = hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
-                .eventId(eventId)
-                .eventTypeId(eventTypeId)
-                .rawPayload(eventPayload)
-                .createdAt(clockService.nowOffsetUTC())
-                .build());
+        final var saved = hearingEventPayloadRepository.save(
+                hearingEventPayloadMapper.toEntity(eventId, eventTypeId, eventPayload));
         log.info("persisted hearing_event_payload for eventId={}", eventId);
         return saved.getHearingEventId();
     }
@@ -51,11 +46,8 @@ public class HearingEventPayloadService {
                     subscriptionId, hearingEventId);
             return;
         }
-        hearingEventSubscriptionRepository.save(HearingEventSubscriptionEntity.builder()
-                .subscriptionId(subscriptionId)
-                .hearingEventId(hearingEventId)
-                .createdAt(clockService.nowOffsetUTC())
-                .build());
+        hearingEventSubscriptionRepository.save(
+                hearingEventPayloadMapper.toSubscriptionEntity(subscriptionId, hearingEventId));
         log.info("persisted hearing_event_subscription for subscriptionId={}, hearingEventId={}",
                 subscriptionId, hearingEventId);
     }

@@ -21,7 +21,7 @@ class HearingEventPayloadRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void existsByEventId_returns_true_for_persisted_entity() {
+    void existsByEventId_for_persisted_entity_should_return_true() {
         UUID eventId = randomUUID();
         saveHearingEventPayload(eventId);
 
@@ -29,12 +29,12 @@ class HearingEventPayloadRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void existsByEventId_returns_false_for_unknown_id() {
+    void existsByEventId_for_unknown_id_should_return_false() {
         assertThat(hearingEventPayloadRepository.existsByEventId(randomUUID())).isFalse();
     }
 
     @Test
-    void saved_entity_has_generated_hearingEventId() {
+    void saved_entity_should_have_generated_hearingEventId() {
         UUID eventId = randomUUID();
         HearingEventPayloadEntity saved = saveHearingEventPayload(eventId);
 

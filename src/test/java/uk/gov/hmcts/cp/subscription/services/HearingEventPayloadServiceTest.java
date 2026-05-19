@@ -2,7 +2,6 @@ package uk.gov.hmcts.cp.subscription.services;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -10,6 +9,7 @@ import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.subscription.entities.EventTypeEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
+import uk.gov.hmcts.cp.subscription.mappers.HearingEventPayloadMapper;
 import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
@@ -35,7 +35,7 @@ class HearingEventPayloadServiceTest {
     @Mock
     private EventTypeRepository eventTypeRepository;
     @Mock
-    private ClockService clockService;
+    private HearingEventPayloadMapper hearingEventPayloadMapper;
 
     @InjectMocks
     private HearingEventPayloadService hearingEventPayloadService;
@@ -52,18 +52,20 @@ class HearingEventPayloadServiceTest {
 
     @Test
     void saveIfAbsent_should_persist_when_not_exists() {
+        HearingEventPayloadEntity entity = HearingEventPayloadEntity.builder()
+                .eventId(eventId)
+                .eventTypeId(1L)
+                .rawPayload(eventPayload)
+                .build();
         when(hearingEventPayloadRepository.existsByEventId(eventId)).thenReturn(false);
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.of(eventTypeEntity));
-        when(hearingEventPayloadRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(hearingEventPayloadMapper.toEntity(eventId, 1L, eventPayload)).thenReturn(entity);
+        when(hearingEventPayloadRepository.save(entity)).thenReturn(entity);
 
         hearingEventPayloadService.saveIfAbsent(eventPayload);
 
-        ArgumentCaptor<HearingEventPayloadEntity> captor = ArgumentCaptor.forClass(HearingEventPayloadEntity.class);
-        verify(hearingEventPayloadRepository).save(captor.capture());
-        HearingEventPayloadEntity saved = captor.getValue();
-        assertThat(saved.getEventId()).isEqualTo(eventId);
-        assertThat(saved.getEventTypeId()).isEqualTo(1L);
-        assertThat(saved.getRawPayload()).isEqualTo(eventPayload);
+        verify(hearingEventPayloadMapper).toEntity(eventId, 1L, eventPayload);
+        verify(hearingEventPayloadRepository).save(entity);
     }
 
     @Test
@@ -101,16 +103,17 @@ class HearingEventPayloadServiceTest {
     void saveSubscriptionIfAbsent_should_persist_when_not_exists() {
         UUID subscriptionId = randomUUID();
         UUID hearingEventId = randomUUID();
+        HearingEventSubscriptionEntity entity = HearingEventSubscriptionEntity.builder()
+                .subscriptionId(subscriptionId)
+                .hearingEventId(hearingEventId)
+                .build();
         when(hearingEventSubscriptionRepository.existsBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId)).thenReturn(false);
-        when(hearingEventSubscriptionRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(hearingEventPayloadMapper.toSubscriptionEntity(subscriptionId, hearingEventId)).thenReturn(entity);
 
         hearingEventPayloadService.saveSubscriptionIfAbsent(subscriptionId, hearingEventId);
 
-        ArgumentCaptor<HearingEventSubscriptionEntity> captor = ArgumentCaptor.forClass(HearingEventSubscriptionEntity.class);
-        verify(hearingEventSubscriptionRepository).save(captor.capture());
-        HearingEventSubscriptionEntity saved = captor.getValue();
-        assertThat(saved.getSubscriptionId()).isEqualTo(subscriptionId);
-        assertThat(saved.getHearingEventId()).isEqualTo(hearingEventId);
+        verify(hearingEventPayloadMapper).toSubscriptionEntity(subscriptionId, hearingEventId);
+        verify(hearingEventSubscriptionRepository).save(entity);
     }
 
     @Test
@@ -123,5 +126,4 @@ class HearingEventPayloadServiceTest {
 
         verify(hearingEventSubscriptionRepository, never()).save(any());
     }
-
 }
