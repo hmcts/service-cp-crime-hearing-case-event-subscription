@@ -26,7 +26,7 @@ class ServiceBusRetryServiceTest {
     ServiceBusRetryService retryService;
 
     @Test
-    void retry_delay_should_be_correct() {
+    void get_retry_delay_with_failure_count_should_return_clamped_delay() {
         when(retryServiceConfig.getRetryDelays()).thenReturn(List.of(Duration.ofMillis(1), Duration.ofMillis(2)));
 
         assertThat(retryService.getRetryDelay(0)).isEqualTo(Duration.ofMillis(1));
@@ -35,7 +35,7 @@ class ServiceBusRetryServiceTest {
     }
 
     @Test
-    void retry_time_should_be_correct() {
+    void get_next_try_time_with_failure_count_should_return_now_plus_retry_delay() {
         OffsetDateTime now = OffsetDateTime.now();
         when(retryServiceConfig.getRetryDelays()).thenReturn(List.of(Duration.ofMillis(1), Duration.ofHours(1)));
         when(clockService.nowOffsetUTC()).thenReturn(now);

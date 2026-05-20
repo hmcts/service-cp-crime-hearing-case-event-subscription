@@ -24,7 +24,7 @@ class RetryServiceConfigTest {
     RetryServiceConfig retryServiceConfig;
 
     @Test
-    void retry_durations_should_parse_all_time_units_correctly() {
+    void configure_retry_durations_with_mixed_time_units_should_bind_to_correct_duration_values() {
         assertThat(retryServiceConfig.getRetryDelays()).containsExactly(
                 Duration.ofMillis(500),
                 Duration.ofSeconds(30),
@@ -35,7 +35,7 @@ class RetryServiceConfigTest {
     }
 
     @Test
-    void should_fail_startup_when_retry_durations_is_empty() {
+    void configure_empty_retry_durations_should_fail_on_startup() {
         assertThatThrownBy(() ->
                 new RetryServiceConfig(java.util.List.of())
         )
@@ -44,7 +44,7 @@ class RetryServiceConfigTest {
     }
 
     @Test
-    void should_fail_startup_when_retry_durations_contains_negative_duration() {
+    void configure_retry_durations_containing_negative_value_should_fail_on_startup() {
         assertThatThrownBy(() ->
                 new RetryServiceConfig(java.util.List.of(Duration.ofSeconds(1), Duration.ofSeconds(-1)))
         )
