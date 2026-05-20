@@ -4,19 +4,24 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
+import java.time.Duration;
 import java.util.List;
 
 @Slf4j
 @Service
 @Getter
 public class RetryServiceConfig {
-    private final List<Integer> retryDelayMsecs;
+    private final List<Duration> retryDelays;
 
     public RetryServiceConfig(
-            @Value("${service-bus.retry-msecs}") final List<Integer> retryDelayMsecs
+            @Value("${service-bus.retry-durations}") final List<Duration> retryDelays
     ) {
-        log.info("RetryConfigService using retryDelay mSecs {}", retryDelayMsecs);
-        this.retryDelayMsecs = retryDelayMsecs;
+        Assert.notEmpty(retryDelays, "service-bus.retry-durations must not be empty");
+        Assert.isTrue(retryDelays.stream().noneMatch(Duration::isNegative),
+                "service-bus.retry-durations must not contain negative durations");
+        log.info("RetryConfigService using retryDelays {}", retryDelays);
+        this.retryDelays = retryDelays;
     }
 }

@@ -27,21 +27,21 @@ class ServiceBusRetryServiceTest {
 
     @Test
     void retry_delay_should_be_correct() {
-        when(retryServiceConfig.getRetryDelayMsecs()).thenReturn(List.of(1, 2));
+        when(retryServiceConfig.getRetryDelays()).thenReturn(List.of(Duration.ofMillis(1), Duration.ofMillis(2)));
 
-        assertThat(retryService.getDelayMsecs(0)).isEqualTo(1);
-        assertThat(retryService.getDelayMsecs(1)).isEqualTo(2);
-        assertThat(retryService.getDelayMsecs(2)).isEqualTo(2);
+        assertThat(retryService.getRetryDelay(0)).isEqualTo(Duration.ofMillis(1));
+        assertThat(retryService.getRetryDelay(1)).isEqualTo(Duration.ofMillis(2));
+        assertThat(retryService.getRetryDelay(2)).isEqualTo(Duration.ofMillis(2));
     }
 
     @Test
     void retry_time_should_be_correct() {
         OffsetDateTime now = OffsetDateTime.now();
-        when(retryServiceConfig.getRetryDelayMsecs()).thenReturn(List.of(1, 3600));
+        when(retryServiceConfig.getRetryDelays()).thenReturn(List.of(Duration.ofMillis(1), Duration.ofHours(1)));
         when(clockService.nowOffsetUTC()).thenReturn(now);
 
         assertThat(retryService.getNextTryTime(0)).isEqualTo(now.plus(Duration.ofMillis(1)));
-        assertThat(retryService.getNextTryTime(1)).isEqualTo(now.plus(Duration.ofMillis(3600)));
-        assertThat(retryService.getNextTryTime(2)).isEqualTo(now.plus(Duration.ofMillis(3600)));
+        assertThat(retryService.getNextTryTime(1)).isEqualTo(now.plus(Duration.ofHours(1)));
+        assertThat(retryService.getNextTryTime(2)).isEqualTo(now.plus(Duration.ofHours(1)));
     }
 }
