@@ -1,21 +1,23 @@
 package uk.gov.hmcts.cp.servicebus.config;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContextException;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import uk.gov.hmcts.cp.subscription.integration.config.PostgresAvailabilityCheck;
 
 import java.time.Duration;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@ExtendWith(SpringExtension.class)
-@ContextConfiguration(classes = RetryServiceConfig.class)
+@SpringBootTest
+@ContextConfiguration(initializers = PostgresAvailabilityCheck.class)
 @TestPropertySource(properties = {
+        "vault.enabled=false",
+        "service-bus.auto-start-processors=false",
         "service-bus.retry-durations=500ms,30s,5m,1h,4h"
 })
 class RetryServiceConfigTest {
@@ -37,7 +39,7 @@ class RetryServiceConfigTest {
     @Test
     void configure_empty_retry_durations_should_fail_on_startup() {
         assertThatThrownBy(() ->
-                new RetryServiceConfig(java.util.List.of())
+                new RetryServiceConfig(List.of())
         )
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must not be empty");
@@ -46,7 +48,7 @@ class RetryServiceConfigTest {
     @Test
     void configure_retry_durations_containing_negative_value_should_fail_on_startup() {
         assertThatThrownBy(() ->
-                new RetryServiceConfig(java.util.List.of(Duration.ofSeconds(1), Duration.ofSeconds(-1)))
+                new RetryServiceConfig(List.of(Duration.ofSeconds(1), Duration.ofSeconds(-1)))
         )
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("must not contain negative durations");
