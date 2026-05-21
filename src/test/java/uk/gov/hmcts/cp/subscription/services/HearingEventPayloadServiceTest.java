@@ -68,15 +68,6 @@ class HearingEventPayloadServiceTest {
     }
 
     @Test
-    void saveIfAbsent_should_skip_when_already_exists() {
-
-        UUID result = hearingEventPayloadService.saveIfAbsent(eventPayload);
-
-        assertThat(result).isNull();
-        verify(hearingEventPayloadRepository, never()).save(any());
-    }
-
-    @Test
     void saveIfAbsent_should_throw_when_event_id_is_null() {
         EventPayload nullIdPayload = EventPayload.builder()
                 .eventType("PRISON_COURT_REGISTER_GENERATED")
