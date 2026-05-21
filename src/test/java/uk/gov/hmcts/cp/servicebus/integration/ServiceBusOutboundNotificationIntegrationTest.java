@@ -36,7 +36,7 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 @TestPropertySource(properties = {
         "vault.enabled=false",
         "service-bus.max-tries=2",
-        "service-bus.retry-msecs=0"
+        "service-bus.retry-durations=0s"
 })
 @ExtendWith(MockitoExtension.class)
 public class ServiceBusOutboundNotificationIntegrationTest extends ServiceBusIntegrationTestBase {
