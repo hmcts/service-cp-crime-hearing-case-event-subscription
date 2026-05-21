@@ -31,6 +31,7 @@ public class HearingEventPayloadEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID hearingEventId;
 
+    @Column(unique = true)
     private UUID eventId;
 
     private Long eventTypeId;

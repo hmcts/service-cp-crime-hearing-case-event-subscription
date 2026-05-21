@@ -19,13 +19,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class HearingEventPayloadMapperTest {
+class HearingEventMapperTest {
 
     @Mock
     private ClockService clockService;
 
     @InjectMocks
-    private HearingEventPayloadMapper hearingEventPayloadMapper;
+    private HearingEventMapper hearingEventPayloadMapper;
 
     private final OffsetDateTime fixedNow = OffsetDateTime.of(2024, 6, 1, 12, 0, 0, 0, ZoneOffset.UTC);
 

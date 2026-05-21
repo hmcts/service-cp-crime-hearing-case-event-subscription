@@ -11,7 +11,7 @@ import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
-public class HearingEventPayloadMapper {
+public class HearingEventMapper {
 
     private final ClockService clockService;
 

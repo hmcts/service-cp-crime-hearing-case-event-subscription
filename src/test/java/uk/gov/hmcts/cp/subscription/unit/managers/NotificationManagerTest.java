@@ -65,7 +65,7 @@ class NotificationManagerTest {
         notificationManager.processNotification(payload);
 
         verify(notificationService).processInboundEvent(eq(payload));
-        verify(callbackDeliveryService).submitOutboundEvents(payload, documentId, false);
+        verify(callbackDeliveryService).submitOutboundEvents(payload, documentId);
     }
 
     @Test

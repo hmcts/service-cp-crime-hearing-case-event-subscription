@@ -9,7 +9,7 @@ import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.subscription.entities.EventTypeEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
-import uk.gov.hmcts.cp.subscription.mappers.HearingEventPayloadMapper;
+import uk.gov.hmcts.cp.subscription.mappers.HearingEventMapper;
 import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class HearingEventPayloadServiceTest {
+class HearingEventServiceTest {
 
     @Mock
     private HearingEventPayloadRepository hearingEventPayloadRepository;
@@ -35,10 +35,10 @@ class HearingEventPayloadServiceTest {
     @Mock
     private EventTypeRepository eventTypeRepository;
     @Mock
-    private HearingEventPayloadMapper hearingEventPayloadMapper;
+    private HearingEventMapper hearingEventPayloadMapper;
 
     @InjectMocks
-    private HearingEventPayloadService hearingEventPayloadService;
+    private HearingEventService hearingEventPayloadService;
 
     private final UUID eventId = randomUUID();
     private final EventPayload eventPayload = EventPayload.builder()
@@ -57,6 +57,7 @@ class HearingEventPayloadServiceTest {
                 .eventTypeId(1L)
                 .rawPayload(eventPayload)
                 .build();
+        when(hearingEventPayloadRepository.findByEventId(eventId)).thenReturn(Optional.empty());
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.of(eventTypeEntity));
         when(hearingEventPayloadMapper.toEntity(eventId, 1L, eventPayload)).thenReturn(entity);
         when(hearingEventPayloadRepository.save(entity)).thenReturn(entity);
@@ -65,6 +66,22 @@ class HearingEventPayloadServiceTest {
 
         verify(hearingEventPayloadMapper).toEntity(eventId, 1L, eventPayload);
         verify(hearingEventPayloadRepository).save(entity);
+    }
+
+    @Test
+    void saveIfAbsent_should_skip_when_already_exists() {
+        UUID hearingEventId = randomUUID();
+        HearingEventPayloadEntity existing = HearingEventPayloadEntity.builder()
+                .hearingEventId(hearingEventId)
+                .eventId(eventId)
+                .build();
+        when(hearingEventPayloadRepository.findByEventId(eventId)).thenReturn(Optional.of(existing));
+
+        UUID result = hearingEventPayloadService.saveIfAbsent(eventPayload);
+
+        assertThat(result).isEqualTo(hearingEventId);
+        verify(hearingEventPayloadRepository, never()).save(any());
+        verify(hearingEventPayloadMapper, never()).toEntity(any(), any(), any());
     }
 
     @Test
@@ -80,6 +97,7 @@ class HearingEventPayloadServiceTest {
 
     @Test
     void saveIfAbsent_should_throw_when_event_type_is_unknown() {
+        when(hearingEventPayloadRepository.findByEventId(eventId)).thenReturn(Optional.empty());
         when(eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> hearingEventPayloadService.saveIfAbsent(eventPayload))
