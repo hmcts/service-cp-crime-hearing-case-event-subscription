@@ -3,6 +3,7 @@ package uk.gov.hmcts.cp.servicebus.services;
 import com.azure.messaging.servicebus.ServiceBusErrorContext;
 import com.azure.messaging.servicebus.ServiceBusProcessorClient;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessageContext;
+import org.springframework.web.client.HttpClientErrorException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -93,9 +94,17 @@ public class ServiceBusProcessorService {
         try {
             MDC.put(CORRELATION_ID_KEY, queueMessage.getCorrelationId().toString());
             serviceBusHandlers.handleMessage(queueName, queueMessage.getTargetUrl(), queueMessage.getMessage());
+        } catch (HttpClientErrorException.NotFound notFound) {
+            final int failureCount = queueMessage.getFailureCount() + 1;
+            log.warn("handleMessage failureCount:{} of {} tries with exception 404 not found ", failureCount, properties.getMaxTries());
+            if (failureCount >= properties.getMaxTries()) {
+                log.error("handleMessage FAILED FINALLY");
+                throw notFound;
+            }
+            clientService.queueMessage(queueName, queueMessage.getTargetUrl(), queueMessage.getMessage(), failureCount);
         } catch (Exception exception) {
             final int failureCount = queueMessage.getFailureCount() + 1;
-            log.error("handleMessage failureCount:{} of {} tries with exception.", failureCount, properties.getMaxTries(), exception);
+            log.error("handleMessage failureCount:{} of {} tries with exception: {}", failureCount, properties.getMaxTries(), exception.getMessage(), exception);
             if (failureCount >= properties.getMaxTries()) {
                 log.error("handleMessage FAILED FINALLY");
                 throw exception;
