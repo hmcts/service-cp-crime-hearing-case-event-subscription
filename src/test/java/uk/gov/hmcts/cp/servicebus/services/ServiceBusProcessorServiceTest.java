@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import uk.gov.hmcts.cp.openapi.model.EventNotificationPayload;
 import uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties;
@@ -19,6 +20,8 @@ import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -102,6 +105,39 @@ class ServiceBusProcessorServiceTest {
         serviceBusProcessorService.handleMessage(NOTIFICATIONS_OUTBOUND_QUEUE, context);
 
         verify(serviceBusClientService).queueMessage(NOTIFICATIONS_OUTBOUND_QUEUE, callbackUrl, "wrapped-message", 1);
+    }
+
+    @Test
+    void handling_message_with_404_should_requeue_message() {
+        when(wrappedMessage.getCorrelationId()).thenReturn(UUID.randomUUID());
+        when(context.getMessage()).thenReturn(serviceBusReceivedMessage);
+        when(serviceBusReceivedMessage.getBody()).thenReturn(binaryData);
+        when(jsonMapper.fromJson("binaryData", ServiceBusWrappedMessage.class)).thenReturn(wrappedMessage);
+        when(wrappedMessage.getMessage()).thenReturn("wrapped-message");
+        when(wrappedMessage.getTargetUrl()).thenReturn(callbackUrl);
+        doThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND)).when(serviceBusHandlers)
+                .handleMessage(NOTIFICATIONS_OUTBOUND_QUEUE, callbackUrl, "message");
+        when(properties.getMaxTries()).thenReturn(2);
+
+        serviceBusProcessorService.handleMessage(NOTIFICATIONS_OUTBOUND_QUEUE, context);
+
+        verify(serviceBusClientService).queueMessage(NOTIFICATIONS_OUTBOUND_QUEUE, callbackUrl, "wrapped-message", 1);
+    }
+
+    @Test
+    void handling_message_with_404_should_throw_when_max_tries_reached() {
+        when(wrappedMessage.getCorrelationId()).thenReturn(UUID.randomUUID());
+        when(context.getMessage()).thenReturn(serviceBusReceivedMessage);
+        when(serviceBusReceivedMessage.getBody()).thenReturn(binaryData);
+        when(jsonMapper.fromJson("binaryData", ServiceBusWrappedMessage.class)).thenReturn(wrappedMessage);
+        when(wrappedMessage.getMessage()).thenReturn("message");
+        when(wrappedMessage.getTargetUrl()).thenReturn(callbackUrl);
+        doThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND)).when(serviceBusHandlers)
+                .handleMessage(NOTIFICATIONS_OUTBOUND_QUEUE, callbackUrl, "message");
+        when(properties.getMaxTries()).thenReturn(1);
+
+        assertThrows(HttpClientErrorException.class, () -> serviceBusProcessorService.handleMessage(NOTIFICATIONS_OUTBOUND_QUEUE, context));
+        verify(serviceBusClientService, never()).queueMessage(any(), any(), any(), anyInt());
     }
 
     @Test
