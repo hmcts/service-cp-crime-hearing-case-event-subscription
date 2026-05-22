@@ -13,16 +13,16 @@ The service SHALL declare `hearing-event.json.enabled` as a Spring property in `
 - 
 ---
 
-### Requirement: Toggle injected into CallbackDeliveryService
-`CallbackDeliveryService` SHALL receive `hearing-event.json.enabled` as an injected `boolean` field so future AMP-504 logic can be guarded by it.
+### Requirement: Toggle injected into NotificationManager; passed to CallbackDeliveryService
+`NotificationManager` SHALL receive `hearing-event.json.enabled` as an injected `boolean` field and pass it as a `boolean` parameter to `CallbackDeliveryService.submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled)`. This keeps `CallbackDeliveryService` (which owns repositories) toggle-blind at the field level.
 
-#### Scenario: Field present when feature off
+#### Scenario: Toggle off — no persistence calls
 - **WHEN** `hearing-event.json.enabled=false`
-- **THEN** `CallbackDeliveryService` is instantiated with `hearingEventJsonEnabled = false` and existing outbound dispatch behaviour is unchanged
+- **THEN** `NotificationManager` passes `false` to `submitOutboundEvents`; `CallbackDeliveryService` makes no persistence calls and existing outbound dispatch behaviour is unchanged
 
-#### Scenario: Field present when feature on
+#### Scenario: Toggle on — persistence calls made
 - **WHEN** `hearing-event.json.enabled=true`
-- **THEN** `CallbackDeliveryService` is instantiated with `hearingEventJsonEnabled = true`
+- **THEN** `NotificationManager` passes `true` to `submitOutboundEvents`; `CallbackDeliveryService` invokes `HearingEventPayloadService` to persist payload and subscription rows
 
 ---
 
