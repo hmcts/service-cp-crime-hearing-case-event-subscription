@@ -1,6 +1,8 @@
 package uk.gov.hmcts.cp.servicebus.services;
 
 import com.azure.messaging.servicebus.ServiceBusMessage;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.azure.messaging.servicebus.ServiceBusSenderClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +18,9 @@ import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static uk.gov.hmcts.cp.filters.TracingFilter.CORRELATION_ID_KEY;
@@ -40,6 +45,8 @@ class ServiceBusClientServiceTest {
 
     @Mock
     ServiceBusSenderClient senderClient;
+    @Mock
+    ServiceBusReceiverClient receiverClient;
 
     OffsetDateTime nextTryTime = OffsetDateTime.now();
     String callbackUrl = "http://callback";
@@ -61,5 +68,54 @@ class ServiceBusClientServiceTest {
         verify(senderClient).sendMessage(serviceBusMessage);
         verify(senderClient).close();
         MDC.remove("correlationId");
+    }
+
+    @Test
+    void clear_dead_letter_queue_should_complete_old_messages_and_return_count() {
+        final ServiceBusReceivedMessage oldMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(10), 1L);
+        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
+        when(receiverClient.receiveMessage(any())).thenReturn(oldMessage, null);
+
+        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isEqualTo(1);
+        verify(receiverClient).complete(oldMessage);
+        verify(receiverClient).close();
+    }
+
+    @Test
+    void clear_dead_letter_queue_should_abandon_recent_messages_and_return_zero() {
+        final ServiceBusReceivedMessage recentMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(2), 1L);
+        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
+        when(receiverClient.receiveMessage(any())).thenReturn(recentMessage, null);
+
+        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isZero();
+        verify(receiverClient).abandon(recentMessage);
+        verify(receiverClient).close();
+    }
+
+    @Test
+    void clear_dead_letter_queue_should_stop_when_skipped_sequence_number_seen_again() {
+        final ServiceBusReceivedMessage recentMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(1), 99L);
+        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
+        when(receiverClient.receiveMessage(any())).thenReturn(recentMessage, recentMessage);
+
+        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isZero();
+        verify(receiverClient).close();
+    }
+
+    @Test
+    void clear_dead_letter_queue_should_return_zero_when_dlq_is_empty() {
+        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
+        when(receiverClient.receiveMessage(any())).thenReturn(null);
+
+        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isZero();
+        verify(receiverClient).close();
+    }
+
+    private ServiceBusReceivedMessage mockMessageEnqueuedAt(final OffsetDateTime enqueuedAt, final long sequenceNumber) {
+        final ServiceBusReceivedMessage message = mock(ServiceBusReceivedMessage.class);
+        when(message.getEnqueuedTime()).thenReturn(enqueuedAt);
+        when(message.getSequenceNumber()).thenReturn(sequenceNumber);
+        when(message.getMessageId()).thenReturn("msg-" + sequenceNumber);
+        return message;
     }
 }

@@ -1,6 +1,8 @@
 package uk.gov.hmcts.cp.servicebus.services;
 
 import com.azure.messaging.servicebus.ServiceBusMessage;
+import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.azure.messaging.servicebus.ServiceBusSenderClient;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,7 +13,10 @@ import uk.gov.hmcts.cp.servicebus.mapper.ServiceBusWrapperMapper;
 import uk.gov.hmcts.cp.servicebus.model.ServiceBusWrappedMessage;
 import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import static uk.gov.hmcts.cp.filters.TracingFilter.CORRELATION_ID_KEY;
@@ -37,5 +42,30 @@ public class ServiceBusClientService {
         serviceBusSenderClient.sendMessage(serviceBusMessage);
         serviceBusSenderClient.close();
         log.info("Sent message to queue:{} with failCount:{} nextTryTime:{}", queueName, failureCount, nextTryTime);
+    }
+
+    public int clearDeadLetterQueue(final String queueName, final int olderThanDays) {
+        final OffsetDateTime cutoff = OffsetDateTime.now().minusDays(olderThanDays);
+        final Set<Long> skipped = new HashSet<>();
+        int count = 0;
+        try (final ServiceBusReceiverClient receiver = clientFactory.deadLetterReceiverClient(queueName)) {
+            ServiceBusReceivedMessage message;
+            while ((message = receiver.receiveMessage(Duration.ofSeconds(1))) != null) {
+                if (skipped.contains(message.getSequenceNumber())) {
+                    receiver.abandon(message);
+                    break;
+                }
+                if (message.getEnqueuedTime().isBefore(cutoff)) {
+                    log.info("Clearing DLQ message id:{} enqueuedAt:{} from queue:{}", message.getMessageId(), message.getEnqueuedTime(), queueName);
+                    receiver.complete(message);
+                    count++;
+                } else {
+                    receiver.abandon(message);
+                    skipped.add(message.getSequenceNumber());
+                }
+            }
+        }
+        log.info("Cleared {} DLQ messages older than {} days from queue:{}", count, olderThanDays, queueName);
+        return count;
     }
 }
