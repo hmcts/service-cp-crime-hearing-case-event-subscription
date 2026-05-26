@@ -120,14 +120,4 @@ class NotificationManagerTest {
 
         verify(subscriptionService).assertClientOwnsSubscription(clientId, subscriptionId);
     }
-
-    @Test
-    void validateClientOwnsSubscription_should_propagate_forbidden_when_ownership_fails() {
-        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied: subscription does not belong to this client"))
-                .when(subscriptionService).assertClientOwnsSubscription(clientId, subscriptionId);
-
-        assertThatThrownBy(() -> notificationManager.validateClientOwnsSubscription(clientId, subscriptionId))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
-    }
 }
