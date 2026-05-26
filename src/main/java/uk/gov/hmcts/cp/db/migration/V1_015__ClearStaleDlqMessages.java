@@ -1,4 +1,4 @@
-package db.migration;
+package uk.gov.hmcts.cp.db.migration;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
