@@ -1,12 +1,13 @@
 package uk.gov.hmcts.cp.subscription.services;
 
 import jakarta.persistence.EntityNotFoundException;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uk.gov.hmcts.cp.hmac.managers.HmacManager;
 import uk.gov.hmcts.cp.openapi.model.EventNotificationPayload;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
+import uk.gov.hmcts.cp.subscription.config.AppProperties;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
 import uk.gov.hmcts.cp.subscription.entities.ClientEntity;
 import uk.gov.hmcts.cp.subscription.entities.ClientHmacEntity;
@@ -22,6 +23,7 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class CallbackDeliveryService {
 
     public static final String EXAMPLE_ENDPOINT = "https://example.com";
@@ -34,26 +36,7 @@ public class CallbackDeliveryService {
     private final ServiceBusClientService clientService;
     private final HmacManager hmacManager;
     private final HearingEventService hearingEventPayloadService;
-    private final boolean hearingEventJsonEnabled;
-
-    public CallbackDeliveryService(
-            final ClientEventRepository clientEventRepository,
-            final ClientHmacRepository clientHmacRepository,
-            final NotificationMapper notificationMapper,
-            final JsonMapper jsonMapper,
-            final ServiceBusClientService clientService,
-            final HmacManager hmacManager,
-            final HearingEventService hearingEventPayloadService,
-            @Value("${hearing-event.json.enabled:false}") final boolean hearingEventJsonEnabled) {
-        this.clientEventRepository = clientEventRepository;
-        this.clientHmacRepository = clientHmacRepository;
-        this.notificationMapper = notificationMapper;
-        this.jsonMapper = jsonMapper;
-        this.clientService = clientService;
-        this.hmacManager = hmacManager;
-        this.hearingEventPayloadService = hearingEventPayloadService;
-        this.hearingEventJsonEnabled = hearingEventJsonEnabled;
-    }
+    private final AppProperties appProperties;
 
     public void submitOutboundEvents(final EventPayload eventPayload, final UUID documentId) {
         final String eventType = eventPayload.getEventType();
@@ -61,10 +44,12 @@ public class CallbackDeliveryService {
         final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload);
         log.info("sending {} outbound notifications", clients.size());
 
-        final UUID hearingEventId = hearingEventJsonEnabled ? hearingEventPayloadService.saveIfAbsent(eventPayload) : null;
+        final UUID hearingEventId = appProperties.isHearingEventJsonEnabledInEnv()
+                ? hearingEventPayloadService.saveIfAbsent(eventPayload)
+                : null;
 
         for (final ClientEntity client : clients) {
-            if (hearingEventJsonEnabled && hearingEventId != null) {
+            if (appProperties.isHearingEventJsonEnabledInEnv()) {
                 hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), hearingEventId);
             }
 
