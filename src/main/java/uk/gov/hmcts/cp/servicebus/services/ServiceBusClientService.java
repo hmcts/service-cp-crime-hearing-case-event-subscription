@@ -48,7 +48,7 @@ public class ServiceBusClientService {
         final OffsetDateTime cutoff = OffsetDateTime.now().minusDays(olderThanDays);
         final Set<Long> skipped = new HashSet<>();
         int count = 0;
-        try (final ServiceBusReceiverClient receiver = clientFactory.deadLetterReceiverClient(queueName)) {
+        try (ServiceBusReceiverClient receiver = clientFactory.deadLetterReceiverClient(queueName)) {
             ServiceBusReceivedMessage message;
             while ((message = receiver.receiveMessage(Duration.ofSeconds(1))) != null) {
                 if (skipped.contains(message.getSequenceNumber())) {
