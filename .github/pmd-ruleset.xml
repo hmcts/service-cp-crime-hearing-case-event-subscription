@@ -20,7 +20,14 @@
         <exclude name="PreserveStackTrace"/>
         <exclude name="ImplicitFunctionalInterface"/>
     </rule>
+    <rule ref="category/java/codestyle.xml/ClassNamingConventions">
+        <properties>
+            <!-- Extends standard PascalCase to also allow Flyway Java migration names e.g. V1_015__ClearStaleDlqMessages -->
+            <property name="classPattern" value="[A-Z][a-zA-Z0-9]*|V[0-9]+_[0-9]+__[A-Z][a-zA-Z0-9]*"/>
+        </properties>
+    </rule>
     <rule ref="category/java/codestyle.xml">
+        <exclude name="ClassNamingConventions"/>
         <exclude name="AtLeastOneConstructor"/>
         <exclude name="CallSuperInConstructor"/>
         <exclude name="LongVariable"/>
