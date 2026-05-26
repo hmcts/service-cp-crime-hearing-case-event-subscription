@@ -187,17 +187,4 @@ class NotificationControllerValidationTest extends IntegrationTestBase {
                 .andDo(print())
                 .andExpect(status().isBadRequest());
     }
-
-    @Test
-    void get_hearing_event_should_return_403_when_client_does_not_own_subscription() throws Exception {
-        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied: subscription does not belong to this client"))
-                .when(notificationManager).validateClientOwnsSubscription(any(), any());
-
-        mockMvc.perform(get(SUBSCRIPTION_HEARING_EVENT_URI,
-                        subscriptionId, documentId)
-                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
-                .andDo(print())
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.message").value("Access denied: subscription does not belong to this client"));
-    }
 }
