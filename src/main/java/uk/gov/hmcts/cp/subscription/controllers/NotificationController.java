@@ -21,6 +21,7 @@ import uk.gov.hmcts.cp.filters.ClientIdResolutionFilter;
 import uk.gov.hmcts.cp.openapi.api.InternalApi;
 import uk.gov.hmcts.cp.openapi.api.NotificationApi;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
+import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
 import uk.gov.hmcts.cp.subscription.managers.NotificationManager;
 import uk.gov.hmcts.cp.subscription.model.DocumentContent;
@@ -79,13 +80,28 @@ public class NotificationController implements InternalApi, NotificationApi {
     }
 
     @Override
+    public ResponseEntity<HearingEventResponse> getHearingEvent(
+            @NotNull @PathVariable("clientSubscriptionId") final UUID clientSubscriptionId,
+            @NotNull @PathVariable("hearingEventId") final UUID hearingEventId,
+            @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
+        if (!hearingEventJsonEnabled) {
+            return ResponseEntity.notFound().build();
+        }
+        final UUID clientId = UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID));
+        log.info("getHearingEvent request clientId:{} clientSubscriptionId:{} hearingEventId:{}", clientId, clientSubscriptionId, hearingEventId);
+        notificationManager.validateClientOwnsSubscription(clientId, clientSubscriptionId);
+        final HearingEventResponse response = notificationManager.getHearingEvent(clientSubscriptionId, hearingEventId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
     public ResponseEntity<Resource> getDocument(
             @NotNull @PathVariable("clientSubscriptionId") final UUID clientSubscriptionId,
             @NotNull @PathVariable("documentId") final UUID documentId,
             @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
-        // TODO Validate clientId and subscriptionId MATCH UP
         final UUID clientId = UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID));
         log.info("getDocument request clientId:{} clientSubscriptionId:{} documentId:{}", clientId, clientSubscriptionId, documentId);
+        notificationManager.validateClientOwnsSubscription(clientId, clientSubscriptionId);
         final DocumentContent content = notificationManager.getDocumentContent(clientSubscriptionId, documentId);
         final Resource resource = new ByteArrayResource(content.getBody());
         final HttpHeaders headers = getHttpHeaders(content);

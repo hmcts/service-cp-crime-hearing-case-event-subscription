@@ -2,10 +2,14 @@ package uk.gov.hmcts.cp.subscription.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
+import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
+import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.mappers.HearingEventMapper;
 import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
@@ -24,6 +28,25 @@ public class HearingEventService {
     private final HearingEventSubscriptionRepository hearingEventSubscriptionRepository;
     private final EventTypeRepository eventTypeRepository;
     private final HearingEventMapper hearingEventPayloadMapper;
+    private final JsonMapper jsonMapper;
+
+    public HearingEventResponse getHearingEvent(final UUID subscriptionId, final UUID hearingEventId) {
+        final HearingEventSubscriptionEntity subscription = hearingEventSubscriptionRepository
+                .findByIdAndSubscriptionId(hearingEventId, subscriptionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "hearingEventId not found for this subscriber"));
+        final HearingEventPayloadEntity payload = hearingEventPayloadRepository
+                .findById(subscription.getHearingEventId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "hearing_event_payload missing for hearing_event_id: " + subscription.getHearingEventId()));
+        log.info("getHearingEvent subscriptionId={} hearingEventId={}", subscriptionId, hearingEventId);
+        return HearingEventResponse.builder()
+                .hearingEventId(subscription.getId())
+                .eventType(payload.getRawPayload().getEventType())
+                .createdAt(payload.getCreatedAt().toInstant())
+                .payload(jsonMapper.toMap(payload.getRawPayload()))
+                .build();
+    }
 
     @Transactional
     public UUID saveIfAbsent(final EventPayload eventPayload) {

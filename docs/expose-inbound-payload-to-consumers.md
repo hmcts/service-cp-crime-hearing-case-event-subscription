@@ -35,9 +35,11 @@ hearing-event:
     enabled: ${HEARING_EVENT_JSON_ENABLED:false}
 ```
 
-The toggle is injected into `NotificationManager` (which has no repository dependencies) and passed as a `boolean` parameter to `CallbackDeliveryService.submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled)`. This keeps persistence-owning classes toggle-blind (T4).
+The toggle is constructor-injected into `CallbackDeliveryService` as a `final boolean hearingEventJsonEnabled` parameter annotated `@Value("${hearing-event.json.enabled:false}")`. `@RequiredArgsConstructor` is replaced with an explicit constructor. `NotificationManager` remains toggle-blind. `NotificationController` receives the toggle via `@Value` field injection to gate the GET endpoint.
 
-Switch on in tests via `application-test.yaml` or `@TestPropertySource(properties = "hearing-event.json.enabled=true")`.
+`CallbackDeliveryService` is not a repository-owning class — it delegates to `HearingEventService` — so holding the toggle field here is compatible with T4.
+
+In unit tests, toggle-on and toggle-off paths are exercised by constructing two service instances in `@BeforeEach` with `hearingEventJsonEnabled=true` and `false` directly.No `ReflectionTestUtils` or `@SpringBootTest` is needed. The default for integration tests is set in `src/test/resources/application.properties`.
 
 ---
 
@@ -137,34 +139,33 @@ fields: subscriptionId (UUID), hearingEventId (UUID, FK → HearingEventPayloadE
 
 ```java
 // HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>
-// No application-level existence check — idempotency on event_id is enforced by the DB UNIQUE constraint
+Optional<HearingEventPayloadEntity> findByEventId(UUID eventId);  // application-level idempotency check in saveIfAbsent; DB UNIQUE on event_id is the safety net
 
 // HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>
-boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId);  // implemented
-Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);  // future: needed for GET endpoint
+boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId);
+Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);  // GET endpoint access control; id is the consumer-facing PK of hearing_event_subscriptions
 ```
 
 ---
 
 ## Processing Flow
 
-The toggle decision is made in `NotificationManager` and passed as a boolean to `CallbackDeliveryService`. Both payload and subscription rows are created inside `submitOutboundEvents()` — at the point where the list of subscribed clients is available.
+The toggle is a `final boolean` field in `CallbackDeliveryService`, constructor-injected via `@Value`. Both payload and subscription rows are created inside `submitOutboundEvents()` — at the point where the list of subscribed clients is available. `NotificationManager` is toggle-blind.
 
 ```
 NotificationManager.processNotification(EventPayload)
     ↓
-    hearingEventJsonEnabled = @Value field (default false)
-    ↓
-CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId, hearingEventJsonEnabled)
+CallbackDeliveryService.submitOutboundEvents(EventPayload, documentId)   ← two-argument; toggle read from field
     ↓
 1. If hearingEventJsonEnabled:
-       hearingEventPayloadService.saveIfAbsent(eventPayload)
-       → resolves eventTypeId, persists HearingEventPayloadEntity
-       → returns service-generated hearingEventId (UUID)
-       → DB UNIQUE constraint on event_id rejects duplicate on re-delivery
+       hearingEventService.saveIfAbsent(eventPayload)
+       → calls findByEventId(eventId) first
+       → if row exists: returns existing hearingEventId (application-level idempotency)
+       → if absent: resolves eventTypeId, persists HearingEventPayloadEntity, returns generated hearingEventId
+       → DB UNIQUE constraint on event_id is the safety net against races
 
 For each subscribed client (only when hearingEventId != null):
-    2. hearingEventPayloadService.saveSubscriptionIfAbsent(subscriptionId, hearingEventId)
+    2. hearingEventService.saveSubscriptionIfAbsent(subscriptionId, hearingEventId)
        → skips if existsBySubscriptionIdAndHearingEventId  ← application-level idempotency for subscriptions
        → else persists HearingEventSubscriptionEntity (id=@GeneratedValue, subscriptionId, hearingEventId)
     3. [existing] Map EventPayload → EventNotificationPayload
@@ -233,18 +234,18 @@ Store as `JSONB` (not `TEXT`) — enables future PostgreSQL JSON path queries.
 - [x] `V1.013__add_hearing_event_payload.sql`
 - [x] `V1.014__add_hearing_event_subscriptions.sql`
 - [x] `HearingEventPayloadEntity` + `HearingEventSubscriptionEntity`
-- [x] `HearingEventPayloadRepository` + `HearingEventSubscriptionRepository`
-- [x] `HearingEventPayloadService` — `saveIfAbsent(EventPayload)` + `saveSubscriptionIfAbsent(UUID, UUID)`
-- [x] Persist rows in `CallbackDeliveryService.submitOutboundEvents()`
-- [x] `HEARING_EVENT_JSON_ENABLED` property wired into `NotificationManager` (passed as parameter to `CallbackDeliveryService`) and `NotificationController`
-- [x] Idempotency guards — DB UNIQUE constraint on `event_id`; `existsBySubscriptionIdAndHearingEventId` before subscription insert
-- [x] Unit tests for service, mapper, idempotency path, and toggle behaviour
-- [x] Integration tests for repository persistence and unique constraint
-- [ ] `HearingEventPayloadService.getByHearingEventId(clientId, hearingEventId)` — needed for GET endpoint
-- [ ] `findByIdAndSubscriptionId` on `HearingEventSubscriptionRepository` — needed for GET endpoint
-- [ ] `NotificationManager.getInboundPayload()` — thin orchestration for GET endpoint
-- [ ] `NotificationController` — new GET endpoint
-- [ ] `InboundPayloadResponse` DTO (OpenAPI spec update → `openApiGenerate`)
-- [ ] Add `hearingEventId` to `EventNotificationPayload` in OpenAPI spec → `openApiGenerate`
-- [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService`
+- [x] `HearingEventPayloadRepository` (`findByEventId`) + `HearingEventSubscriptionRepository` (`existsBySubscriptionIdAndHearingEventId`, `findByIdAndSubscriptionId`)
+- [x] `HearingEventService` — `saveIfAbsent(EventPayload)` (application-level `findByEventId` check) + `saveSubscriptionIfAbsent(UUID, UUID)` + `getHearingEvent(UUID, UUID)`
+- [x] Persist rows in `CallbackDeliveryService.submitOutboundEvents()` (two-argument; toggle from constructor field)
+- [x] `HEARING_EVENT_JSON_ENABLED` property — constructor-injected into `CallbackDeliveryService`; field-injected into `NotificationController` to gate GET endpoint
+- [x] `JsonMapper.toMap(Object)` — Jackson `convertValue` to `Map<String, Object>` for GET response `payload` field
+- [x] Idempotency guards — `findByEventId` (application-level) + DB UNIQUE on `event_id` (safety net); `existsBySubscriptionIdAndHearingEventId` before subscription insert
+- [x] `NotificationManager.getHearingEvent(UUID, UUID)` — thin delegation to `HearingEventService`
+- [x] `NotificationController.getHearingEvent` — returns 404 when toggle off; delegates to `NotificationManager` when on
+- [x] Unit tests for service (`saveIfAbsent`, `saveSubscriptionIfAbsent`, `getHearingEvent`), mapper, idempotency path, toggle behaviour, GET endpoint
+- [x] Integration tests for repository persistence, unique constraint, `findByIdAndSubscriptionId` (happy path, wrong subscriber, unknown id)
+- [x] API dependency bumped to `2.0.10` (`HearingEventResponse` model + `getHearingEvent` operation)
+- [ ] Add `hearingEventId` to `EventNotificationPayload` in OpenAPI spec → `openApiGenerate` (blocked on external spec library — separate PR)
+- [ ] Populate `hearingEventId` on outbound payload in `CallbackDeliveryService` (blocked — separate PR)
+- [ ] Encrypt payload at rest (decision b — deferred; `AttributeConverter` wrapping `@JdbcTypeCode` is the hook)
 - [ ] Integration test: POST createNotification → GET payload returns same data; new subscriber cannot GET older notification

@@ -3,8 +3,10 @@ package uk.gov.hmcts.cp.subscription.services;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.hmac.managers.HmacManager;
 import uk.gov.hmcts.cp.hmac.model.KeyPair;
 import uk.gov.hmcts.cp.openapi.model.ClientSubscription;
@@ -91,6 +93,13 @@ public class SubscriptionService {
     public boolean hasAccess(final UUID subscriptionId,
                              final String eventType) {
         return clientEventRepository.countByClientSubscriptionAndEventName(subscriptionId, eventType) > 0;
+    }
+
+    @Transactional(readOnly = true)
+    public void assertClientOwnsSubscription(final UUID clientId, final UUID subscriptionId) {
+        clientRepository.findByClientIdAndSubscriptionId(clientId, subscriptionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Access denied: subscription does not belong to this client"));
     }
 
     @Transactional
