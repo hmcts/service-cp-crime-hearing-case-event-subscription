@@ -49,8 +49,8 @@ public class ServiceBusClientService {
         final Set<Long> skipped = new HashSet<>();
         int count = 0;
         try (ServiceBusReceiverClient receiver = clientFactory.deadLetterReceiverClient(queueName)) {
-            ServiceBusReceivedMessage message;
-            while ((message = receiver.receiveMessage(Duration.ofSeconds(1))) != null) {
+            ServiceBusReceivedMessage message = receiver.receiveMessage(Duration.ofSeconds(1));
+            while (message != null) {
                 if (skipped.contains(message.getSequenceNumber())) {
                     receiver.abandon(message);
                     break;
@@ -63,6 +63,7 @@ public class ServiceBusClientService {
                     receiver.abandon(message);
                     skipped.add(message.getSequenceNumber());
                 }
+                message = receiver.receiveMessage(Duration.ofSeconds(1));
             }
         }
         log.info("Cleared {} DLQ messages older than {} days from queue:{}", count, olderThanDays, queueName);
