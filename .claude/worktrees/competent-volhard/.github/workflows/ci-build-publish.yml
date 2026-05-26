@@ -1,0 +1,354 @@
+name: CI Build and Publish
+
+on:
+  workflow_call:
+    secrets:
+      AZURE_DEVOPS_ARTIFACT_USERNAME:
+        required: true
+      AZURE_DEVOPS_ARTIFACT_TOKEN:
+        required: true
+      HMCTS_ADO_PAT:
+        required: true
+      DEPLOYMENT_APP_ID:
+        required: true
+        description: "GitHub App ID for deployment"
+      DEPLOYMENT_APP_PRIVATE_KEY:
+        required: true
+        description: "GitHub App private key for deployment"
+    inputs:
+      environment:
+        required: true
+        type: string
+        default: dev
+      is_release:
+        required: false
+        type: boolean
+        default: false
+      is_publish:
+        required: true
+        type: boolean
+      trigger_docker:
+        required: true
+        type: boolean
+      trigger_deploy:
+        required: true
+        type: boolean
+      run_api_test:
+        required: false
+        type: boolean
+        default: false
+      deploy_environment:
+        required: false
+        type: string
+        default: dev
+
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    outputs:
+      artefact_version: ${{ inputs.is_release && steps.artefact.outputs.release_version || steps.artefact.outputs.draft_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate Artefact Version
+        id: artefact
+        uses: hmcts/artefact-version-action@v1
+        with:
+          release: ${{ inputs.is_release }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: [version]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    outputs:
+      repo_name: ${{ steps.repo_vars.outputs.repo_name }}
+      artefact_name: ${{ steps.repo_vars.outputs.artefact_name }}
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: current
+
+      - name: Gradle Build
+        env:
+          ARTEFACT_VERSION: ${{ needs.version.outputs.artefact_version }}
+        run: |
+          echo "Building with ARTEFACT_VERSION=$ARTEFACT_VERSION"
+          ./gradlew composeUp
+          ./gradlew build -DARTEFACT_VERSION=$ARTEFACT_VERSION
+          ./gradlew composeDown
+
+      - name: Extract repo name
+        id: repo_vars
+        run: |
+          repo_name=${GITHUB_REPOSITORY##*/}
+          echo "repo_name=${repo_name}" >> $GITHUB_OUTPUT
+          echo "artefact_name=${repo_name}-${{ needs.version.outputs.artefact_version }}" >> $GITHUB_OUTPUT
+
+      - name: Upload JAR Artefact
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-jar
+          path: build/libs/${{ steps.repo_vars.outputs.artefact_name }}.jar
+
+      - name: Upload unit and integration test reports
+        if: always()
+        uses: ./.github/actions/upload-test-reports
+        with:
+          artifact_name: unit-integration-test-reports
+          path: |
+            build/reports/tests/test/
+            build/test-results/test/
+
+  api-test-pr:
+    if: ${{ inputs.run_api_test }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: current
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Run API Tests
+        run: |
+          cd apiTest
+          ./build-and-run-apitest.sh
+
+      - name: Upload test reports
+        if: always()
+        uses: ./.github/actions/upload-test-reports
+        with:
+          artifact_name: api-test-pr-reports
+          path: |
+            apiTest/build/reports/tests/test/
+            apiTest/build/test-results/test/
+
+  publish-artefact:
+    needs: [ version, build ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: current
+
+      - name: Gradle Publish
+        if: ${{ inputs.is_publish }}
+        env:
+          ARTEFACT_VERSION: ${{ needs.version.outputs.artefact_version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AZURE_DEVOPS_ARTIFACT_USERNAME: ${{ secrets.AZURE_DEVOPS_ARTIFACT_USERNAME }}
+          AZURE_DEVOPS_ARTIFACT_TOKEN: ${{ secrets.AZURE_DEVOPS_ARTIFACT_TOKEN }}
+        run: |
+          if [ -z "AZURE_DEVOPS_ARTIFACT_USERNAME" ]; then
+            echo "::warning::AZURE_DEVOPS_ARTIFACT_USERNAME is null or not set"
+          fi
+
+          if [ -z "$AZURE_DEVOPS_ARTIFACT_TOKEN" ]; then
+            echo "::warning::AZURE_DEVOPS_ARTIFACT_TOKEN is null or not set"
+          fi
+
+          echo "Publishing artefact for version: $ARTEFACT_VERSION"
+          
+          ./gradlew publish \
+            -DARTEFACT_VERSION=$ARTEFACT_VERSION \
+            -DGITHUB_REPOSITORY=${{ github.repository }} \
+            -DGITHUB_ACTOR=${{ github.actor }} \
+            -DGITHUB_TOKEN=$GITHUB_TOKEN \
+            -DAZURE_DEVOPS_ARTIFACT_USERNAME=$AZURE_DEVOPS_ARTIFACT_USERNAME \
+            -DAZURE_DEVOPS_ARTIFACT_TOKEN=$AZURE_DEVOPS_ARTIFACT_TOKEN
+
+  push-ghcr:
+    needs: [ publish-artefact, build, version ]
+    if: ${{ inputs.trigger_docker }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v6
+
+      - name: Download JAR Artefact
+        uses: actions/download-artifact@v8
+        with:
+          name: app-jar
+          path: build/libs
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Packages
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image to GitHub
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ needs.version.outputs.artefact_version }}
+          build-args: |
+            BASE_IMAGE=eclipse-temurin:25
+            JAR_FILENAME=${{ needs.build.outputs.artefact_name }}.jar
+
+  api-test-image:
+    if: ${{ inputs.trigger_docker }}
+    needs: [push-ghcr, version]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: current
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Packages
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run API Tests against published Docker image
+        env:
+          DOCKER_IMAGE: ghcr.io/${{ github.repository }}:${{ needs.version.outputs.artefact_version }}
+        run: |
+          cd apiTest
+          ./build-and-run-apitest.sh
+
+      - name: Upload test reports
+        if: always()
+        uses: ./.github/actions/upload-test-reports
+        with:
+          artifact_name: api-test-main-reports
+          path: |
+            apiTest/build/reports/tests/test/
+            apiTest/build/test-results/test/
+
+  trigger-acr-copy:
+    needs: [ publish-artefact, build, version ]
+    if: ${{ inputs.trigger_deploy }}
+    runs-on: ubuntu-latest
+    outputs:
+      run_id: ${{ steps.trigger.outputs.run_id }}
+    steps:
+      - name: Extract repo name
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
+
+      - name: Trigger ADO pipeline 460
+        id: trigger
+        uses: hmcts/trigger-ado-pipeline@v2
+        with:
+          pipeline_id: 460
+          ado_pat: ${{ secrets.HMCTS_ADO_PAT }}
+          template_parameters: >
+            {
+              "GROUP_ID": "uk.gov.hmcts.cp",
+              "ARTIFACT_ID": "${{ env.REPO_NAME }}",
+              "ARTIFACT_VERSION": "${{ needs.version.outputs.artefact_version }}",
+              "TARGET_REPOSITORY": "${{ github.repository }}",
+              "agentDemand": "ubuntu-j25",
+              "baseImage": "hmcts/apm-services:25-jre"
+            }
+
+  wait-acr-copy:
+    needs: [trigger-acr-copy]
+    if: ${{ inputs.trigger_deploy }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for ADO pipeline 460
+        uses: hmcts/monitor-ado-pipeline@v1
+        with:
+          pipeline_id: 460
+          run_id: ${{ needs.trigger-acr-copy.outputs.run_id }}
+          ado_pat: ${{ secrets.HMCTS_ADO_PAT }}
+          poll_interval: 30
+          timeout: 1800
+
+  deploy-dev:
+    needs: [wait-acr-copy, version, build]
+    if: ${{ inputs.trigger_deploy }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate date suffix
+        id: date
+        shell: bash
+        run: echo "suffix=_$(date -u +'%d%m%y')" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via ADO pipeline
+        uses: hmcts/action-ado-deploy@v1
+        with:
+          service_name: ${{ needs.build.outputs.repo_name }}
+          image_tag: ${{ needs.version.outputs.artefact_version }}
+          tag_suffix: ${{ steps.date.outputs.suffix }}
+          app_id: ${{ secrets.DEPLOYMENT_APP_ID }}
+          app_private_key: ${{ secrets.DEPLOYMENT_APP_PRIVATE_KEY }}
+          target_repository: hmcts/cp-vp-aks-deploy
+          target_branch: env/dev
+          values_file: vp-config/services_values.yml
+          pipeline_id: 434
+          ado_pat: ${{ secrets.HMCTS_ADO_PAT }}
+          ref_name: refs/heads/env/dev
+          wait: false
+          template_parameters: >
+            {
+              "env": "dev",
+              "cpbackendenv": "steccm64",
+              "stack": "devamp01",
+              "cluster": "K8-DEV-CS01-CL02"
+            }
+

@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/client-subscriptions/([a-zA-Z0-9-]*)"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "subscription-get.json",
+    "transformers": ["response-template"]
+  }
+}

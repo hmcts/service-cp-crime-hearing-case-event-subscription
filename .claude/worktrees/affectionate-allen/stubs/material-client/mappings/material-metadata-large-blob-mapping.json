@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/material-query-api/query/api/rest/material/material/04325082-5203-4eaa-9f62-e153d6308631/metadata"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "material-response-large-blob.json"
+  }
+}

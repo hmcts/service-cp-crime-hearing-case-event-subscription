@@ -1,0 +1,21 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/material-query-api/query/api/rest/material/material/([a-zA-Z0-9-]*)/content",
+    "headers": {
+      "X-Correlation-Id": {
+        "matches": "^([a-zA-Z0-9-]*)$"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/vnd.material.query.material+json"
+    },
+    "bodyFileName": "material-with-contenturl.json",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

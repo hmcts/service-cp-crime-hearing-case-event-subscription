@@ -1,0 +1,50 @@
+CREATE TABLE event_type (
+    id integer PRIMARY KEY NOT NULL,
+    event_name VARCHAR(128) NOT NULL UNIQUE,
+    display_name VARCHAR(256) NOT NULL,
+    category VARCHAR(64) NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_event_type_event_name ON event_type(event_name);
+
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (1, 'PRISON_COURT_REGISTER_GENERATED', 'Prison court register', 'REGISTER');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (2, 'WEE_Layout5', 'Warrant Supplement', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (3, 'NEE_DetentionOnRecommendationForDeportation', 'Detention on Recommendation for Deportation', 'NOTICE');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (4, 'OEE_MedicalRemandAdditionalDetails', 'Medical Remand - Additional Details', 'ORDER');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (5, 'WEE_RemandAfterBailAppealByProsecutor', 'Remand Warrant After Bail Appeal by Prosecutor', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (6, 'WEE_CustodialSentence', 'Warrant for Custodial Sentence', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (7, 'WEE_CustodialSentenceWitness', 'Warrant for Custodial Sentence (Witness)', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (8, 'WEE_CommittalToCrownCourtForConsiderationOfTheQuestionOfBailOnAChargeOfMurder', 'Warrant of Committal to Crown Court for Consideration of the Question of Bail on a Charge of Murder', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (9, 'WEE_CommittalToCrownCourtForSentence', 'Warrant of Committal to Crown Court for Sentence', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (10, 'WEE_SendingToCrownCourtForTrial', 'Warrant of Sending to Crown Court for Trial', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (11, 'OEE_BailAppealEndOfCustody', 'Bail Appeal - End of Custody', 'ORDER');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (12, 'WEE_CommitmentPendingTransferToServiceCustody', 'Warrant of Commitment Pending Transfer to Service Custody', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (13, 'WEE_NonPaymentOfMoneyOwedCivilDebt', 'Warrant of Committal for Non-Payment of Money Owed Civil Debt,', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (14, 'WEE_CustodyWarrantOnDischargeOfExtraditionPendingAppeal', 'Custody Warrant on Discharge of Extradition Pending Appeal', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (15, 'WEE_CustodyWarrantOnDischargeOfExtraditionPendingAppealPart2', 'Custody Warrant on Discharge of Extradition Pending Appeal (Part 2)', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (16, 'WEE_CustodyWarrantOnExtradition', 'Custody Warrant on Extradition', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (17, 'WEE_CustodyWarrantOnExtraditionCategory2Territory', 'Custody Warrant on Extradition ‚Äì Category 2 Territory', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (18, 'WEE_CustodyWarrantOnExtraditionWithConsent', 'Custody Warrant on Extradition (Part 1)', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (19, 'WEE_CustodyWarrantOnExtraditionWithBailDirection', 'Custody Warrant on Extradition (with Bail Direction)', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (20, 'WEE_CustodyWarrantOnExtraditionWithBailDirectionWithConsent', 'Custody Warrant on Extradition with Bail Direction', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (21, 'WEE_CustodyWarrantOnExtraditionWithBailDirectionCategory2Territory', 'Custody Warrant on Extradition (with Bail Direction) ‚Äì Category 2 Territory', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (22, 'WEE_CustodyWarrantSendingToSecretaryOfStateCategory2Territory', 'Custody Warrant Sending to Secretary of State ‚Äì Category 2 Territory', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (23, 'WEE_CustodyWarrantSendingToSecretaryOfStateOnConsentCategory2Territory', 'Custody Warrant Sending to Secretary of State on Consent ‚Äì Category 2 Territory', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (24, 'WEE_CustodyWarrantWithBailDirectionOnDischargeOfExtraditionPendingAppeal', 'Custody Warrant with Bail Direction on Discharge of Extradition Pending Appeal', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (25, 'WEE_CustodyWarrantWithBailDirectionOnDischargeOfExtraditionPendingAppealPart2', 'Custody Warrant with Bail Direction on Discharge of Extradition Pending Appeal (Part 2)', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (26, 'WEE_CustodyWarrantWithBailDirectionSendingToSecretaryOfStateCategory2Territory', 'Custody Warrant with Bail Direction Sending to Secretary of State ‚Äì Category 2 Territory', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (27, 'WEE_CustodyWarrantWithBailDirectionSendingToSecretaryOfStateOnConsentCategory2Territory', 'Custody Warrant with Bail Direction Sending to Secretary of State on Consent ‚Äì Category 2 Territory', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (28, 'WEE_ExtraditionRemandAfterBailAppealByProsecutor', 'Remand Warrant After Bail Appeal by Prosecutor - Extradition', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (29, 'WEE_ExtraditionSupplementToCustodyWarrant', 'Supplement to Custody Warrant on Extradition', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (30, 'OBE_TerminationOfFootballBanning', 'Application for Termination of Football Banning Order', 'ORDER');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (31, 'OBE_ChangeOfFootballBanning', 'Change of Football Banning Order', 'ORDER');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (32, 'NEE_FootballBanning', 'Notice of Football Banning Order', 'NOTICE');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (33, 'WEE_Remand', 'Remand Warrant', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (34, 'WXE_RemandWarrantYouthDetentionAccommodation', 'Remand Warrant - Youth Detention Accommodation', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (35, 'OXE_DetentionAndTraining', 'Detention and Training Order', 'ORDER');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (36, 'WEE_InjunctionDetention', 'Injunction Warrant of Detention', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (37, 'OPE_SupervisionOnBreachOfDetentionAndTraining', 'Supervision on Breach of Detention and Training Order', 'ORDER');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (38, 'WEE_CommittalToCrownCourtAuthorityToHoldInYouthDetentionAccommodation', 'Warrant of Committal to Crown Court - Authority to Hold in Youth Detention Accommodation', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (39, 'WEE_Detention', 'Warrant of Detention', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (40, 'WEE_DetentionInYouthDetentionAccommodationBreach', 'Warrant of Detention in Youth Detention Accommodation (Breach)', 'WARRANT');
+INSERT INTO event_type (id, event_name, display_name, category) VALUES (41, 'WEE_SendingToCrownCourtAuthorityToHoldInYouthDetentionAccommodation', 'Warrant of Sending to Crown Court - Authority to Hold in Youth Detention Accommodation', 'WARRANT');

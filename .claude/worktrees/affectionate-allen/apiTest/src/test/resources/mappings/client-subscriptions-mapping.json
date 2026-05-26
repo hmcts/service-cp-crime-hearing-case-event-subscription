@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/client-subscriptions"
+  },
+  "response": {
+    "status": 201,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "subscription-created.json",
+    "transformers": ["response-template"]
+  }
+}

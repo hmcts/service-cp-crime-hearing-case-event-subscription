@@ -1,0 +1,19 @@
+{
+  "eventId": "11111111-2222-3333-4444-555555555555",
+  "materialId": "11111111-1111-1111-1111-111111111112",
+  "eventType": "PRISON_COURT_REGISTER_GENERATED",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "defendant": {
+    "masterDefendantId": "7c198796-08bb-4803-b456-fa0c29ca6022",
+    "name": "string",
+    "dateOfBirth": "1990-05-15",
+    "custodyEstablishmentDetails": {
+      "emailAddress": "string@email.com"
+    },
+    "cases": [
+      {
+        "urn": "string"
+      }
+    ]
+  }
+}

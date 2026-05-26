@@ -1,0 +1,9 @@
+{
+  "materialId": "6c198796-08bb-4803-b456-fa0c29ca6021",
+  "metadata": {
+    "materialId": "6c198796-08bb-4803-b456-fa0c29ca6021",
+    "fileName": "PrisonCourtRegister_20251219083322.pdf",
+    "mimeType": "application/pdf"
+  },
+  "contentUrl": "http://{{request.host}}:{{request.port}}/material-query-api/query/api/rest/material/material/6c198796-08bb-4803-b456-fa0c29ca6021/binary"
+}

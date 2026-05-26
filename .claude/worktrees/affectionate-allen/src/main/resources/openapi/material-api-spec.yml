@@ -1,0 +1,132 @@
+openapi: 3.0.0
+info:
+  title: Material Query API
+  description: API for querying material metadata and content
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/material-query-api/query/api/rest/material
+paths:
+  /material-query-api/query/api/rest/material/material/{materialId}/content:
+    get:
+      tags:
+        - Material
+      operationId: getMaterialByMaterialId
+      summary: Get material
+      description: |
+        Retrieve a material by its ID.
+      parameters:
+        - name: materialId
+          in: path
+          required: true
+          description: Material ID
+          schema:
+            type: string
+            format: uuid
+        - name: stream
+          in: query
+          required: false
+          description: Flag to indicate if the file should be streamed back or returned as an attachment
+          schema:
+            type: string
+        - name: requestPdf
+          in: query
+          required: false
+          description: Flag to indicate in order to request the file as a pdf
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Réponse
+          content:
+            application/vnd.material.query.material+json:
+              schema:
+                $ref: '#/components/schemas/Material'
+  /material-query-api/query/api/rest/material/material/{materialId}/metadata:
+    get:
+      tags:
+        - Material
+      operationId: getMaterialMetadataByMaterialId
+      summary: Get material metadata
+      description: Retrieve metadata for a material.
+      parameters:
+        - name: materialId
+          in: path
+          required: true
+          description: Material ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Réponse
+          content:
+            application/vnd.material.query.material-metadata+json:
+              schema:
+                $ref: '#/components/schemas/MaterialMetadata'
+            application/vnd.material.query.material-metadata-details+json:
+              schema:
+                $ref: '#/components/schemas/MaterialMetadataDetails'
+components:
+  schemas:
+    Material:
+      type: object
+      properties:
+        materialId:
+          type: string
+          format: uuid
+        metadata:
+          $ref: '#/components/schemas/MaterialMetadata'
+        contentUrl:
+          type: string
+          description: URL to download the material
+      required:
+        - materialId
+        - metadata
+    MaterialMetadata:
+      type: object
+      properties:
+        materialId:
+          description: Material Id
+          type: string
+          format: uuid
+        alfrescoAssetId:
+          description: Id returned by Alfresco
+          type: string
+        fileName:
+          description: File name of the material
+          type: string
+        mimeType:
+          type: string
+        materialAddedDate:
+          description: Material added timestamp in '2016-05-03T10:31:50.026' format
+          type: string
+        externalLink:
+          description: The external link that serves the file.
+          type: string
+      required:
+        - materialId
+        - fileName
+        - mimeType
+        - materialAddedDate
+    MaterialMetadataDetails:
+      type: object
+      properties:
+        materialId:
+          description: Material Id
+          type: string
+          format: uuid
+        alfrescoAssetId:
+          description: Id returned by Alfresco
+          type: string
+        fileName:
+          description: File name of the material
+          type: string
+        fileSize:
+          type: string
+      required:
+        - materialId
+        - fileName
+        - alfrescoAssetId
+        - fileSize
+  securitySchemes: {}

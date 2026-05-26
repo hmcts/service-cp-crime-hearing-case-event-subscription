@@ -162,12 +162,12 @@ class NotificationControllerValidationTest extends IntegrationTestBase {
     }
 
     @Test
-    void get_hearing_event_should_return_404_when_feature_toggle_is_off() throws Exception {
+    void get_hearing_event_should_return_501_when_feature_toggle_is_off() throws Exception {
         mockMvc.perform(get(SUBSCRIPTION_HEARING_EVENT_URI,
                         subscriptionId, hearingEventId)
                         .header("Authorization", AUTHORIZATION_HEADER_VALUE))
                 .andDo(print())
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotImplemented());
     }
 
     @Test

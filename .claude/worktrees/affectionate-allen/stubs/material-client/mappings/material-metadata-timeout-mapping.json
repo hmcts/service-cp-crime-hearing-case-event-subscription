@@ -1,0 +1,9 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/material-query-api/query/api/rest/material/material/11111111-1111-1111-1111-111111111112/metadata"
+  },
+  "response": {
+    "status": 204
+  }
+}

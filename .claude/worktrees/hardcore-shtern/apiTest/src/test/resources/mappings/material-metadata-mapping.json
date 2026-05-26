@@ -1,0 +1,19 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPattern": "/material-query-api/query/api/rest/material/material/([a-fA-F0-9-]*)/metadata",
+    "headers": {
+      "X-Correlation-Id": {
+        "matches": "^([a-zA-Z0-9-]*)$"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "material-response.json",
+    "transformers": ["response-template"]
+  }
+}

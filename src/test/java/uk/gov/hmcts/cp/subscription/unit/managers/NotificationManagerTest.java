@@ -90,10 +90,7 @@ class NotificationManagerTest {
     @Test
     void getHearingEvent_should_delegate_to_hearing_event_service() {
         UUID hearingEventId = UUID.randomUUID();
-        HearingEventResponse expected = HearingEventResponse.builder()
-                .hearingEventId(hearingEventId)
-                .eventType("PRISON_COURT_REGISTER_GENERATED")
-                .build();
+        HearingEventResponse expected = HearingEventResponse.builder().build();
         when(hearingEventService.getHearingEvent(subscriptionId, hearingEventId)).thenReturn(expected);
 
         HearingEventResponse result = notificationManager.getHearingEvent(subscriptionId, hearingEventId);

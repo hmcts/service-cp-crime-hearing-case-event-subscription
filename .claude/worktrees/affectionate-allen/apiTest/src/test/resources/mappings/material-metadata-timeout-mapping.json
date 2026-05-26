@@ -1,0 +1,10 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "GET",
+    "url": "/material-query-api/query/api/rest/material/material/99999999-9999-9999-9999-999999999999/metadata"
+  },
+  "response": {
+    "status": 204
+  }
+}

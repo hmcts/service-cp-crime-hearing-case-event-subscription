@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/material-query-api/query/api/rest/material/material/6c198796-08bb-4803-b456-fa0c29ca6021/metadata"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "material-response.json"
+  }
+}

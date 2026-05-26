@@ -1,0 +1,14 @@
+{
+  "priority": 5,
+  "request": {
+    "method": "GET",
+    "urlPathPattern": "/largefiles-blob-container/.*"
+  },
+  "response": {
+    "status": 403,
+    "headers": {
+      "Content-Type": "application/xml"
+    },
+    "body": "<?xml version=\"1.0\" encoding=\"utf-8\"?><Error><Code>AuthenticationFailed</Code><Message>Server failed to authenticate the request. Make sure the value of Authorization header is formed correctly including the signature.</Message><AuthenticationErrorDetail>Signature fields not well formed.</AuthenticationErrorDetail></Error>"
+  }
+}

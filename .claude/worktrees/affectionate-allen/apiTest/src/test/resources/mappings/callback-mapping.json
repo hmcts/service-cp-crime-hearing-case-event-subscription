@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/callback/notify",
+    "headers": {
+      "X-Correlation-Id": {
+        "matches": "^([a-zA-Z0-9-]*)$"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "callback-accepted.json"
+  }
+}

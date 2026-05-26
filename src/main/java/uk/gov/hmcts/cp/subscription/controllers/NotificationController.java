@@ -85,7 +85,8 @@ public class NotificationController implements InternalApi, NotificationApi {
             @NotNull @PathVariable("hearingEventId") final UUID hearingEventId,
             @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
         if (!hearingEventJsonEnabled) {
-            return ResponseEntity.notFound().build();
+            log.info("hearingEventJsonEnabled feature toggle is off, returning 501 clientSubscriptionId:{} hearingEventId:{}", clientSubscriptionId, hearingEventId);
+            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
         }
         final UUID clientId = UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID));
         log.info("getHearingEvent request clientId:{} clientSubscriptionId:{} hearingEventId:{}", clientId, clientSubscriptionId, hearingEventId);

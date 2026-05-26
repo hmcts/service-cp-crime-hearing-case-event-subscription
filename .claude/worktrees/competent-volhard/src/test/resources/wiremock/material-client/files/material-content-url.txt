@@ -1,0 +1,1 @@
+http://{{request.host}}:{{request.port}}/material-query-api/query/api/rest/material/material/{{request.pathSegments.[6]}}/binary

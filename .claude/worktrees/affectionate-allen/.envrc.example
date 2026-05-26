@@ -1,0 +1,9 @@
+# Copy to .envrc and edit for local development. Run `direnv allow` after editing.
+# See README for variable descriptions.
+
+export SERVER_PORT=4550
+export DATASOURCE_URL=jdbc:postgresql://localhost:5432/appdb
+export DATASOURCE_USERNAME=postgres
+export DATASOURCE_PASSWORD=postgres
+export MATERIAL_CLIENT_URL=http://localhost:8081
+export DOCUMENT_SERVICE_URL=http://localhost:8082

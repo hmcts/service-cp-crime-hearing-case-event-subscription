@@ -1,0 +1,7 @@
+{
+  "clientSubscriptionId": "{{request.pathSegments.[1]}}",
+  "notificationEndpoint": {
+    "callbackUrl": "https://my-callback-url"
+  },
+  "eventTypes": ["PRISON_COURT_REGISTER_GENERATED"]
+}
