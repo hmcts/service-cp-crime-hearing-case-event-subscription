@@ -66,7 +66,7 @@ import static uk.gov.hmcts.cp.subscription.model.EventNotificationPayloadWrapper
 @Import(IgnoreSSLCertificatesForWiremockTest.class)
 @TestPropertySource(properties = {
         "service-bus.max-tries=3",
-        "service-bus.retry-msecs=0,500,1000"
+        "service-bus.retry-durations=0s,500ms,1s"
 })
 @Slf4j
 class NotificationE2EIntegrationTest extends IntegrationTestBase {
