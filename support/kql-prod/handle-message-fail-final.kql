@@ -1,0 +1,9 @@
+let ContainerIdList = KubePodInventory
+| where Name contains "hearing-results-document-subscription"
+| distinct ContainerID, PodLabel, Namespace, PodIp, Name;
+ContainerLog
+| where ContainerId in (ContainerIdList)
+| where LogMessage contains 'handleMessage FAILED FINALLY'
+| extend LogJson = parse_json(LogMessage)
+| extend Message = tostring(LogJson.message)
+| project TimeGenerated, Message

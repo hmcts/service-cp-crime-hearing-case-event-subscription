@@ -1,0 +1,11 @@
+ContainerLogV2
+| where PodName contains "hearing-results-document-subscription"
+| where PodName !contains "dbsetup"
+| extend LogJson = parse_json(LogMessage)
+| where tostring(LogJson.level) == "ERROR"
+| where LogMessage contains "notifications.outbound"
+    or LogMessage contains "Sending notification"
+    or LogMessage contains "CallbackDeliveryService"
+    or LogMessage contains "CallbackClient"
+| project TimeGenerated, Level = tostring(LogJson.level), CorrId = tostring(split(tostring(LogJson["X-Correlation-Id"]), "-")[-1]), Message = tostring(LogJson.message)
+| order by TimeGenerated asc

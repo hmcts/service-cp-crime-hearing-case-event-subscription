@@ -1,0 +1,27 @@
+ContainerLogV2
+| where TimeGenerated >= ago(28d)
+| where PodName contains "hearing-results-document-subscription"
+| where PodName !contains "dbsetup"
+| where LogMessage contains 'Received notification request'
+    or LogMessage contains 'Sending notification to'
+    or LogMessage contains 'getDocument request'
+    or LogMessage contains 'handleMessage FAILED FINALLY'
+| extend MessageType = case(
+    LogMessage contains 'Received notification request', 'Inbound notification',
+    LogMessage contains 'Sending notification to',       'Outbound notification',
+    LogMessage contains 'getDocument request',           'Get Document',
+    LogMessage contains 'handleMessage FAILED FINALLY',  'Queue failures',
+    'Other'
+)
+| summarize Count = count() by MessageType, Week = strcat("w/c ", format_datetime(startofweek(TimeGenerated), "dd/MM/yyyy"))
+| evaluate pivot(Week, sum(Count), MessageType)
+| join kind=leftouter (
+    datatable(MessageType:string, SortOrder:int)[
+        'Inbound notification', 1,
+        'Outbound notification', 2,
+        'Get Document', 3,
+        'Queue failures', 4
+    ]
+) on MessageType
+| order by SortOrder asc
+| project-away SortOrder, MessageType1

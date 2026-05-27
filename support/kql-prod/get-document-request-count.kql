@@ -1,0 +1,8 @@
+let ContainerIdList = KubePodInventory
+| where Name contains "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where LogEntry contains 'getDocument request'
+| summarize Count = count()
