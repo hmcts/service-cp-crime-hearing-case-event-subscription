@@ -16,8 +16,10 @@ import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import static uk.gov.hmcts.cp.filters.TracingFilter.CORRELATION_ID_KEY;
 
@@ -46,27 +48,44 @@ public class ServiceBusClientService {
 
     public int clearDeadLetterQueue(final String queueName, final int olderThanDays) {
         final OffsetDateTime cutoff = OffsetDateTime.now().minusDays(olderThanDays);
+        final int count = doClearDeadLetterQueue(queueName, enqueuedAt -> enqueuedAt.isBefore(cutoff));
+        log.info("Cleared {} DLQ messages older than {} days from queue:{}", count, olderThanDays, queueName);
+        return count;
+    }
+
+    public int clearDeadLetterQueue(final String queueName, final OffsetDateTime from, final OffsetDateTime to) {
+        final int count = doClearDeadLetterQueue(queueName, enqueuedAt -> !enqueuedAt.isBefore(from) && enqueuedAt.isBefore(to));
+        log.info("Cleared {} DLQ messages from {} to {} from queue:{}", count, from, to, queueName);
+        return count;
+    }
+
+    private int doClearDeadLetterQueue(final String queueName, final Predicate<OffsetDateTime> shouldPurge) {
         final Set<Long> skipped = new HashSet<>();
         int count = 0;
         try (ServiceBusReceiverClient receiver = clientFactory.deadLetterReceiverClient(queueName)) {
-            ServiceBusReceivedMessage message = receiver.receiveMessage(Duration.ofSeconds(1));
+            ServiceBusReceivedMessage message = nextMessage(receiver);
             while (message != null) {
                 if (skipped.contains(message.getSequenceNumber())) {
                     receiver.abandon(message);
                     break;
                 }
-                if (message.getEnqueuedTime().isBefore(cutoff)) {
-                    log.info("Clearing DLQ message id:{} enqueuedAt:{} from queue:{}", message.getMessageId(), message.getEnqueuedTime(), queueName);
+                final OffsetDateTime enqueuedAt = message.getEnqueuedTime();
+                if (shouldPurge.test(enqueuedAt)) {
+                    log.info("Clearing DLQ message id:{} enqueuedAt:{} from queue:{}", message.getMessageId(), enqueuedAt, queueName);
                     receiver.complete(message);
                     count++;
                 } else {
                     receiver.abandon(message);
                     skipped.add(message.getSequenceNumber());
                 }
-                message = receiver.receiveMessage(Duration.ofSeconds(1));
+                message = nextMessage(receiver);
             }
         }
-        log.info("Cleared {} DLQ messages older than {} days from queue:{}", count, olderThanDays, queueName);
         return count;
+    }
+
+    private ServiceBusReceivedMessage nextMessage(final ServiceBusReceiverClient receiver) {
+        final Iterator<ServiceBusReceivedMessage> it = receiver.receiveMessages(1, Duration.ofSeconds(1)).iterator();
+        return it.hasNext() ? it.next() : null;
     }
 }

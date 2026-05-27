@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.servicebus.services;
 
+import com.azure.core.util.IterableStream;
 import com.azure.messaging.servicebus.ServiceBusMessage;
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage;
 import com.azure.messaging.servicebus.ServiceBusReceiverClient;
@@ -16,10 +17,14 @@ import uk.gov.hmcts.cp.servicebus.model.ServiceBusWrappedMessage;
 import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 
 import java.time.OffsetDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -74,7 +79,9 @@ class ServiceBusClientServiceTest {
     void clear_dead_letter_queue_should_complete_old_messages_and_return_count() {
         final ServiceBusReceivedMessage oldMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(10), 1L);
         when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
-        when(receiverClient.receiveMessage(any())).thenReturn(oldMessage, null);
+        when(receiverClient.receiveMessages(anyInt(), any()))
+            .thenReturn(IterableStream.of(List.of(oldMessage)))
+            .thenReturn(IterableStream.of(Collections.emptyList()));
 
         assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isEqualTo(1);
         verify(receiverClient).complete(oldMessage);
@@ -85,7 +92,9 @@ class ServiceBusClientServiceTest {
     void clear_dead_letter_queue_should_abandon_recent_messages_and_return_zero() {
         final ServiceBusReceivedMessage recentMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(2), 1L);
         when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
-        when(receiverClient.receiveMessage(any())).thenReturn(recentMessage, null);
+        when(receiverClient.receiveMessages(anyInt(), any()))
+            .thenReturn(IterableStream.of(List.of(recentMessage)))
+            .thenReturn(IterableStream.of(Collections.emptyList()));
 
         assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isZero();
         verify(receiverClient).abandon(recentMessage);
@@ -96,7 +105,9 @@ class ServiceBusClientServiceTest {
     void clear_dead_letter_queue_should_stop_when_skipped_sequence_number_seen_again() {
         final ServiceBusReceivedMessage recentMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(1), 99L);
         when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
-        when(receiverClient.receiveMessage(any())).thenReturn(recentMessage, recentMessage);
+        when(receiverClient.receiveMessages(anyInt(), any()))
+            .thenReturn(IterableStream.of(List.of(recentMessage)))
+            .thenReturn(IterableStream.of(List.of(recentMessage)));
 
         assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isZero();
         verify(receiverClient).close();
@@ -105,9 +116,39 @@ class ServiceBusClientServiceTest {
     @Test
     void clear_dead_letter_queue_should_return_zero_when_dlq_is_empty() {
         when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
-        when(receiverClient.receiveMessage(any())).thenReturn(null);
+        when(receiverClient.receiveMessages(anyInt(), any())).thenReturn(IterableStream.of(Collections.emptyList()));
 
         assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isZero();
+        verify(receiverClient).close();
+    }
+
+    @Test
+    void clear_dead_letter_queue_with_date_range_should_complete_messages_within_range() {
+        final OffsetDateTime from = OffsetDateTime.now().minusDays(10);
+        final OffsetDateTime to = OffsetDateTime.now().minusDays(5);
+        final ServiceBusReceivedMessage inRangeMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(7), 1L);
+        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
+        when(receiverClient.receiveMessages(anyInt(), any()))
+            .thenReturn(IterableStream.of(List.of(inRangeMessage)))
+            .thenReturn(IterableStream.of(Collections.emptyList()));
+
+        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, from, to)).isEqualTo(1);
+        verify(receiverClient).complete(inRangeMessage);
+        verify(receiverClient).close();
+    }
+
+    @Test
+    void clear_dead_letter_queue_with_date_range_should_abandon_messages_outside_range() {
+        final OffsetDateTime from = OffsetDateTime.now().minusDays(10);
+        final OffsetDateTime to = OffsetDateTime.now().minusDays(5);
+        final ServiceBusReceivedMessage outsideRangeMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(2), 1L);
+        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
+        when(receiverClient.receiveMessages(anyInt(), any()))
+            .thenReturn(IterableStream.of(List.of(outsideRangeMessage)))
+            .thenReturn(IterableStream.of(Collections.emptyList()));
+
+        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, from, to)).isZero();
+        verify(receiverClient).abandon(outsideRangeMessage);
         verify(receiverClient).close();
     }
 
@@ -115,7 +156,7 @@ class ServiceBusClientServiceTest {
         final ServiceBusReceivedMessage message = mock(ServiceBusReceivedMessage.class);
         when(message.getEnqueuedTime()).thenReturn(enqueuedAt);
         when(message.getSequenceNumber()).thenReturn(sequenceNumber);
-        when(message.getMessageId()).thenReturn("msg-" + sequenceNumber);
+        lenient().when(message.getMessageId()).thenReturn("msg-" + sequenceNumber);
         return message;
     }
 }
