@@ -2,7 +2,10 @@ package uk.gov.hmcts.cp.servicebus.services;
 
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.messaging.servicebus.ServiceBusClientBuilder;
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.azure.messaging.servicebus.ServiceBusSenderClient;
+import com.azure.messaging.servicebus.models.ServiceBusReceiveMode;
+import com.azure.messaging.servicebus.models.SubQueue;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties;
@@ -23,6 +26,15 @@ public class ServiceBusClientFactory {
 
     public ServiceBusClientBuilder.ServiceBusProcessorClientBuilder processorClientBuilder(final String queueName) {
         return clientBuilder().processor().queueName(queueName);
+    }
+
+    public ServiceBusReceiverClient deadLetterReceiverClient(final String queueName) {
+        return clientBuilder()
+                .receiver()
+                .queueName(queueName)
+                .subQueue(SubQueue.DEAD_LETTER_QUEUE)
+                .receiveMode(ServiceBusReceiveMode.PEEK_LOCK)
+                .buildClient();
     }
 
     private ServiceBusClientBuilder clientBuilder() {

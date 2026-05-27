@@ -18,7 +18,7 @@ public class JsonMapper {
     private ObjectMapper objectMapper;
 
     public JsonMapper() {
-        objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.setDateFormat(new StdDateFormat().withColonInTimeZone(true));

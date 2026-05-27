@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.servicebus.services;
 
+import com.azure.messaging.servicebus.ServiceBusReceiverClient;
 import com.azure.messaging.servicebus.ServiceBusSenderClient;
 import org.junit.jupiter.api.Test;
 import uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties;
@@ -41,5 +42,14 @@ class ServiceBusClientFactoryTest {
         final ServiceBusProperties properties = new ServiceBusProperties(EMULATOR_ADMIN, AZURE_MESSAGING, 5);
         final ServiceBusClientFactory factory = new ServiceBusClientFactory(properties, vaultProperties());
         assertThat(factory.processorClientBuilder("processor-queue")).isNotNull();
+    }
+
+    @Test
+    void deadLetterReceiverClient_should_build_non_null_client_for_emulator_queue() {
+        final ServiceBusProperties properties = new ServiceBusProperties(EMULATOR_ADMIN, EMULATOR_MESSAGING, 5);
+        final ServiceBusClientFactory factory = new ServiceBusClientFactory(properties, vaultProperties());
+        try (ServiceBusReceiverClient receiver = factory.deadLetterReceiverClient("test-queue")) {
+            assertThat(receiver).isNotNull();
+        }
     }
 }
