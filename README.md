@@ -68,6 +68,7 @@ The project includes an `.envrc.example` file with the environment variables the
 | `DATASOURCE_PASSWORD` | `postgres` | Database password |
 | `MATERIAL_CLIENT_URL` | `http://localhost:8081` | Material service base URL |
 | `DOCUMENT_SERVICE_URL` | `http://localhost:8082` | Document service base URL |
+| `HEARING_EVENT_JSON_ENABLED` | `false` | Persist the full hearing event JSON payload to `hearing_event_payload` and link it to subscribers in `hearing_event_subscription`. Enable to activate the PCR JSON exposure feature (AMP-504). |
 
 If you don’t use direnv, you can still export these variables in your shell before running `./gradlew bootRun`.
 

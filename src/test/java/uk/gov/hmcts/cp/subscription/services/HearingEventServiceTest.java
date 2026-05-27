@@ -17,8 +17,6 @@ import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -145,31 +143,29 @@ class HearingEventServiceTest {
     void getHearingEvent_when_subscription_found_should_return_response() {
         UUID subscriptionId = randomUUID();
         UUID consumerHearingEventId = randomUUID();
-        UUID payloadFk = randomUUID();
-        OffsetDateTime createdAt = OffsetDateTime.of(2024, 6, 1, 12, 0, 0, 0, ZoneOffset.UTC);
+        UUID hearingEventId = randomUUID();
         Map<String, Object> payloadMap = Map.of("eventType", "PRISON_COURT_REGISTER_GENERATED");
 
         HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
                 .id(consumerHearingEventId)
                 .subscriptionId(subscriptionId)
-                .hearingEventId(payloadFk)
+                .hearingEventId(hearingEventId)
                 .build();
         HearingEventPayloadEntity payloadEntity = HearingEventPayloadEntity.builder()
-                .hearingEventId(payloadFk)
+                .hearingEventId(hearingEventId)
                 .rawPayload(eventPayload)
-                .createdAt(createdAt)
+                .build();
+        HearingEventResponse expected = HearingEventResponse.builder()
+                .hearingEventId(consumerHearingEventId)
                 .build();
         when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(consumerHearingEventId, subscriptionId))
                 .thenReturn(Optional.of(subscription));
-        when(hearingEventPayloadRepository.findById(payloadFk)).thenReturn(Optional.of(payloadEntity));
+        when(hearingEventPayloadRepository.findById(hearingEventId)).thenReturn(Optional.of(payloadEntity));
         when(jsonMapper.toMap(eventPayload)).thenReturn(payloadMap);
+        when(hearingEventPayloadMapper.toResponse(subscription, payloadEntity, payloadMap)).thenReturn(expected);
 
         HearingEventResponse result = hearingEventPayloadService.getHearingEvent(subscriptionId, consumerHearingEventId);
-
-        assertThat(result.getHearingEventId()).isEqualTo(consumerHearingEventId);
-        assertThat(result.getEventType()).isEqualTo("PRISON_COURT_REGISTER_GENERATED");
-        assertThat(result.getCreatedAt()).isEqualTo(createdAt.toInstant());
-        assertThat(result.getPayload()).isEqualTo(payloadMap);
+        assertThat(result).isEqualTo(expected);
     }
 
     @Test
@@ -188,22 +184,22 @@ class HearingEventServiceTest {
     void getHearingEvent_should_throw_not_found_when_payload_entity_missing() {
         UUID subscriptionId = randomUUID();
         UUID consumerHearingEventId = randomUUID();
-        UUID payloadFk = randomUUID();
+        UUID hearingEventId = randomUUID();
         HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
                 .id(consumerHearingEventId)
                 .subscriptionId(subscriptionId)
-                .hearingEventId(payloadFk)
+                .hearingEventId(hearingEventId)
                 .build();
         when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(consumerHearingEventId, subscriptionId))
                 .thenReturn(Optional.of(subscription));
-        when(hearingEventPayloadRepository.findById(payloadFk)).thenReturn(Optional.empty());
+        when(hearingEventPayloadRepository.findById(hearingEventId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> hearingEventPayloadService.getHearingEvent(subscriptionId, consumerHearingEventId))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
                     assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-                    assertThat(rse.getReason()).contains(payloadFk.toString());
+                    assertThat(rse.getReason()).contains(hearingEventId.toString());
                 });
     }
 }

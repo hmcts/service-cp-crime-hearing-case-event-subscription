@@ -3,12 +3,15 @@ package uk.gov.hmcts.cp.subscription.services;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.cp.hmac.managers.HmacManager;
 import uk.gov.hmcts.cp.openapi.model.EventNotificationPayload;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
+import uk.gov.hmcts.cp.subscription.config.AppProperties;
+import uk.gov.hmcts.cp.subscription.config.EnvironmentName;
 import uk.gov.hmcts.cp.subscription.entities.ClientEntity;
 import uk.gov.hmcts.cp.subscription.entities.ClientHmacEntity;
 import uk.gov.hmcts.cp.subscription.mappers.NotificationMapper;
@@ -48,9 +51,11 @@ class CallbackDeliveryServiceTest {
     ServiceBusClientService serviceBusClientService;
     @Mock
     HearingEventService hearingEventService;
+    @Mock
+    AppProperties appProperties;
 
+    @InjectMocks
     private CallbackDeliveryService callbackDeliveryService;
-    private CallbackDeliveryService toggleOnService;
 
     private final UUID documentId = randomUUID();
     private final String callbackUrl = "https://callback.example.com";
@@ -65,16 +70,6 @@ class CallbackDeliveryServiceTest {
             .build();
     private final EventNotificationPayload payload = EventNotificationPayload.builder().build();
     private final EventNotificationPayloadWrapper payloadWrapper = EventNotificationPayloadWrapper.builder().build();
-
-    @BeforeEach
-    void setUp() {
-        callbackDeliveryService = new CallbackDeliveryService(
-                clientEventRepository, clientHmacRepository, notificationMapper, jsonMapper,
-                serviceBusClientService, hmacManager, hearingEventService, false);
-        toggleOnService = new CallbackDeliveryService(
-                clientEventRepository, clientHmacRepository, notificationMapper, jsonMapper,
-                serviceBusClientService, hmacManager, hearingEventService, true);
-    }
 
     @Test
     void submit_should_queue_to_service_bus() {
@@ -123,36 +118,38 @@ class CallbackDeliveryServiceTest {
 
     @Test
     void submit_should_call_saveIfAbsent_when_toggle_on() {
+        when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(true);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of());
         when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
         when(hearingEventService.saveIfAbsent(eventPayload)).thenReturn(randomUUID());
 
-        toggleOnService.submitOutboundEvents(eventPayload, documentId);
+        callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
 
         verify(hearingEventService).saveIfAbsent(eventPayload);
         verify(hearingEventService, never()).saveSubscriptionIfAbsent(any(), any());
     }
 
     @Test
-    void submit_should_not_call_saveSubscriptionIfAbsent_when_hearingEventId_is_null() {
+    void submit_should_not_call_saveSubscriptionIfAbsent_when_toggle_off() {
+        when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(false);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of(clientEntity));
         when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
-        when(hearingEventService.saveIfAbsent(eventPayload)).thenReturn(null);
         when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(clientHmacEntity));
         when(jsonMapper.toJson(payload)).thenReturn("{payload}");
         when(hmacManager.calculateSignature(hmacKeyId, "{payload}")).thenReturn("signature");
         when(notificationMapper.mapToWrapper(payload, hmacKeyId, "signature")).thenReturn(payloadWrapper);
         when(jsonMapper.toJson(payloadWrapper)).thenReturn("{payload-wrapper}");
 
-        toggleOnService.submitOutboundEvents(eventPayload, documentId);
+        callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
 
-        verify(hearingEventService).saveIfAbsent(eventPayload);
+        verify(hearingEventService, never()).saveIfAbsent(eventPayload);
         verify(hearingEventService, never()).saveSubscriptionIfAbsent(any(), any());
     }
 
     @Test
     void submit_should_call_saveSubscriptionIfAbsent_per_client_when_toggle_on() {
         UUID generatedHearingEventId = randomUUID();
+        when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(true);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of(clientEntity));
         when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
         when(hearingEventService.saveIfAbsent(eventPayload)).thenReturn(generatedHearingEventId);
@@ -162,7 +159,7 @@ class CallbackDeliveryServiceTest {
         when(notificationMapper.mapToWrapper(payload, hmacKeyId, "signature")).thenReturn(payloadWrapper);
         when(jsonMapper.toJson(payloadWrapper)).thenReturn("{payload-wrapper}");
 
-        toggleOnService.submitOutboundEvents(eventPayload, documentId);
+        callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
 
         verify(hearingEventService).saveIfAbsent(eventPayload);
         verify(hearingEventService).saveSubscriptionIfAbsent(eq(subscriptionId), eq(generatedHearingEventId));
