@@ -48,18 +48,24 @@ The service SHALL have a JPA entity `HearingEventSubscriptionEntity` mapping `he
 - **THEN** the row exists in `hearing_event_payload` and the `raw_payload` column contains the serialised JSON
 ---
 
-### Requirement: HearingEventPayloadRepository persists entities
-`HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>` SHALL persist `HearingEventPayloadEntity` rows. Idempotency on re-delivery is enforced by the `UNIQUE` constraint on `event_id` at the database level — no application-level existence check method is required.
+### Requirement: HearingEventPayloadRepository persists and queries entities
+`HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>` SHALL persist `HearingEventPayloadEntity` rows and provide:
+- `Optional<HearingEventPayloadEntity> findByEventId(UUID eventId)` — application-level idempotency check in `HearingEventService.saveIfAbsent`; the DB `UNIQUE` constraint on `event_id` remains as a safety net.
 
 #### Scenario: Entity persists with service-generated hearingEventId
 - **WHEN** a `HearingEventPayloadEntity` is saved with `eventId` set and no `hearingEventId` supplied
 - **THEN** a row is written with a service-generated UUID as `hearing_event_id` PK and the supplied value in `event_id`
 
+#### Scenario: findByEventId returns existing entity on re-delivery
+- **WHEN** `findByEventId(eventId)` is called and a row exists for that `event_id`
+- **THEN** `Optional.of(entity)` is returned with the existing `hearingEventId`
+
 ---
 
-### Requirement: HearingEventSubscriptionRepository provides existence check
+### Requirement: HearingEventSubscriptionRepository provides existence check and lookup
 `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>` SHALL provide:
-- `boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId)`
+- `boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId)` — guards `saveSubscriptionIfAbsent`
+- `Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId)` — GET endpoint lookup; `id` is the consumer-facing PK of `hearing_event_subscriptions`
 
 #### Scenario: existsBySubscriptionIdAndHearingEventId returns true on duplicate
 - **WHEN** a row exists for the given `(subscriptionId, hearingEventId)` pair
@@ -69,20 +75,33 @@ The service SHALL have a JPA entity `HearingEventSubscriptionEntity` mapping `he
 - **WHEN** no row exists for the given `(subscriptionId, hearingEventId)` pair
 - **THEN** `existsBySubscriptionIdAndHearingEventId` returns `false`
 
+#### Scenario: findByIdAndSubscriptionId returns row for authorised caller
+- **WHEN** a row exists with the given `id` PK and `subscriptionId`
+- **THEN** `Optional.of(entity)` is returned
+
+#### Scenario: findByIdAndSubscriptionId returns empty for unknown or unauthorised caller
+- **WHEN** no row exists for the given `(id, subscriptionId)` pair
+- **THEN** `Optional.empty()` is returned
+
 #### Scenario: Duplicate subscription insert rejected
 - **WHEN** a row with the same `(subscription_id, hearing_event_id)` pair is inserted twice
 - **THEN** the database rejects the second insert with a unique constraint violation
 
 ---
 
-### Requirement: HearingEventPayloadService persists rows
-`HearingEventPayloadService` SHALL provide:
-- `UUID saveIfAbsent(EventPayload eventPayload)` — null-checks `eventPayload.getEventId()`; resolves `eventTypeId` via `EventTypeRepository.findByEventName(eventPayload.getEventType())`; builds and persists a `HearingEventPayloadEntity` with `eventId` set; returns the service-generated `hearingEventId`. Idempotency on re-delivery is enforced by the DB `UNIQUE` constraint on `event_id`.
+### Requirement: HearingEventService persists rows and serves GET
+`HearingEventService` SHALL provide:
+- `UUID saveIfAbsent(EventPayload eventPayload)` — null-checks `eventPayload.getEventId()`; calls `findByEventId` first; if a row already exists, returns its `hearingEventId` immediately (application-level idempotency); otherwise resolves `eventTypeId` via `EventTypeRepository.findByEventName`, builds and persists a `HearingEventPayloadEntity`, and returns the generated `hearingEventId`. The DB `UNIQUE` constraint on `event_id` remains as a safety net.
 - `saveSubscriptionIfAbsent(UUID subscriptionId, UUID hearingEventId)` — checks `existsBySubscriptionIdAndHearingEventId`; if absent, builds and persists a `HearingEventSubscriptionEntity` with a generated `id`
+- `HearingEventResponse getHearingEvent(UUID subscriptionId, UUID hearingEventId)` — resolves the subscription row via `findByIdAndSubscriptionId(hearingEventId, subscriptionId)`; throws `ResponseStatusException(NOT_FOUND)` when absent; fetches the payload entity by `subscription.getHearingEventId()`; builds and returns `HearingEventResponse` with `hearingEventId = subscription.getId()`, `eventType`, `createdAt`, `payload` (serialised via `JsonMapper.toMap`)
 
 #### Scenario: saveIfAbsent persists entity with correct eventTypeId and returns generated hearingEventId
-- **WHEN** `saveIfAbsent(eventPayload)` is called with a known event type
+- **WHEN** `saveIfAbsent(eventPayload)` is called with a known event type and no existing row
 - **THEN** `HearingEventPayloadEntity` is persisted with the correct `eventTypeId` resolved from `event_type`, `eventId` set from `eventPayload.getEventId()`, and the service-generated `hearingEventId` is returned
+
+#### Scenario: saveIfAbsent skips insert and returns existing hearingEventId on re-delivery
+- **WHEN** `saveIfAbsent(eventPayload)` is called and a row already exists for `eventPayload.getEventId()`
+- **THEN** no new row is persisted; the existing `hearingEventId` is returned
 
 #### Scenario: saveIfAbsent throws when eventId is null
 - **WHEN** `saveIfAbsent(eventPayload)` is called with `eventPayload.getEventId()` returning `null`
@@ -92,12 +111,20 @@ The service SHALL have a JPA entity `HearingEventSubscriptionEntity` mapping `he
 - **WHEN** `saveSubscriptionIfAbsent(subscriptionId, hearingEventId)` is called and no existing row
 - **THEN** `HearingEventSubscriptionEntity` is persisted with the supplied values and a generated `id`
 
+#### Scenario: getHearingEvent returns response for authorised caller
+- **WHEN** `getHearingEvent(subscriptionId, hearingEventId)` is called and a subscription row exists
+- **THEN** `HearingEventResponse` is returned with `hearingEventId = subscription.getId()`, correct `eventType`, `createdAt`, and `payload`
+
+#### Scenario: getHearingEvent throws 404 when subscription not found
+- **WHEN** `getHearingEvent(subscriptionId, hearingEventId)` is called and no subscription row exists for the pair
+- **THEN** `ResponseStatusException` with `HttpStatus.NOT_FOUND` is thrown
+
 ---
 
 ### Requirement: CallbackDeliveryService persists rows when toggle on
-`CallbackDeliveryService.submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled)` receives the toggle as a `boolean` parameter from `NotificationManager`. When `hearingEventJsonEnabled = true`, it SHALL:
-1. Before the per-client loop: call `hearingEventPayloadService.saveIfAbsent(eventPayload)` and capture the returned `hearingEventId`
-2. For each client: call `hearingEventPayloadService.saveSubscriptionIfAbsent(subscriptionId, hearingEventId)` only when `hearingEventId != null`
+`CallbackDeliveryService` receives `hearingEventJsonEnabled` as a `final boolean` field injected via the explicit constructor (see feature-toggle spec). `submitOutboundEvents(eventPayload, documentId)` is a two-argument method; the toggle is read from the field. When `hearingEventJsonEnabled = true`, it SHALL:
+1. Before the per-client loop: call `hearingEventService.saveIfAbsent(eventPayload)` and capture the returned `hearingEventId`
+2. For each client: call `hearingEventService.saveSubscriptionIfAbsent(subscriptionId, hearingEventId)` only when `hearingEventId != null`
 When `hearingEventJsonEnabled = false`, no persistence calls are made.
 
 #### Scenario: Payload row created on first delivery
@@ -106,7 +133,7 @@ When `hearingEventJsonEnabled = false`, no persistence calls are made.
 
 #### Scenario: Payload row not duplicated on re-delivery
 - **WHEN** `hearingEventJsonEnabled = true` and a row already exists for the event
-- **THEN** `saveIfAbsent()` skips the insert (idempotency guard)
+- **THEN** `saveIfAbsent()` returns the existing `hearingEventId` without a new insert
 
 #### Scenario: Subscription row created per subscriber
 - **WHEN** `hearingEventJsonEnabled = true` and no subscription row exists for the client

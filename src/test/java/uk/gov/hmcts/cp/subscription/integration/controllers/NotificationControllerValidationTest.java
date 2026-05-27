@@ -31,6 +31,7 @@ class NotificationControllerValidationTest extends IntegrationTestBase {
     private static final String NOTIFICATION_REQUEST_MISSING_MATERIAL = "stubs/requests/progression/pcr-request-missing-material.json";
     private static final String NOTIFICATION_REQUEST_MISSING_EVENT = "stubs/requests/progression/pcr-request-missing-event.json";
     private static final String SUBSCRIPTION_DOCUMENT_URI = "/client-subscriptions/{clientSubscriptionId}/documents/{documentId}";
+    private static final String SUBSCRIPTION_HEARING_EVENT_URI = "/client-subscriptions/{clientSubscriptionId}/hearing-events/{hearingEventId}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -40,6 +41,7 @@ class NotificationControllerValidationTest extends IntegrationTestBase {
 
     UUID subscriptionId = randomUUID();
     UUID documentId = randomUUID();
+    UUID hearingEventId = randomUUID();
 
     @Test
     void bad_content_type_should_return_415() throws Exception {
@@ -144,5 +146,45 @@ class NotificationControllerValidationTest extends IntegrationTestBase {
                         .header("Authorization", AUTHORIZATION_HEADER_VALUE))
                 .andDo(print())
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void get_document_should_return_403_when_client_does_not_own_subscription() throws Exception {
+        doThrow(new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied: subscription does not belong to this client"))
+                .when(notificationManager).validateClientOwnsSubscription(any(), any());
+
+        mockMvc.perform(get(SUBSCRIPTION_DOCUMENT_URI,
+                        subscriptionId, documentId)
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
+                .andDo(print())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("Access denied: subscription does not belong to this client"));
+    }
+
+    @Test
+    void get_hearing_event_should_return_501_when_feature_toggle_is_off() throws Exception {
+        mockMvc.perform(get(SUBSCRIPTION_HEARING_EVENT_URI,
+                        subscriptionId, hearingEventId)
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
+                .andDo(print())
+                .andExpect(status().isNotImplemented());
+    }
+
+    @Test
+    void get_hearing_event_should_return_400_when_invalid_subscription_uuid() throws Exception {
+        mockMvc.perform(get(SUBSCRIPTION_HEARING_EVENT_URI,
+                        "invalid-uuid", hearingEventId)
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void get_hearing_event_should_return_400_when_invalid_hearing_event_uuid() throws Exception {
+        mockMvc.perform(get(SUBSCRIPTION_HEARING_EVENT_URI,
+                        subscriptionId, "invalid-uuid")
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
     }
 }

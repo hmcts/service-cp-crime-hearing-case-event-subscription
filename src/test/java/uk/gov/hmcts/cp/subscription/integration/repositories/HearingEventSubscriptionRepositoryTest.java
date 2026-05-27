@@ -12,6 +12,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
+import java.util.Optional;
+
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +50,37 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
 
         assertThatThrownBy(() -> saveSubscription(subscriptionId, hearingEventId))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void findByIdAndSubscriptionId_should_return_entity_when_both_match() {
+        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
+
+        Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
+                .findByIdAndSubscriptionId(saved.getId(), subscriptionId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(saved.getId());
+        assertThat(result.get().getSubscriptionId()).isEqualTo(subscriptionId);
+        assertThat(result.get().getHearingEventId()).isEqualTo(hearingEventId);
+    }
+
+    @Test
+    void findByIdAndSubscriptionId_should_return_empty_when_subscription_id_does_not_match() {
+        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
+
+        Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
+                .findByIdAndSubscriptionId(saved.getId(), randomUUID());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByIdAndSubscriptionId_should_return_empty_when_id_does_not_exist() {
+        Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
+                .findByIdAndSubscriptionId(randomUUID(), subscriptionId);
+
+        assertThat(result).isEmpty();
     }
 
     private UUID saveHearingEventPayload() {

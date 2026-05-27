@@ -4,8 +4,8 @@
 
 ## 2. Service Wiring
 
-- [x] 2.1 Inject `@Value("${hearing-event.json.enabled:false}") boolean hearingEventJsonEnabled` into `NotificationManager`; pass as `boolean` parameter to `CallbackDeliveryService.submitOutboundEvents()` (T4: toggle kept in the orchestrator that has no repository dependencies)
-- [x] 2.2 Inject `@Value("${hearing-event.json.enabled:false}") boolean hearingEventJsonEnabled` into `NotificationController`
+- [x] 2.1 Remove `@RequiredArgsConstructor` from `CallbackDeliveryService`; add explicit constructor with `@Value("${hearing-event.json.enabled:false}") final boolean hearingEventJsonEnabled` as last parameter (T4: toggle stored in the service that controls persistence, never in a repository-owning class)
+- [x] 2.2 Add `@Value("${hearing-event.json.enabled:false}") private boolean hearingEventJsonEnabled` field injection in `NotificationController`; gates GET endpoint
 
 ## 3. Database Migrations
 
@@ -20,14 +20,14 @@
 ## 5. Persistence Infrastructure
 
 - [x] 5.1 `@JdbcTypeCode(SqlTypes.JSON)` on `rawPayload` — Hibernate 6 binds as `Types.OTHER`; no separate converter class needed
-- [x] 5.2 Create `HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>`
-- [x] 5.3 Create `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>` with `existsBySubscriptionIdAndHearingEventId`
-- [x] 5.4 Create `HearingEventPayloadService` — `UUID saveIfAbsent(EventPayload)` (null-checks `eventId`; persists entity and returns generated `hearingEventId`; DB `UNIQUE` constraint on `event_id` enforces idempotency at storage level) + `saveSubscriptionIfAbsent(UUID, UUID)` (guarded by `existsBySubscriptionIdAndHearingEventId`)
+- [x] 5.2 Create `HearingEventPayloadRepository extends JpaRepository<HearingEventPayloadEntity, UUID>` with `Optional<HearingEventPayloadEntity> findByEventId(UUID eventId)` for application-level idempotency
+- [x] 5.3 Create `HearingEventSubscriptionRepository extends JpaRepository<HearingEventSubscriptionEntity, UUID>` with `existsBySubscriptionIdAndHearingEventId` and `Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId)` for GET endpoint
+- [x] 5.4 Create `HearingEventService` — `UUID saveIfAbsent(EventPayload)` (null-checks `eventId`; calls `findByEventId` first and returns existing `hearingEventId` if found; otherwise persists and returns generated `hearingEventId`) + `saveSubscriptionIfAbsent(UUID, UUID)` (guarded by `existsBySubscriptionIdAndHearingEventId`) + `HearingEventResponse getHearingEvent(UUID, UUID)` (resolves subscription via `findByIdAndSubscriptionId`, builds response via `JsonMapper.toMap`)
 
 ## 6. Processing Flow
 
-- [x] 6.1 Inject `HearingEventPayloadService` into `CallbackDeliveryService`
-- [x] 6.2 In `submitOutboundEvents(eventPayload, documentId, hearingEventJsonEnabled)`: when toggle `true`, call `hearingEventPayloadService.saveIfAbsent(eventPayload)` and capture returned `hearingEventId`
+- [x] 6.1 Inject `HearingEventService` into `CallbackDeliveryService` constructor
+- [x] 6.2 In `submitOutboundEvents(eventPayload, documentId)` (two-argument): when `hearingEventJsonEnabled` field is `true`, call `hearingEventService.saveIfAbsent(eventPayload)` and capture returned `hearingEventId`
 - [x] 6.3 In `submitOutboundEvents()`: persist `HearingEventSubscriptionEntity` per client when toggle on and `hearingEventId != null`, guarded by `existsBySubscriptionIdAndHearingEventId` check inside `saveSubscriptionIfAbsent`
 
 ## 7. Unit Tests
@@ -44,7 +44,7 @@
 - [x] 7.10 `CallbackDeliveryServiceTest` — toggle on, subscription absent: `saveSubscriptionIfAbsent()` called
 - [x] 7.11 `CallbackDeliveryServiceTest` — toggle on, subscription present: `saveSubscriptionIfAbsent()` skips
 - [x] 7.12 `HearingEventPayloadMapperTest` — `toEntity` maps all fields; `toSubscriptionEntity` maps all fields
-- [x] 7.13 `NotificationManagerTest` — `processNotification` passes `hearingEventJsonEnabled` (default `false`) to `submitOutboundEvents`
+- [x] 7.13 `NotificationManagerTest` — `getHearingEvent` delegates to `HearingEventService.getHearingEvent`
 
 ## 8. Integration Tests
 
@@ -52,3 +52,21 @@
 - [x] 8.2 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns true for existing pair
 - [x] 8.3 `HearingEventSubscriptionRepositoryTest` — `existsBySubscriptionIdAndHearingEventId` returns false for unknown pair
 - [x] 8.4 `HearingEventSubscriptionRepositoryTest` — duplicate insert throws `DataIntegrityViolationException`
+
+## 9. API Version Bump
+
+- [x] 9.1 Update `uk.gov.hmcts.cp:api-cp-crime-hearing-results-document-subscription` dependency in `build.gradle` from `2.0.9` to `2.0.10`; `2.0.10` introduces `HearingEventResponse` model and the `getHearingEvent` operation on `NotificationApi`
+
+## 10. GET Endpoint Implementation
+
+- [x] 10.1 Add `Map<String, Object> toMap(Object object)` to `JsonMapper` using Jackson `convertValue` with `TypeReference<Map<String, Object>>`
+- [x] 10.2 Add `HearingEventResponse getHearingEvent(UUID subscriptionId, UUID hearingEventId)` to `HearingEventService`: resolves subscription via `findByIdAndSubscriptionId`, fetches payload entity, builds `HearingEventResponse` with consumer-facing `hearingEventId = subscription.getId()`
+- [x] 10.3 Add thin delegation method `getHearingEvent(UUID, UUID)` to `NotificationManager` → `hearingEventService.getHearingEvent()`
+- [x] 10.4 Implement `NotificationController.getHearingEvent`: returns `404` when `hearingEventJsonEnabled = false`; delegates to `notificationManager.getHearingEvent()` and returns `200 OK` when enabled
+
+## 11. Unit Tests — GET Endpoint
+
+- [x] 11.1 `HearingEventServiceTest` — `getHearingEvent` returns `HearingEventResponse` with correct `hearingEventId`, `eventType`, `createdAt`, `payload` when subscription found
+- [x] 11.2 `HearingEventServiceTest` — `getHearingEvent` throws `ResponseStatusException(NOT_FOUND)` when no subscription row exists for `(id, subscriptionId)`
+- [x] 11.3 `HearingEventServiceTest` — `saveIfAbsent` skips insert and returns existing `hearingEventId` when `findByEventId` returns a present row
+- [x] 11.4 `NotificationManagerTest` — `getHearingEvent` delegates to `hearingEventService.getHearingEvent`

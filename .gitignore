@@ -9,6 +9,7 @@ apiTest/.gradle/
 *.class
 bin/main/application.yaml
 .claude/CLAUDE.md
+.claude/worktrees
 
 ### STS ###
 .apt_generated
