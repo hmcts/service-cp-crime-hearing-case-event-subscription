@@ -28,7 +28,7 @@ import static uk.gov.hmcts.cp.subscription.model.EventNotificationPayloadWrapper
 @RequiredArgsConstructor
 @Slf4j
 @ConditionalOnExpression(
-    "'${environment.name:UNKNOWN}' == 'DEV' || '${environment.name:UNKNOWN}' == 'SIT' || '${environment.name:UNKNOWN}' == 'LOCAL'"
+    "'${environment.name}' == 'DEVELOPER' || '${environment.name}' == 'DEV' || '${environment.name}' == 'SIT'"
 )
 public class MockCallbackController {
 
