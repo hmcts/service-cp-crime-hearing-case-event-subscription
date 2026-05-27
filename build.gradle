@@ -8,7 +8,7 @@ plugins {
   id 'maven-publish'
   id 'com.github.ben-manes.versions' version '0.54.0'
   id 'org.cyclonedx.bom' version '3.2.4'
-  id 'com.gorylenko.gradle-git-properties' version '3.0.2'
+  id 'com.gorylenko.gradle-git-properties' version '3.0.3'
   id 'com.avast.gradle.docker-compose' version '0.17.21'
 }
 
@@ -32,7 +32,7 @@ apply {
 // Sadly, dependabot does not track dependencies in the apply-from files
 dependencies {
   // Api spec
-  implementation('uk.gov.hmcts.cp:api-cp-crime-hearing-results-document-subscription:2.0.9')
+  implementation('uk.gov.hmcts.cp:api-cp-crime-hearing-results-document-subscription:2.0.10')
   implementation('io.swagger.core.v3:swagger-annotations:2.2.50')
 
 

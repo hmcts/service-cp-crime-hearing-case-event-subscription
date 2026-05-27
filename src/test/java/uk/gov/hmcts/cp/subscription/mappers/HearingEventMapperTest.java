@@ -6,12 +6,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
+import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.services.ClockService;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.util.UUID.randomUUID;
@@ -60,5 +62,30 @@ class HearingEventMapperTest {
         assertThat(result.getHearingEventId()).isEqualTo(hearingEventId);
         assertThat(result.getCreatedAt()).isEqualTo(fixedNow);
         assertThat(result.getId()).isNull();
+    }
+
+    @Test
+    void toResponse_should_map_all_fields() {
+        UUID consumerHearingEventId = randomUUID();
+        UUID payloadFk = randomUUID();
+        EventPayload rawPayload = EventPayload.builder().eventType("PRISON_COURT_REGISTER_GENERATED").build();
+        Map<String, Object> payloadMap = Map.of("eventType", "PRISON_COURT_REGISTER_GENERATED");
+
+        HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
+                .id(consumerHearingEventId)
+                .hearingEventId(payloadFk)
+                .build();
+        HearingEventPayloadEntity payload = HearingEventPayloadEntity.builder()
+                .hearingEventId(payloadFk)
+                .rawPayload(rawPayload)
+                .createdAt(fixedNow)
+                .build();
+
+        HearingEventResponse result = hearingEventPayloadMapper.toResponse(subscription, payload, payloadMap);
+
+        assertThat(result.getHearingEventId()).isEqualTo(consumerHearingEventId);
+        assertThat(result.getEventType()).isEqualTo("PRISON_COURT_REGISTER_GENERATED");
+        assertThat(result.getCreatedAt()).isEqualTo(fixedNow.toInstant());
+        assertThat(result.getPayload()).isEqualTo(payloadMap);
     }
 }

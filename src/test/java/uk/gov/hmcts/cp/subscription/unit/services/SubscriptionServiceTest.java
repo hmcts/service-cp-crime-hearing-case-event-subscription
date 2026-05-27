@@ -33,6 +33,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
@@ -215,5 +218,24 @@ class SubscriptionServiceTest {
 
         boolean result = subscriptionService.hasAccess(subscriptionId, "PRISON_COURT_REGISTER_GENERATED");
         assertThat(result).isFalse();
+    }
+
+    @Test
+    void assertClientOwnsSubscription_should_pass_when_client_owns_subscription() {
+        when(clientRepository.findByClientIdAndSubscriptionId(clientId, subscriptionId)).thenReturn(Optional.of(clientEntity));
+
+        subscriptionService.assertClientOwnsSubscription(clientId, subscriptionId);
+
+        verify(clientRepository).findByClientIdAndSubscriptionId(clientId, subscriptionId);
+    }
+
+    @Test
+    void assertClientOwnsSubscription_should_throw_forbidden_when_subscription_belongs_to_different_client() {
+        UUID differentClientId = UUID.randomUUID();
+        when(clientRepository.findByClientIdAndSubscriptionId(differentClientId, subscriptionId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> subscriptionService.assertClientOwnsSubscription(differentClientId, subscriptionId))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN));
     }
 }

@@ -5,7 +5,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
+import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.subscription.entities.EventTypeEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
@@ -14,6 +17,7 @@ import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,6 +40,8 @@ class HearingEventServiceTest {
     private EventTypeRepository eventTypeRepository;
     @Mock
     private HearingEventMapper hearingEventPayloadMapper;
+    @Mock
+    private JsonMapper jsonMapper;
 
     @InjectMocks
     private HearingEventService hearingEventPayloadService;
@@ -131,5 +137,69 @@ class HearingEventServiceTest {
         hearingEventPayloadService.saveSubscriptionIfAbsent(subscriptionId, hearingEventId);
 
         verify(hearingEventSubscriptionRepository, never()).save(any());
+    }
+
+    @Test
+    void getHearingEvent_when_subscription_found_should_return_response() {
+        UUID subscriptionId = randomUUID();
+        UUID consumerHearingEventId = randomUUID();
+        UUID hearingEventId = randomUUID();
+        Map<String, Object> payloadMap = Map.of("eventType", "PRISON_COURT_REGISTER_GENERATED");
+
+        HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
+                .id(consumerHearingEventId)
+                .subscriptionId(subscriptionId)
+                .hearingEventId(hearingEventId)
+                .build();
+        HearingEventPayloadEntity payloadEntity = HearingEventPayloadEntity.builder()
+                .hearingEventId(hearingEventId)
+                .rawPayload(eventPayload)
+                .build();
+        HearingEventResponse expected = HearingEventResponse.builder()
+                .hearingEventId(consumerHearingEventId)
+                .build();
+        when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(consumerHearingEventId, subscriptionId))
+                .thenReturn(Optional.of(subscription));
+        when(hearingEventPayloadRepository.findById(hearingEventId)).thenReturn(Optional.of(payloadEntity));
+        when(jsonMapper.toMap(eventPayload)).thenReturn(payloadMap);
+        when(hearingEventPayloadMapper.toResponse(subscription, payloadEntity, payloadMap)).thenReturn(expected);
+
+        HearingEventResponse result = hearingEventPayloadService.getHearingEvent(subscriptionId, consumerHearingEventId);
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    void getHearingEvent_when_subscription_missing_should_throw_not_found() {
+        UUID subscriptionId = randomUUID();
+        UUID hearingEventId = randomUUID();
+        when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(hearingEventId, subscriptionId))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> hearingEventPayloadService.getHearingEvent(subscriptionId, hearingEventId))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND));
+    }
+
+    @Test
+    void getHearingEvent_should_throw_not_found_when_payload_entity_missing() {
+        UUID subscriptionId = randomUUID();
+        UUID consumerHearingEventId = randomUUID();
+        UUID hearingEventId = randomUUID();
+        HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
+                .id(consumerHearingEventId)
+                .subscriptionId(subscriptionId)
+                .hearingEventId(hearingEventId)
+                .build();
+        when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(consumerHearingEventId, subscriptionId))
+                .thenReturn(Optional.of(subscription));
+        when(hearingEventPayloadRepository.findById(hearingEventId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> hearingEventPayloadService.getHearingEvent(subscriptionId, consumerHearingEventId))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> {
+                    ResponseStatusException rse = (ResponseStatusException) ex;
+                    assertThat(rse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+                    assertThat(rse.getReason()).contains(hearingEventId.toString());
+                });
     }
 }
