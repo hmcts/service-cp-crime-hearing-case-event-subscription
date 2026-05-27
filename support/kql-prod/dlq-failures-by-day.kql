@@ -1,0 +1,16 @@
+let startTime = ago(28d);
+let endTime = now();
+let ContainerIdList = KubePodInventory
+| where Name contains "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+let failures = ContainerLog
+| where TimeGenerated >= startTime
+| where ContainerID in (ContainerIdList)
+| where LogEntry contains 'handleMessage FAILED FINALLY'
+| summarize Count = count() by Day = bin(TimeGenerated, 1d);
+range Day from startTime to endTime step 1d
+| project Day = bin(Day, 1d)
+| join kind=leftouter failures on Day
+| project Day, Count = coalesce(Count, 0)
+| order by Day asc

@@ -1,0 +1,8 @@
+ContainerLogV2
+| where PodName contains "hearing-results-document-subscription"
+| where PodName !contains "dbsetup"
+| where LogMessage contains 'handleError unexpected error on'
+| extend LogJson = parse_json(LogMessage)
+| extend Queue = extract(@'handleError unexpected error on (\S+) moving to DLQ', 1, tostring(LogJson.message))
+| summarize Count = count() by Queue, Day = bin(TimeGenerated, 1d)
+| order by Day asc, Queue asc

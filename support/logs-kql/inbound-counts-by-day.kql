@@ -1,0 +1,6 @@
+ContainerLogV2
+| where PodName contains "hearing-results-document-subscription"
+| where PodName !contains "dbsetup"
+| where LogMessage contains 'Received notification request'
+| summarize Count = count() by Day = bin(TimeGenerated, 1d)
+| order by Day asc
