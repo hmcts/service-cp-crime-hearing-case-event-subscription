@@ -1,0 +1,10 @@
+let ContainerIdList = KubePodInventory
+| where Name contains "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where LogEntry contains 'failureCount: 4'
+| extend LogJson = parse_json(LogEntry)
+| project TimeGenerated, Level = tostring(LogJson.level), CorrId = tostring(split(tostring(LogJson["X-Correlation-Id"]), "-")[-1]), Message = tostring(LogJson.message)
+| order by TimeGenerated desc
