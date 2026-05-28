@@ -21,3 +21,5 @@ jobs:
       trigger_docker: true
       trigger_deploy: true
       deploy_environment: dev
+      deploy_sit: true
+      service_name: hearing-results-document-subscription
