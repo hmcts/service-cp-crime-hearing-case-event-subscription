@@ -89,5 +89,5 @@ dependencies {
   testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
   implementation 'com.azure:azure-identity:1.18.3'
-  implementation 'com.azure:azure-security-keyvault-secrets:4.10.7'
+  implementation 'com.azure:azure-security-keyvault-secrets:4.11.0'
 }
