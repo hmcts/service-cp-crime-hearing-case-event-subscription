@@ -10,3 +10,11 @@ tasks.withType(JavaCompile).configureEach {
 tasks.withType(JavaExec).configureEach {
   javaLauncher.set(javaToolchains.launcherFor(java.toolchain))
 }
+
+apply plugin: 'idea'
+idea {
+  module {
+    // Exclude Claude worktrees from IDEA indexing — prevents duplicate search results
+    excludeDirs += file('.claude')
+  }
+}
