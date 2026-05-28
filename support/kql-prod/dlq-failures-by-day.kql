@@ -3,6 +3,7 @@ let endTime = now();
 let ContainerIdList = KubePodInventory
 | where Name contains "hearing-results-document-subscription"
 | where Name !contains "dbsetup"
+| where ContainerName == "springboot-app"
 | distinct ContainerID;
 let failures = ContainerLog
 | where TimeGenerated >= startTime

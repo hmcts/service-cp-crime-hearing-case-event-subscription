@@ -2,6 +2,7 @@ let correlationId = toscalar(
     ContainerLogV2
     | where PodName contains "hearing-results-document-subscription"
     | where PodName !contains "dbsetup"
+| where ContainerName == "springboot-app"
     | where LogMessage contains "REPLACE_ME"
     | extend LogJson = parse_json(LogMessage)
     | project CorrelationId = tostring(LogJson["X-Correlation-Id"])
@@ -10,6 +11,7 @@ let correlationId = toscalar(
 ContainerLogV2
 | where PodName contains "hearing-results-document-subscription"
 | where PodName !contains "dbsetup"
+| where ContainerName == "springboot-app"
 | where LogMessage contains correlationId
 | extend LogJson = parse_json(LogMessage)
 | project TimeGenerated, Level = tostring(LogJson.level), CorrId = tostring(split(tostring(LogJson["X-Correlation-Id"]), "-")[-1]), Message = tostring(LogJson.message)
