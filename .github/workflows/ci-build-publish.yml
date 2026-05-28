@@ -375,3 +375,14 @@ jobs:
               "cluster": "K8-DEV-CS01-CL02"
             }
 
+  deploy-sit:
+    needs: [deploy-dev, version]
+    if: ${{ inputs.trigger_deploy && inputs.deploy_sit && inputs.service_name != '' }}
+    uses: hmcts/cp-vp-aks-deploy/.github/workflows/deploy-sit-pr.yml@main
+    with:
+      service_name: ${{ inputs.service_name }}
+      image_tag: ${{ needs.deploy-dev.outputs.full_tag }}
+    secrets:
+      app_id: ${{ secrets.DEPLOYMENT_APP_ID }}
+      app_private_key: ${{ secrets.DEPLOYMENT_APP_PRIVATE_KEY }}
+
