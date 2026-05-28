@@ -58,6 +58,7 @@ cd support
 | Query | Description |
 |---|---|
 | `logs-all.kql` | All logs for the service |
+| `logs-inbound-notifications.kql` | All inbound notification processing logs |
 | `errors-all.kql` | ERROR level only |
 | `errors-inbound.kql` | Inbound processing errors |
 | `errors-outbound.kql` | Outbound callback errors |
