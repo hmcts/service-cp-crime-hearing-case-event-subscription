@@ -39,7 +39,7 @@ subscription:
 
 hearing-event:
   json:
-    enabled: ${HEARING_EVENT_JSON_ENABLED:false}
+    enabled: ${HEARING_EVENT_JSON_ENABLED:true}
 
 vault:
   enabled: ${AZURE_VAULT_ENABLED:false}
