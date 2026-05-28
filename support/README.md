@@ -10,6 +10,7 @@ KQL queries for the `hearing-results-document-subscription` service.
 | [`logs-kql/`](logs-kql/) | Dev/int — queries `ContainerLogV2` directly using `PodName` |
 | [`kql-prod/`](kql-prod/) | Prod — joins `KubePodInventory` with `ContainerLog` (until `ContainerLogV2` rolls out to prod) |
 | [`chart-kql/`](chart-kql/) | Pivot/summary queries for dashboard charts |
+| [`alerts-kql/`](alerts-kql/) | Alert threshold queries — source of truth for [`cp-amp-terraform-alerts`](https://github.com/hmcts/cp-amp-terraform-alerts) |
 
 ---
 
@@ -74,3 +75,16 @@ cd support
 | Query | Description |
 |---|---|
 | `counts-by-message-type-weekly.kql` | Inbound/outbound/getDocument/failures pivot by week |
+
+### alerts-kql
+
+> **Source of truth** for alert queries deployed via [`cp-amp-terraform-alerts`](https://github.com/hmcts/cp-amp-terraform-alerts).
+>
+> After changing a query here:
+> 1. Run `./sync-alerts-to-terraform.sh` to copy files to the Terraform repo
+> 2. Commit, push and raise a PR in `cp-amp-terraform-alerts`
+> 3. Once merged, run the Terraform pipeline in that repo to apply the changes to Azure Monitor
+
+| Query | Description |
+|---|---|
+| `amp-hearing-results-document-subscription-failure-count-6.kql` | Messages that have reached 6 failures (~48s of retries elapsed) |
