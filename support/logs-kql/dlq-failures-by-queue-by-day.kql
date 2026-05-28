@@ -1,6 +1,7 @@
 ContainerLogV2
 | where PodName contains "hearing-results-document-subscription"
 | where PodName !contains "dbsetup"
+| where ContainerName == "springboot-app"
 | where LogMessage contains 'handleError unexpected error on'
 | extend LogJson = parse_json(LogMessage)
 | extend Queue = extract(@'handleError unexpected error on (\S+) moving to DLQ', 1, tostring(LogJson.message))
