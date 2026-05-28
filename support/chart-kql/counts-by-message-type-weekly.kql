@@ -1,6 +1,6 @@
 ContainerLogV2
 | where TimeGenerated >= ago(28d)
-| where PodName contains "hearing-results-document-subscription"
+| where PodName startswith "hearing-results-document-subscription"
 | where PodName !contains "dbsetup"
 | where LogMessage contains 'Received notification request'
     or LogMessage contains 'Sending notification to'

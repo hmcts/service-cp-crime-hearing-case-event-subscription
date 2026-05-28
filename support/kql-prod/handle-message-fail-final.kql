@@ -1,5 +1,5 @@
 let ContainerIdList = KubePodInventory
-| where Name contains "hearing-results-document-subscription"
+| where Name startswith "hearing-results-document-subscription"
 | distinct ContainerID, PodLabel, Namespace, PodIp, Name;
 ContainerLog
 | where ContainerId in (ContainerIdList)

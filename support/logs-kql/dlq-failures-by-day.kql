@@ -1,5 +1,5 @@
 ContainerLogV2
-| where PodName contains "hearing-results-document-subscription"
+| where PodName startswith "hearing-results-document-subscription"
 | where PodName !contains "dbsetup"
 | where ContainerName == "springboot-app"
 | where LogMessage contains 'handleMessage FAILED FINALLY'

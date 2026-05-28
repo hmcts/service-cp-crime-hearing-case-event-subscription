@@ -1,7 +1,7 @@
 let startTime = ago(28d);
 let endTime = now();
 let ContainerIdList = KubePodInventory
-| where Name contains "hearing-results-document-subscription"
+| where Name startswith "hearing-results-document-subscription"
 | where Name !contains "dbsetup"
 | where ContainerName == "springboot-app"
 | distinct ContainerID;

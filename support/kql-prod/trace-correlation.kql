@@ -1,6 +1,6 @@
 let correlationId = "REPLACE_ME"; // paste full or partial X-Correlation-Id here
 let ContainerIdList = KubePodInventory
-| where Name contains "hearing-results-document-subscription"
+| where Name startswith "hearing-results-document-subscription"
 | where Name !contains "dbsetup"
 | where ContainerName == "springboot-app"
 | distinct ContainerID;
