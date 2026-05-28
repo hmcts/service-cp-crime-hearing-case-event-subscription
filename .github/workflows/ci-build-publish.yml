@@ -41,6 +41,15 @@ on:
         required: false
         type: string
         default: dev
+      service_name:
+        required: false
+        type: string
+        default: ''
+        description: "Key in vp-config/services_values.yml for the SIT deploy PR"
+      deploy_sit:
+        required: false
+        type: boolean
+        default: false
 
 
 jobs:
@@ -331,11 +340,17 @@ jobs:
     needs: [wait-acr-copy, version, build]
     if: ${{ inputs.trigger_deploy }}
     runs-on: ubuntu-latest
+    outputs:
+      full_tag: ${{ steps.full_tag.outputs.value }}
     steps:
       - name: Generate date suffix
         id: date
         shell: bash
         run: echo "suffix=_$(date -u +'%d%m%y')" >> "$GITHUB_OUTPUT"
+
+      - name: Compute full image tag
+        id: full_tag
+        run: echo "value=${{ needs.version.outputs.artefact_version }}${{ steps.date.outputs.suffix }}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy via ADO pipeline
         uses: hmcts/action-ado-deploy@v1
