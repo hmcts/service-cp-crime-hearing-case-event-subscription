@@ -2,6 +2,7 @@ package uk.gov.hmcts.cp.subscription.services;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,6 +19,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SubscriptionValidationService {
@@ -28,6 +30,7 @@ public class SubscriptionValidationService {
     public void validateClientDoesNotExist(final UUID clientId) {
         final Optional<ClientEntity> existingClient = clientRepository.findByClientId(clientId);
         if (existingClient.isPresent()) {
+            log.warn("duplicate subscription request clientId:{} subscriptionId:{}", clientId, existingClient.get().getSubscriptionId());
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "subscription already exist with " + existingClient.get().getSubscriptionId());
         }
