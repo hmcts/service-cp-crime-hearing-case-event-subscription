@@ -13,7 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Sanity tests for the PCR 400 production incident (29/05/2026, AMP-537).
+ * Sanity tests for the PCR 400 incident (29/05/2026, AMP-537).
  *
  * <p>Root cause: WildFly's {@code javax.json JsonObject::toString()} parses {@code \n} JSON escapes
  * into literal {@code U+000A} characters and re-emits them unescaped. {@code PcrEventPayload.payload}
