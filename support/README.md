@@ -87,4 +87,5 @@ cd support
 
 | Query | Description |
 |---|---|
-| `amp-hearing-results-document-subscription-failure-count-6.kql` | Messages that have reached 6 failures (~48s of retries elapsed) |
+| `amp-hrds-failure-count-6.kql` | Messages that have reached 6 failures (~48s of retries elapsed) |
+| `amp-hrds-duplicate-subscription.kql` | Duplicate subscription requests (409 CONFLICT) — useful for testing alert groups |

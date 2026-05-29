@@ -54,7 +54,8 @@ class KqlLogMessageContractTest {
             kqlContract("handleError unexpected error on",                 "ServiceBusProcessorService", 1),
             kqlContract("Sending notification",                           "CallbackClient", 1),
             kqlContract("PostStartup Queue",                               "PostStartup", 1),
-            kqlContract("failureCount:",                                   "ServiceBusProcessorService", 2)
+            kqlContract("failureCount:",                                   "ServiceBusProcessorService", 2),
+            kqlContract("duplicate subscription request",                  "SubscriptionValidationService", 1)
         );
     }
 
