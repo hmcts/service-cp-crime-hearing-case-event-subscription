@@ -13,20 +13,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Sanity tests for the PCR 400 incident (29/05/2026, AMP-537).
+o * Sanity tests proving AMP accepts properly-serialised {@code EventPayload} bodies (AMP-537).
  *
- * <p>Root cause: WildFly's {@code javax.json JsonObject::toString()} parses {@code \n} JSON escapes
- * into literal {@code U+000A} characters and re-emits them unescaped. {@code PcrEventPayload.payload}
- * embeds this via {@code @JsonRawValue}, producing a malformed HTTP body that Jackson rejects with
- * {@code HttpMessageNotReadableException} (CTRL-CHAR code 10) → 400.
+ * <p><b>PCR (progression):</b> WildFly's {@code javax.json JsonObject::toString()} converts
+ * {@code \n} JSON escapes to literal {@code U+000A} characters. {@code PcrEventPayload.payload}
+ * re-emits these via {@code @JsonRawValue} → malformed HTTP body → Jackson 400.
+ * Fix: {@code FileService.retrieveRawPayload()} reads raw bytes, preserving {@code \n} as
+ * valid JSON escape sequences.
  *
- * <p>Fix: {@code FileService.retrieveRawPayload()} in progression reads raw file bytes, preserving
- * {@code \n} as valid JSON escape sequences (hex {@code 5C6E}) throughout.
+ * <p><b>NOW (hearing-nows):</b> {@code @JsonRawValue} on the field (not the Lombok getter) is
+ * ignored by the RESTEasy container's Jackson provider → {@code payload} serialised as a quoted
+ * string → AMP's {@code Map<String, Object>} cannot deserialise → 400.
+ * Fix: field type changed from {@code String} to {@code JsonNode}; Jackson serialises inline.
  *
- * <p>Fixture: {@code pcr-payload-production-sample.json} — verbatim PCR JSON from the file service
- * for the incident. {@code pcr-notification-from-progression.json} — full {@code EventPayload} body
- * as progression POSTs after the fix.
- *
+ * <p>Fixtures: {@code pcr-payload-production-sample.json}, {@code pcr-notification-from-progression.json},
+ * {@code now-notification-from-hearing-nows.json}.
  */
 class NotificationControllerPayloadFieldTest extends IntegrationTestBase {
 
@@ -38,6 +39,9 @@ class NotificationControllerPayloadFieldTest extends IntegrationTestBase {
     // Full notification body produced by progression after the FileService.retrieveRawPayload() fix.
     private static final String PROGRESSION_FIX_NOTIFICATION_FILE =
             "stubs/requests/progression/pcr-notification-from-progression.json";
+
+    private static final String HEARING_NOWS_FIX_NOTIFICATION_FILE =
+            "stubs/requests/hearingnows/now-notification-from-hearing-nows.json";
 
     private static final String BASE_BODY = "{"
             + "\"eventType\":\"PRISON_COURT_REGISTER_GENERATED\","
@@ -101,6 +105,17 @@ class NotificationControllerPayloadFieldTest extends IntegrationTestBase {
     @Test
     void notification_with_complete_payload_as_produced_by_progression_fix_should_return_202() throws Exception {
         String body = loadPayload(PROGRESSION_FIX_NOTIFICATION_FILE);
+
+        mockMvc.perform(post(NOTIFICATION_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andDo(print())
+                .andExpect(status().isAccepted());
+    }
+
+    @Test
+    void notification_with_now_payload_as_produced_by_hearing_nows_fix_should_return_202() throws Exception {
+        String body = loadPayload(HEARING_NOWS_FIX_NOTIFICATION_FILE);
 
         mockMvc.perform(post(NOTIFICATION_URI)
                         .contentType(MediaType.APPLICATION_JSON)
