@@ -13,7 +13,6 @@ import uk.gov.hmcts.cp.subscription.services.ClockService;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.Map;
 import java.util.UUID;
 
 import static java.util.UUID.randomUUID;
@@ -69,7 +68,7 @@ class HearingEventMapperTest {
         UUID consumerHearingEventId = randomUUID();
         UUID payloadFk = randomUUID();
         EventPayload rawPayload = EventPayload.builder().eventType("PRISON_COURT_REGISTER_GENERATED").build();
-        Map<String, Object> payloadMap = Map.of("eventType", "PRISON_COURT_REGISTER_GENERATED");
+        String payloadJson = "{\"eventType\":\"PRISON_COURT_REGISTER_GENERATED\"}";
 
         HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
                 .id(consumerHearingEventId)
@@ -81,11 +80,11 @@ class HearingEventMapperTest {
                 .createdAt(fixedNow)
                 .build();
 
-        HearingEventResponse result = hearingEventPayloadMapper.toResponse(subscription, payload, payloadMap);
+        HearingEventResponse result = hearingEventPayloadMapper.toResponse(subscription, payload, payloadJson);
 
         assertThat(result.getHearingEventId()).isEqualTo(consumerHearingEventId);
         assertThat(result.getEventType()).isEqualTo("PRISON_COURT_REGISTER_GENERATED");
         assertThat(result.getCreatedAt()).isEqualTo(fixedNow.toInstant());
-        assertThat(result.getPayload()).isEqualTo(payloadMap);
+        assertThat(result.getPayload()).isEqualTo(payloadJson);
     }
 }

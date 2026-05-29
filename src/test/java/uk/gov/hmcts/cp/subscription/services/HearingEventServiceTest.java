@@ -17,7 +17,6 @@ import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
 import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -144,7 +143,7 @@ class HearingEventServiceTest {
         UUID subscriptionId = randomUUID();
         UUID consumerHearingEventId = randomUUID();
         UUID hearingEventId = randomUUID();
-        Map<String, Object> payloadMap = Map.of("eventType", "PRISON_COURT_REGISTER_GENERATED");
+        String payloadJson = "{\"eventType\":\"PRISON_COURT_REGISTER_GENERATED\"}";
 
         HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
                 .id(consumerHearingEventId)
@@ -161,8 +160,8 @@ class HearingEventServiceTest {
         when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(consumerHearingEventId, subscriptionId))
                 .thenReturn(Optional.of(subscription));
         when(hearingEventPayloadRepository.findById(hearingEventId)).thenReturn(Optional.of(payloadEntity));
-        when(jsonMapper.toMap(eventPayload)).thenReturn(payloadMap);
-        when(hearingEventPayloadMapper.toResponse(subscription, payloadEntity, payloadMap)).thenReturn(expected);
+        when(jsonMapper.toJson(eventPayload)).thenReturn(payloadJson);
+        when(hearingEventPayloadMapper.toResponse(subscription, payloadEntity, payloadJson)).thenReturn(expected);
 
         HearingEventResponse result = hearingEventPayloadService.getHearingEvent(subscriptionId, consumerHearingEventId);
         assertThat(result).isEqualTo(expected);

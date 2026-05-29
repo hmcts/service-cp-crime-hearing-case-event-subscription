@@ -49,8 +49,4 @@ public class JsonMapper {
         final String uuid = toJsonNode(json).at(jsonPointer).textValue();
         return uuid == null ? null : UUID.fromString(uuid);
     }
-
-    public Map<String, Object> toMap(final Object object) {
-        return objectMapper.convertValue(object, new TypeReference<Map<String, Object>>() {});
-    }
 }

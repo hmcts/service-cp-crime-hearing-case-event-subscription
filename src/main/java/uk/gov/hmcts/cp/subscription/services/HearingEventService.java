@@ -40,7 +40,7 @@ public class HearingEventService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "hearing_event_payload missing for hearing_event_id: " + subscription.getHearingEventId()));
         log.info("getHearingEvent subscriptionId={} hearingEventId={}", subscriptionId, hearingEventId);
-        return hearingEventPayloadMapper.toResponse(subscription, payload, jsonMapper.toMap(payload.getRawPayload()));
+        return hearingEventPayloadMapper.toResponse(subscription, payload, jsonMapper.toJson(payload.getRawPayload()));
     }
 
     @Transactional
