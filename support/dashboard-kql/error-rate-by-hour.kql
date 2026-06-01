@@ -1,0 +1,10 @@
+ContainerLogV2
+| where PodNamespace  == 'ns-dev-amp-01'
+| where TimeGenerated > ago(7d)
+| where ContainerName != 'istio-proxy'
+| where PodName contains 'hearing-results'
+| where LogLevel == 'error'
+| where LogMessage contains 'ResponseStatusException'
+| project TimeGenerated, LogLevel, LogMessage
+| summarize ErrorCount = count() by bin(TimeGenerated, 1h)
+| render timechart

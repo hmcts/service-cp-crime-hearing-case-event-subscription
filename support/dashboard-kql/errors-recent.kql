@@ -1,0 +1,12 @@
+ContainerLogV2
+| where PodNamespace  == 'ns-dev-amp-01'
+| where TimeGenerated > ago(7d)
+| where ContainerName != 'istio-proxy'
+| where PodName contains 'hearing-results'
+| where LogLevel == 'error'
+| extend LogJson = parse_json(LogMessage)
+| extend Message = tostring(LogJson.message)
+| extend Level   = tostring(LogJson.level)
+| order by TimeGenerated desc
+| take 50
+| project TimeGenerated, Message

@@ -9,7 +9,8 @@ KQL queries for the `hearing-results-document-subscription` service.
 |---|---|
 | [`logs-kql/`](logs-kql/) | Dev/int — queries `ContainerLogV2` directly using `PodName` |
 | [`kql-prod/`](kql-prod/) | Prod — joins `KubePodInventory` with `ContainerLog` (until `ContainerLogV2` rolls out to prod) |
-| [`chart-kql/`](chart-kql/) | Pivot/summary queries for dashboard charts |
+| [`chart-kql/`](chart-kql/) | Pivot/summary queries for ad-hoc analysis |
+| [`dashboard-kql/`](dashboard-kql/) | Dashboard tile queries — source of truth for [`cp-amp-terraform-az-dashboard`](https://github.com/hmcts/cp-amp-terraform-az-dashboard) |
 | [`alerts-kql/`](alerts-kql/) | Alert threshold queries — source of truth for [`cp-amp-terraform-alerts`](https://github.com/hmcts/cp-amp-terraform-alerts) |
 
 ---
@@ -76,6 +77,26 @@ cd support
 |---|---|
 | `counts-by-message-type-weekly.kql` | Inbound/outbound/getDocument/failures pivot by week |
 
+### dashboard-kql
+
+> **Source of truth** for dashboard tile queries deployed via [`cp-amp-terraform-az-dashboard`](https://github.com/hmcts/cp-amp-terraform-az-dashboard).
+>
+> After changing a query here:
+> 1. Run `./sync-dashboard-to-terraform.sh` to copy files to the Terraform repo
+> 2. Commit, push and raise a PR in `cp-amp-terraform-az-dashboard`
+> 3. Once merged, run the Terraform pipeline in that repo to apply the changes to Azure
+
+| Query | Description |
+|---|---|
+| `received-notifications-by-day.kql` | Received notifications trend — 84 day line chart |
+| `received-notifications-by-hour.kql` | Received notifications trend — 1 day column chart |
+| `get-documents-by-day.kql` | Get document requests trend — 84 day line chart |
+| `get-documents-by-hour.kql` | Get document requests trend — 1 day column chart |
+| `error-rate-by-hour.kql` | ResponseStatusException error rate — 7 day line chart |
+| `errors-recent.kql` | Last 50 errors — table |
+| `all-logs-recent.kql` | All logs last 12h — table |
+| `todays-summary.kql` | Today's notification/error/exception counts — table |
+
 ### alerts-kql
 
 > **Source of truth** for alert queries deployed via [`cp-amp-terraform-alerts`](https://github.com/hmcts/cp-amp-terraform-alerts).
@@ -87,5 +108,6 @@ cd support
 
 | Query | Description |
 |---|---|
-| `amp-hrds-failure-count-6.kql` | Messages that have reached 6 failures (~48s of retries elapsed) |
+| `amp-hrds-inbound-failure-count-6.kql` | Inbound messages that have reached 6 failures (~48s of retries elapsed) |
+| `amp-hrds-outbound-failure-count-6.kql` | Outbound messages that have reached 6 failures (~48s of retries elapsed) |
 | `amp-hrds-duplicate-subscription.kql` | Duplicate subscription requests (409 CONFLICT) — useful for testing alert groups |
