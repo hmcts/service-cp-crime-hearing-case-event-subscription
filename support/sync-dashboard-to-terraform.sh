@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Syncs chart-kql/ to the cp-amp-terraform-az-dashboard queries/hearing-results-document-subscription/ folder.
+# Syncs dashboard-kql/ to the cp-amp-terraform-az-dashboard queries/hearing-results-document-subscription/ folder.
 # Run from anywhere — uses the script's own location to find both repos.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$SCRIPT_DIR/chart-kql"
+SRC="$SCRIPT_DIR/dashboard-kql"
 TF_REPO="$(cd "$SCRIPT_DIR/../../cp-amp-terraform-az-dashboard" 2>/dev/null && pwd)"
 
 if [ -z "$TF_REPO" ]; then

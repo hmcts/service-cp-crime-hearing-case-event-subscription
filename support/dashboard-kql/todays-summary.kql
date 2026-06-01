@@ -1,0 +1,27 @@
+union
+(ContainerLogV2
+    | where PodNamespace == 'ns-dev-amp-01'
+    | where ContainerName != 'istio-proxy'
+    | where PodName contains 'hearing-results'
+    | where TimeGenerated >= startofday(now())
+    | where LogMessage contains 'Received notification request'
+    | summarize Count = count()
+    | extend Metric = 'Notifications Received'),
+(ContainerLogV2
+    | where PodNamespace == 'ns-dev-amp-01'
+    | where ContainerName != 'istio-proxy'
+    | where PodName contains 'hearing-results'
+    | where TimeGenerated >= startofday(now())
+    | where LogLevel == 'error'
+    | summarize Count = count()
+    | extend Metric = 'Errors'),
+(ContainerLogV2
+    | where PodNamespace == 'ns-dev-amp-01'
+    | where ContainerName != 'istio-proxy'
+    | where PodName contains 'hearing-results'
+    | where TimeGenerated >= startofday(now())
+    | where LogMessage contains 'ResponseStatusException'
+    | summarize Count = count()
+    | extend Metric = 'Response Exceptions')
+| project Metric, Count
+| order by Metric asc

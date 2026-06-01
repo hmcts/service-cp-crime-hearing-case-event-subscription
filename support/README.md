@@ -9,7 +9,8 @@ KQL queries for the `hearing-results-document-subscription` service.
 |---|---|
 | [`logs-kql/`](logs-kql/) | Dev/int — queries `ContainerLogV2` directly using `PodName` |
 | [`kql-prod/`](kql-prod/) | Prod — joins `KubePodInventory` with `ContainerLog` (until `ContainerLogV2` rolls out to prod) |
-| [`chart-kql/`](chart-kql/) | Dashboard tile queries — source of truth for [`cp-amp-terraform-az-dashboard`](https://github.com/hmcts/cp-amp-terraform-az-dashboard) |
+| [`chart-kql/`](chart-kql/) | Pivot/summary queries for ad-hoc analysis |
+| [`dashboard-kql/`](dashboard-kql/) | Dashboard tile queries — source of truth for [`cp-amp-terraform-az-dashboard`](https://github.com/hmcts/cp-amp-terraform-az-dashboard) |
 | [`alerts-kql/`](alerts-kql/) | Alert threshold queries — source of truth for [`cp-amp-terraform-alerts`](https://github.com/hmcts/cp-amp-terraform-alerts) |
 
 ---
@@ -72,6 +73,12 @@ cd support
 
 ### chart-kql
 
+| Query | Description |
+|---|---|
+| `counts-by-message-type-weekly.kql` | Inbound/outbound/getDocument/failures pivot by week |
+
+### dashboard-kql
+
 > **Source of truth** for dashboard tile queries deployed via [`cp-amp-terraform-az-dashboard`](https://github.com/hmcts/cp-amp-terraform-az-dashboard).
 >
 > After changing a query here:
@@ -81,7 +88,6 @@ cd support
 
 | Query | Description |
 |---|---|
-| `counts-by-message-type-weekly.kql` | Inbound/outbound/getDocument/failures pivot by week |
 | `received-notifications-by-day.kql` | Received notifications trend — 84 day line chart |
 | `received-notifications-by-hour.kql` | Received notifications trend — 1 day column chart |
 | `get-documents-by-day.kql` | Get document requests trend — 84 day line chart |
