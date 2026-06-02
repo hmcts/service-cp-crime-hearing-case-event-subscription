@@ -57,6 +57,19 @@ class NotificationControllerPayloadFieldTest extends IntegrationTestBase {
             + "\"cases\":[{\"urn\":\"28DI8140839\"}]"
             + "}";
 
+    private static final String BASE_BODY_NO_DOB = "{"
+            + "\"eventType\":\"PRISON_COURT_REGISTER_GENERATED\","
+            + "\"eventId\":\"a4554152-10fb-44fe-a015-226f8d547c91\","
+            + "\"materialId\":\"886a3d9c-2543-4fdd-8b5c-1597e3d36ebb\","
+            + "\"hearingId\":\"b2c3d4e5-f6a7-8901-bcde-f12345678901\","
+            + "\"timestamp\":\"2026-05-29T10:23:29Z\","
+            + "\"defendant\":{"
+            + "\"masterDefendantId\":\"f08465c5-0000-0000-0000-000000000000\","
+            + "\"name\":\"Leo Kuhn\","
+            + "\"custodyEstablishmentDetails\":{\"emailAddress\":\"lavenderhill@prison.gov.uk\"},"
+            + "\"cases\":[{\"urn\":\"28DI8140839\"}]"
+            + "}";
+
     @MockitoBean
     private ServiceBusClientService serviceBusClientService;
 
@@ -64,6 +77,15 @@ class NotificationControllerPayloadFieldTest extends IntegrationTestBase {
     void setUp() {
         reset(serviceBusClientService);
         clearAllTables();
+    }
+
+    @Test
+    void notification_without_date_of_birth_should_return_202() throws Exception {
+        mockMvc.perform(post(NOTIFICATION_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(BASE_BODY_NO_DOB + "}"))
+                .andDo(print())
+                .andExpect(status().isAccepted());
     }
 
     @Test
