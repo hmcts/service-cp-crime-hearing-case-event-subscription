@@ -363,7 +363,7 @@ jobs:
           template_parameters: >
             {
               "env": "dev",
-              "cpbackendenv": "steccm14",
+              "cpbackendenv": "steccm64",
               "stack": "devamp01",
               "cluster": "K8-DEV-CS01-CL02"
             }
