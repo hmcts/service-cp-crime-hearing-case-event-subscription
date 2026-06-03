@@ -1,0 +1,5 @@
+KubePodInventory
+| where Name startswith "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct Computer
+| order by Computer asc

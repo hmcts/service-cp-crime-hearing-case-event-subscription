@@ -1,0 +1,15 @@
+let events =
+    ContainerLogV2
+    | where PodNamespace == 'ns-dev-amp-01'
+    | where TimeGenerated > ago(24h)
+    | where ContainerName != 'istio-proxy'
+    | where PodName contains 'hearing-results'
+    | where LogMessage contains 'processInboundEvent eventId'
+    | extend LogJson = parse_json(LogMessage)
+    | extend Message = tostring(LogJson.message)
+    | extend EventType = extract("eventType:(\\S+)", 1, Message)
+    | where isnotempty(EventType)
+    | summarize Count = count() by EventType;
+events
+| project EventType = tostring(EventType), Count = toint(Count)
+| order by Count desc

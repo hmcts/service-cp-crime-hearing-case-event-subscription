@@ -1,0 +1,26 @@
+let ContainerIdList = KubePodInventory
+| where Name startswith "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+union
+(ContainerLog
+    | where ContainerID in (ContainerIdList)
+    | where TimeGenerated >= startofday(now())
+    | where LogEntry contains 'Received notification request'
+    | summarize Count = count()
+    | extend Metric = 'Notifications Received'),
+(ContainerLog
+    | where ContainerID in (ContainerIdList)
+    | where TimeGenerated >= startofday(now())
+    | extend LogJson = parse_json(LogEntry)
+    | where tostring(LogJson.level) == 'error'
+    | summarize Count = count()
+    | extend Metric = 'Errors'),
+(ContainerLog
+    | where ContainerID in (ContainerIdList)
+    | where TimeGenerated >= startofday(now())
+    | where LogEntry contains 'ResponseStatusException'
+    | summarize Count = count()
+    | extend Metric = 'Response Exceptions')
+| project Metric, Count
+| order by Metric asc

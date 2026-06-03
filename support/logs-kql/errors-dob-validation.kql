@@ -1,0 +1,8 @@
+ContainerLogV2
+| where PodName startswith "hearing-results-document-subscription"
+| where PodName !contains "dbsetup"
+| where ContainerName == "springboot-app"
+| where LogMessage contains "defendant.dateOfBirth must not be null"
+| extend LogJson = parse_json(LogMessage)
+| project TimeGenerated, Level = tostring(LogJson.level), CorrId = tostring(split(tostring(LogJson["X-Correlation-Id"]), "-")[-1]), Message = tostring(LogJson.message)
+| order by TimeGenerated asc

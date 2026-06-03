@@ -1,0 +1,12 @@
+let ContainerIdList = KubePodInventory
+| where Name startswith "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where TimeGenerated > ago(7d)
+| extend LogJson = parse_json(LogEntry)
+| where tostring(LogJson.level) == 'error'
+| where LogEntry contains 'ResponseStatusException'
+| summarize ErrorCount = count() by bin(TimeGenerated, 1h)
+| render timechart

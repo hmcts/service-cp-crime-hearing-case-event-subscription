@@ -1,0 +1,17 @@
+let ContainerIdList = KubePodInventory
+| where Name startswith "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where TimeGenerated > ago(12h)
+| extend LogJson = parse_json(LogEntry)
+| extend Message = tostring(LogJson.message)
+| extend Level   = tostring(LogJson.level)
+| extend LocalTime = datetime_utc_to_local(TimeGenerated, 'Europe/London')
+| order by LocalTime desc
+| take 500
+| project
+    ['LocalTime'] = format_datetime(LocalTime, 'yyyy-MM-dd HH:mm:ss'),
+    Level,
+    Message

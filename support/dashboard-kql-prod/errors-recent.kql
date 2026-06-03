@@ -1,0 +1,14 @@
+let ContainerIdList = KubePodInventory
+| where Name startswith "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where TimeGenerated > ago(7d)
+| extend LogJson = parse_json(LogEntry)
+| extend Message = tostring(LogJson.message)
+| extend Level   = tostring(LogJson.level)
+| where Level == 'error'
+| order by TimeGenerated desc
+| take 50
+| project TimeGenerated, Message

@@ -1,0 +1,13 @@
+let ContainerIdList = KubePodInventory
+| where Name startswith "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where TimeGenerated > ago(84d)
+| where LogEntry contains 'Received notification request'
+| make-series ReceivedNotification = count() default=0
+    on TimeGenerated
+    from ago(84d) to now()
+    step 1d
+| render timechart

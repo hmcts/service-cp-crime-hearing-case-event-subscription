@@ -1,0 +1,17 @@
+let ContainerIdList = KubePodInventory
+    | where Name startswith "hearing-results-document-subscription"
+    | where Name !contains "dbsetup"
+    | distinct ContainerID;
+let events =
+    ContainerLog
+    | where ContainerID in (ContainerIdList)
+    | where TimeGenerated > ago(24h)
+    | where LogEntry contains 'processInboundEvent eventId'
+    | extend LogJson = parse_json(LogEntry)
+    | extend Message = tostring(LogJson.message)
+    | extend EventType = extract("eventType:(\\S+)", 1, Message)
+    | where isnotempty(EventType)
+    | summarize Count = count() by EventType;
+events
+| project EventType = tostring(EventType), Count = toint(Count)
+| order by Count desc

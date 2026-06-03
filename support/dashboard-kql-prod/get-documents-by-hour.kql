@@ -1,0 +1,13 @@
+let ContainerIdList = KubePodInventory
+| where Name startswith "hearing-results-document-subscription"
+| where Name !contains "dbsetup"
+| distinct ContainerID;
+ContainerLog
+| where ContainerID in (ContainerIdList)
+| where TimeGenerated > ago(1d)
+| where LogEntry contains 'getDocument request'
+| make-series GetDocument = count() default=0
+    on TimeGenerated
+    from ago(1d) to now()
+    step 1h
+| render columnchart
