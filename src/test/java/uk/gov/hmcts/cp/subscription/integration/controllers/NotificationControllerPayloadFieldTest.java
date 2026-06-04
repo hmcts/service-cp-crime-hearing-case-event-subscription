@@ -12,23 +12,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
-o * Sanity tests proving AMP accepts properly-serialised {@code EventPayload} bodies (AMP-537).
- *
- * <p><b>PCR (progression):</b> WildFly's {@code javax.json JsonObject::toString()} converts
- * {@code \n} JSON escapes to literal {@code U+000A} characters. {@code PcrEventPayload.payload}
- * re-emits these via {@code @JsonRawValue} → malformed HTTP body → Jackson 400.
- * Fix: {@code FileService.retrieveRawPayload()} reads raw bytes, preserving {@code \n} as
- * valid JSON escape sequences.
- *
- * <p><b>NOW (hearing-nows):</b> {@code @JsonRawValue} on the field (not the Lombok getter) is
- * ignored by the RESTEasy container's Jackson provider → {@code payload} serialised as a quoted
- * string → AMP's {@code Map<String, Object>} cannot deserialise → 400.
- * Fix: field type changed from {@code String} to {@code JsonNode}; Jackson serialises inline.
- *
- * <p>Fixtures: {@code pcr-payload-production-sample.json}, {@code pcr-notification-from-progression.json},
- * {@code now-notification-from-hearing-nows.json}.
- */
 class NotificationControllerPayloadFieldTest extends IntegrationTestBase {
 
     private static final String NOTIFICATION_URI = "/notifications";
@@ -144,5 +127,19 @@ class NotificationControllerPayloadFieldTest extends IntegrationTestBase {
                         .content(body))
                 .andDo(print())
                 .andExpect(status().isAccepted());
+    }
+
+    @Test
+    void notification_with_jsonnode_introspection_payload_should_return_400() throws Exception {
+        String introspectionPayload = "{"
+                + "\"int\":false,\"long\":false,\"object\":true,"
+                + "\"nodeType\":\"OBJECT\",\"textual\":false,\"containerNode\":true}";
+        String body = BASE_BODY + ",\"payload\":" + introspectionPayload + "}";
+
+        mockMvc.perform(post(NOTIFICATION_URI)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
     }
 }

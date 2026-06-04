@@ -10,10 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+import uk.gov.hmcts.cp.openapi.model.EventPayload;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -78,6 +81,26 @@ class JsonMapperTest {
 
         Example exampleAgain = jsonMapper.fromJson(json, Example.class);
         assertThat(exampleAgain).usingRecursiveComparison().isEqualTo(example);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void toMap_preserves_real_event_payload_content_without_jsonnode_introspection_fields() {
+        EventPayload eventPayload = EventPayload.builder()
+                .eventId(UUID.fromString("a4554152-10fb-44fe-a015-226f8d547c91"))
+                .eventType("PRISON_COURT_REGISTER_GENERATED")
+                .payload(Map.of(
+                        "registerDate", "2026-05-29",
+                        "cases", List.of(Map.of("caseId", "11111111-1111-1111-1111-111111111111")),
+                        "orderingCourt", "Some Court"))
+                .build();
+
+        Map<String, Object> map = jsonMapper.toMap(eventPayload);
+        Map<String, Object> payload = (Map<String, Object>) map.get("payload");
+
+        assertThat(payload).containsKeys("registerDate", "cases", "orderingCourt");
+        assertThat(payload).doesNotContainKeys(
+                "nodeType", "containerNode", "object", "array", "textual", "int", "long");
     }
 
     @Test
