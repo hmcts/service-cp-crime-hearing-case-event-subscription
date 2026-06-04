@@ -25,6 +25,7 @@ import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
 import uk.gov.hmcts.cp.subscription.managers.NotificationManager;
 import uk.gov.hmcts.cp.subscription.model.DocumentContent;
+import uk.gov.hmcts.cp.subscription.services.EventPayloadValidator;
 import uk.gov.hmcts.cp.subscription.services.EventTypeService;
 import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 
@@ -68,6 +69,13 @@ public class NotificationController implements InternalApi, NotificationApi {
                 eventPayload.getHearingId(),
                 eventPayload.getMaterialId(),
                 eventPayload.getEventType());
+
+        if (EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
+            log.error("Rejecting notification: payload is Jackson JsonNode introspection metadata, not "
+                            + "document content (producer serialisation regression). eventId: {}, eventType: {}",
+                    eventPayload.getEventId(), eventPayload.getEventType());
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
 
         if (eventTypeService.eventExists(eventPayload.getEventType())) {
             final String eventjson = jsonMapper.toJson(eventPayload);
