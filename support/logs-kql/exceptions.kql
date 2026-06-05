@@ -1,0 +1,12 @@
+// Exception logs from hearing-results-document-subscription service
+// Shows logs with exception details
+
+ContainerLogV2
+| where PodName startswith "hearing-results-document-subscription"
+| where PodName !contains "dbsetup"
+| where ContainerName == "springboot-app"
+| extend LogJson = parse_json(LogMessage)
+| where tostring(LogJson.exception) != "" or tostring(LogJson.message) contains "Exception"
+| extend StackTrace = tostring(LogJson.stackTrace)
+| project TimeGenerated, Level = tostring(LogJson.level), CorrId = tostring(split(tostring(LogJson["X-Correlation-Id"]), "-")[-1]), Message = tostring(LogJson.message), Exception = tostring(LogJson.exception), StackTrace
+| order by TimeGenerated asc
