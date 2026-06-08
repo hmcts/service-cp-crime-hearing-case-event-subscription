@@ -53,32 +53,31 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void findByIdAndSubscriptionId_should_return_entity_when_both_match() {
-        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
+    void findByHearingEventIdAndSubscriptionId_should_return_entity_when_both_match() {
+        saveSubscription(subscriptionId, hearingEventId);
 
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByIdAndSubscriptionId(saved.getId(), subscriptionId);
+                .findByHearingEventIdAndSubscriptionId(hearingEventId, subscriptionId);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(saved.getId());
         assertThat(result.get().getSubscriptionId()).isEqualTo(subscriptionId);
         assertThat(result.get().getHearingEventId()).isEqualTo(hearingEventId);
     }
 
     @Test
-    void findByIdAndSubscriptionId_should_return_empty_when_subscription_id_does_not_match() {
-        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
+    void findByHearingEventIdAndSubscriptionId_should_return_empty_when_subscription_id_does_not_match() {
+        saveSubscription(subscriptionId, hearingEventId);
 
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByIdAndSubscriptionId(saved.getId(), randomUUID());
+                .findByHearingEventIdAndSubscriptionId(hearingEventId, randomUUID());
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    void findByIdAndSubscriptionId_should_return_empty_when_id_does_not_exist() {
+    void findByHearingEventIdAndSubscriptionId_should_return_empty_when_hearing_event_id_does_not_exist() {
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByIdAndSubscriptionId(randomUUID(), subscriptionId);
+                .findByHearingEventIdAndSubscriptionId(randomUUID(), subscriptionId);
 
         assertThat(result).isEmpty();
     }

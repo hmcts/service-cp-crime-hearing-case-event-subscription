@@ -61,18 +61,15 @@ class HearingEventMapperTest {
         assertThat(result.getSubscriptionId()).isEqualTo(subscriptionId);
         assertThat(result.getHearingEventId()).isEqualTo(hearingEventId);
         assertThat(result.getCreatedAt()).isEqualTo(fixedNow);
-        assertThat(result.getId()).isNull();
     }
 
     @Test
     void toResponse_should_map_all_fields() {
-        UUID consumerHearingEventId = randomUUID();
         UUID payloadFk = randomUUID();
         EventPayload rawPayload = EventPayload.builder().eventType("PRISON_COURT_REGISTER_GENERATED").build();
         Map<String, Object> payloadMap = Map.of("eventType", "PRISON_COURT_REGISTER_GENERATED");
 
         HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
-                .id(consumerHearingEventId)
                 .hearingEventId(payloadFk)
                 .build();
         HearingEventPayloadEntity payload = HearingEventPayloadEntity.builder()
@@ -83,7 +80,7 @@ class HearingEventMapperTest {
 
         HearingEventResponse result = hearingEventPayloadMapper.toResponse(subscription, payload, payloadMap);
 
-        assertThat(result.getHearingEventId()).isEqualTo(consumerHearingEventId);
+        assertThat(result.getHearingEventId()).isEqualTo(payloadFk);
         assertThat(result.getEventType()).isEqualTo("PRISON_COURT_REGISTER_GENERATED");
         assertThat(result.getCreatedAt()).isEqualTo(fixedNow.toInstant());
         assertThat(result.getPayload()).isEqualTo(payloadMap);

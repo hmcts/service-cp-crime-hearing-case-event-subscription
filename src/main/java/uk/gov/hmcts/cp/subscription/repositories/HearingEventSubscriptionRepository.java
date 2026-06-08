@@ -12,5 +12,5 @@ public interface HearingEventSubscriptionRepository extends JpaRepository<Hearin
 
     boolean existsBySubscriptionIdAndHearingEventId(UUID subscriptionId, UUID hearingEventId);
 
-    Optional<HearingEventSubscriptionEntity> findByIdAndSubscriptionId(UUID id, UUID subscriptionId);
+    Optional<HearingEventSubscriptionEntity> findByHearingEventIdAndSubscriptionId(UUID hearingEventId, UUID subscriptionId);
 }

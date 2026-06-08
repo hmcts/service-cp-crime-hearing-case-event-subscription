@@ -32,7 +32,7 @@ public class HearingEventService {
 
     public HearingEventResponse getHearingEvent(final UUID subscriptionId, final UUID hearingEventId) {
         final HearingEventSubscriptionEntity subscription = hearingEventSubscriptionRepository
-                .findByIdAndSubscriptionId(hearingEventId, subscriptionId)
+                .findByHearingEventIdAndSubscriptionId(hearingEventId, subscriptionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "hearingEventId not found for this subscriber"));
         final HearingEventPayloadEntity payload = hearingEventPayloadRepository

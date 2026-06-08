@@ -68,23 +68,20 @@ class NotificationControllerIntegrationTest extends IntegrationTestBase {
         verify(serviceBusClientService).queueMessage(eq(NOTIFICATIONS_INBOUND_QUEUE), eq(null), anyString(), eq(0));
     }
 
-    // Reproduces the Azure Blob 403 "Signature fields not well formed" bug.
-    // Without URI.create(): RestTemplate re-encodes %2B -> %252B in the SAS query params,
-    // breaking the signature. WireMock simulates Azure's behaviour:
-    //   - stub - material-blob-large-file-mapping.json — exact URL with %2B preserved → returns 200
-    //   - stub - material-blob-auth-fail-mapping.json — any blob path → returns 403
     @Test
-    void get_hearing_event_should_return_200_with_response_when_subscription_owns_event() throws Exception {
+    void get_hearing_event_should_return_200_with_full_response_when_subscription_owns_event() throws Exception {
         UUID subscriptionId = insertSubscription(CALLBACK_URL, List.of("PRISON_COURT_REGISTER_GENERATED"));
-        UUID payloadId = insertHearingEventPayload();
-        UUID consumerHearingEventId = insertHearingEventSubscription(subscriptionId, payloadId);
+        UUID hearingEventId = insertHearingEventPayload();
+        insertHearingEventSubscription(subscriptionId, hearingEventId);
 
-        mockMvc.perform(get(HEARING_EVENT_URI, subscriptionId, consumerHearingEventId)
+        mockMvc.perform(get(HEARING_EVENT_URI, subscriptionId, hearingEventId)
                         .header("Authorization", AUTHORIZATION_HEADER_VALUE))
                 .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hearingEventId").value(consumerHearingEventId.toString()))
-                .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
+                .andExpect(jsonPath("$.hearingEventId").value(hearingEventId.toString()))
+                .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
     }
 
     @Test
@@ -142,6 +139,6 @@ class NotificationControllerIntegrationTest extends IntegrationTestBase {
                 .hearingEventId(hearingEventId)
                 .createdAt(OffsetDateTime.now(ZoneOffset.UTC))
                 .build());
-        return entity.getId();
+        return entity.getHearingEventId();
     }
 }
