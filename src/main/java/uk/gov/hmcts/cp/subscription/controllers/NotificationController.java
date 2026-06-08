@@ -70,7 +70,7 @@ public class NotificationController implements InternalApi, NotificationApi {
                 eventPayload.getMaterialId(),
                 eventPayload.getEventType());
 
-        if (EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
+        if (hearingEventJsonEnabled && EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
             log.error("Rejecting notification: payload is Jackson JsonNode introspection metadata, not "
                             + "document content (producer serialisation regression). eventId: {}, eventType: {}",
                     eventPayload.getEventId(), eventPayload.getEventType());
