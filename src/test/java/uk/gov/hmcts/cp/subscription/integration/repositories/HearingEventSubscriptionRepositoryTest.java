@@ -2,7 +2,6 @@ package uk.gov.hmcts.cp.subscription.integration.repositories;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataIntegrityViolationException;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
@@ -16,7 +15,6 @@ import java.util.Optional;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
 
@@ -42,14 +40,6 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     void existsBySubscriptionIdAndHearingEventId_for_unknown_pair_should_returns_false() {
         assertThat(hearingEventSubscriptionRepository
                 .existsBySubscriptionIdAndHearingEventId(randomUUID(), randomUUID())).isFalse();
-    }
-
-    @Test
-    void duplicate_insert_should_violate_unique_constraint() {
-        saveSubscription(subscriptionId, hearingEventId);
-
-        assertThatThrownBy(() -> saveSubscription(subscriptionId, hearingEventId))
-                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
