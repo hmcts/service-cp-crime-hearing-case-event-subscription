@@ -29,11 +29,8 @@ import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 import uk.gov.hmcts.cp.subscription.integration.stubs.SubscriptionStub;
 import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 
-import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
-
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
@@ -70,8 +67,7 @@ import static uk.gov.hmcts.cp.subscription.model.EventNotificationPayloadWrapper
 @Import(IgnoreSSLCertificatesForWiremockTest.class)
 @TestPropertySource(properties = {
         "service-bus.max-tries=3",
-        "service-bus.retry-durations=0s,500ms,1s",
-        "hearing-event.json.enabled=true"
+        "service-bus.retry-durations=0s,500ms,1s"
 })
 @Slf4j
 class NotificationE2EIntegrationTest extends IntegrationTestBase {
@@ -94,16 +90,12 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
     private String hmacSecret;
     private UUID callbackDocumentId;
     private UUID callbackHearingId;
-    private UUID callbackHearingEventId;
     private String callbackBody;
     private String callbackSignature;
     private String callbackKeyId;
 
     private static final UUID materialId = UUID.fromString("6c198796-08bb-4803-b456-fa0c29ca6021");
-    private static final UUID hearingId = UUID.fromString("b2c3d4e5-f6a7-8901-bcde-f12345678901");
-    private static final UUID PCR_EVENT_ID = UUID.fromString("a1b2c3d4-e5f6-7890-abcd-ef1234567890");
     private static final String documentUri = CLIENT_SUBSCRIPTIONS_URI + "/{clientSubscriptionId}/documents/{documentId}";
-    private static final String hearingEventUri = CLIENT_SUBSCRIPTIONS_URI + "/{clientSubscriptionId}/hearing-events/{hearingEventId}";
     private static final String eventPayloadPath = "stubs/requests/progression/pcr-request-prison-court-register.json";
 
     @InjectWireMock("callback-client")
@@ -155,19 +147,6 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
         then_the_subscriber_receives_a_callback();
         and_the_callback_signature_is_correct();
         then_the_subscriber_can_retrieve_the_document();
-    }
-
-    @Test
-    void happy_path_should_return_hearing_event_json() throws Exception {
-        given_i_create_a_new_subscription();
-        given_i_have_a_callback_endpoint();
-        given_material_service_returns_document_success();
-
-        when_a_notification_event_is_posted();
-        when_material_service_responds();
-        when_hearing_event_is_persisted();
-
-        then_the_subscriber_can_retrieve_the_hearing_event();
     }
 
     @Test
