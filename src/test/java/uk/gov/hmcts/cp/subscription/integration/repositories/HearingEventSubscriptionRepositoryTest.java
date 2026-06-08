@@ -43,11 +43,11 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void findByHearingEventIdAndSubscriptionId_should_return_entity_when_both_match() {
+    void findBySubscriptionIdAndHearingEventId_should_return_entity_when_both_match() {
         saveSubscription(subscriptionId, hearingEventId);
 
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByHearingEventIdAndSubscriptionId(hearingEventId, subscriptionId);
+                .findBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId);
 
         assertThat(result).isPresent();
         assertThat(result.get().getSubscriptionId()).isEqualTo(subscriptionId);
@@ -55,19 +55,19 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void findByHearingEventIdAndSubscriptionId_should_return_empty_when_subscription_id_does_not_match() {
+    void findBySubscriptionIdAndHearingEventId_should_return_empty_when_subscription_id_does_not_match() {
         saveSubscription(subscriptionId, hearingEventId);
 
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByHearingEventIdAndSubscriptionId(hearingEventId, randomUUID());
+                .findBySubscriptionIdAndHearingEventId(randomUUID(), hearingEventId);
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    void findByHearingEventIdAndSubscriptionId_should_return_empty_when_hearing_event_id_does_not_exist() {
+    void findBySubscriptionIdAndHearingEventId_should_return_empty_when_hearing_event_id_does_not_exist() {
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByHearingEventIdAndSubscriptionId(randomUUID(), subscriptionId);
+                .findBySubscriptionIdAndHearingEventId(subscriptionId, randomUUID());
 
         assertThat(result).isEmpty();
     }

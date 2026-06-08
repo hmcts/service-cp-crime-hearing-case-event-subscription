@@ -263,25 +263,4 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("PrisonCourtRegister")));
     }
 
-    private void when_hearing_event_is_persisted() {
-        await()
-                .pollInterval(Duration.ofMillis(100))
-                .atMost(Duration.ofSeconds(5))
-                .untilAsserted(() -> {
-                    Optional<HearingEventPayloadEntity> entity =
-                            hearingEventPayloadRepository.findByEventId(PCR_EVENT_ID);
-                    assertThat(entity).isPresent();
-                    callbackHearingEventId = entity.get().getHearingEventId();
-                });
-    }
-
-    private void then_the_subscriber_can_retrieve_the_hearing_event() throws Exception {
-        mockMvc.perform(get(hearingEventUri, subscriptionId, callbackHearingEventId)
-                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hearingEventId").value(callbackHearingEventId.toString()))
-                .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
-    }
 }
