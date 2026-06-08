@@ -61,6 +61,7 @@ class HearingEventMapperTest {
         assertThat(result.getSubscriptionId()).isEqualTo(subscriptionId);
         assertThat(result.getHearingEventId()).isEqualTo(hearingEventId);
         assertThat(result.getCreatedAt()).isEqualTo(fixedNow);
+        assertThat(result.getId()).isNull();
     }
 
     @Test
