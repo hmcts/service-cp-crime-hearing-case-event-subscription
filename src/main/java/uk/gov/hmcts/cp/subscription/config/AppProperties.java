@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.STE;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.DEV;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.DEVELOPER;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.SIT;
@@ -22,7 +23,7 @@ public class AppProperties {
             @Value("${hearing-event.json.enabled}") final boolean hearingEventJsonEnabled) {
         this.environmentName = environmentName;
         this.hearingEventJsonEnabledInEnv = hearingEventJsonEnabled &&
-                (environmentName == DEVELOPER || environmentName == DEV || environmentName == SIT);
+                (environmentName == DEVELOPER || environmentName == STE || environmentName == DEV || environmentName == SIT);
         log.info("Initialised AppProperties with environmentName:{}", environmentName);
         log.info("Initialised AppProperties with hearingEventJsonEnabledInEnv:{}", this.hearingEventJsonEnabledInEnv);
     }
