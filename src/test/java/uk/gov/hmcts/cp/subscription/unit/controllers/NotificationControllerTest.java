@@ -12,6 +12,7 @@ import org.slf4j.MDC;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.cp.filters.ClientIdResolutionFilter;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
@@ -21,6 +22,7 @@ import uk.gov.hmcts.cp.subscription.model.DocumentContent;
 import uk.gov.hmcts.cp.subscription.services.EventTypeService;
 import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 
+import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.ACCEPTED;
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_INBOUND_QUEUE;
 
 @ExtendWith(MockitoExtension.class)
@@ -79,6 +82,33 @@ class NotificationControllerTest {
         ResponseEntity<Void> response = notificationController.createNotification(payload, null);
         verifyNoInteractions(clientService);
         assertThat(response.getStatusCode()).isEqualTo(ACCEPTED);
+    }
+
+    @Test
+    void jsonnode_introspection_payload_is_accepted_when_toggle_disabled() {
+        EventPayload introspectionPayload = EventPayload.builder()
+                .payload(Map.of("nodeType", "OBJECT", "containerNode", true, "object", true))
+                .build();
+        when(jsonMapper.toJson(introspectionPayload)).thenReturn("payload-json");
+        when(eventTypeService.eventExists(introspectionPayload.getEventType())).thenReturn(true);
+
+        ResponseEntity<Void> response = notificationController.createNotification(introspectionPayload, null);
+
+        verify(clientService).queueMessage(NOTIFICATIONS_INBOUND_QUEUE, null, "payload-json", 0);
+        assertThat(response.getStatusCode()).isEqualTo(ACCEPTED);
+    }
+
+    @Test
+    void jsonnode_introspection_payload_is_rejected_when_toggle_enabled() {
+        ReflectionTestUtils.setField(notificationController, "hearingEventJsonEnabled", true);
+        EventPayload introspectionPayload = EventPayload.builder()
+                .payload(Map.of("nodeType", "OBJECT", "containerNode", true, "object", true))
+                .build();
+
+        ResponseEntity<Void> response = notificationController.createNotification(introspectionPayload, null);
+
+        verifyNoInteractions(clientService);
+        assertThat(response.getStatusCode()).isEqualTo(BAD_REQUEST);
     }
 
     @Test
