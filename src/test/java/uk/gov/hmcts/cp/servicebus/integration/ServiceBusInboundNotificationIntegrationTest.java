@@ -14,7 +14,7 @@ import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.openapi.model.EventPayloadDefendant;
 import uk.gov.hmcts.cp.openapi.model.EventPayloadDefendantCustodyEstablishmentDetails;
 import uk.gov.hmcts.cp.servicebus.integration.config.ServiceBusAvailabilityCheck;
-import uk.gov.hmcts.cp.subscription.integration.config.PostgresAvailabilityCheck;
+import uk.gov.hmcts.cp.subscription.integration.config.PostgresInitialise;
 import uk.gov.hmcts.cp.subscription.model.MaterialMetadata;
 import uk.gov.hmcts.cp.subscription.services.MaterialService;
 
@@ -28,7 +28,7 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 
 @Slf4j
 @SpringBootTest
-@ContextConfiguration(initializers = {PostgresAvailabilityCheck.class, ServiceBusAvailabilityCheck.class})
+@ContextConfiguration(initializers = {PostgresInitialise.class, ServiceBusAvailabilityCheck.class})
 @TestPropertySource(properties = {
         "vault.enabled=false",
         "service-bus.max-tries=2",

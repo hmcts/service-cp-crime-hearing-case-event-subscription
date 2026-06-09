@@ -1,6 +1,6 @@
 dockerCompose {
     useComposeFiles = ['docker/docker-compose.yml']
-    startedServices = ['postgres', 'sqledge', 'servicebus-emulator']
+    startedServices = ['db', 'sqledge', 'servicebus-emulator']
 
     buildBeforeUp = false
     waitForTcpPorts = true
