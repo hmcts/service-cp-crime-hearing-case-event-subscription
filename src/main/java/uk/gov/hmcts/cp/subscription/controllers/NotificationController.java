@@ -23,6 +23,7 @@ import uk.gov.hmcts.cp.openapi.api.NotificationApi;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
+import uk.gov.hmcts.cp.subscription.config.AppProperties;
 import uk.gov.hmcts.cp.subscription.managers.NotificationManager;
 import uk.gov.hmcts.cp.subscription.model.DocumentContent;
 import uk.gov.hmcts.cp.subscription.services.EventPayloadValidator;
@@ -46,13 +47,11 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 @Slf4j
 public class NotificationController implements InternalApi, NotificationApi {
 
+    private final AppProperties appProperties;
     private final ServiceBusClientService clientService;
     private final EventTypeService eventTypeService;
     private final NotificationManager notificationManager;
     private final JsonMapper jsonMapper;
-
-    @Value("${hearing-event.json.enabled:false}")
-    private boolean hearingEventJsonEnabled;
 
     @Override
     public Optional<NativeWebRequest> getRequest() {
@@ -70,7 +69,7 @@ public class NotificationController implements InternalApi, NotificationApi {
                 eventPayload.getMaterialId(),
                 eventPayload.getEventType());
 
-        if (hearingEventJsonEnabled && EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
+        if (appProperties.isHearingEventJsonEnabledInEnv() && EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
             log.error("Rejecting notification: payload is Jackson JsonNode introspection metadata, not "
                             + "document content (producer serialisation regression). eventId: {}, eventType: {}",
                     eventPayload.getEventId(), eventPayload.getEventType());
@@ -92,7 +91,7 @@ public class NotificationController implements InternalApi, NotificationApi {
             @NotNull @PathVariable("clientSubscriptionId") final UUID clientSubscriptionId,
             @NotNull @PathVariable("hearingEventId") final UUID hearingEventId,
             @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
-        if (!hearingEventJsonEnabled) {
+        if (!appProperties.isHearingEventJsonEnabledInEnv()) {
             log.info("hearingEventJsonEnabled feature toggle is off, returning 501 clientSubscriptionId:{} hearingEventId:{}", clientSubscriptionId, hearingEventId);
             return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
         }

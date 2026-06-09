@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.cp.subscription.config.AppProperties;
 import uk.gov.hmcts.cp.subscription.controllers.GlobalExceptionHandler;
 import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 import uk.gov.hmcts.cp.subscription.managers.NotificationManager;
@@ -36,6 +37,8 @@ class NotificationControllerValidationTest extends IntegrationTestBase {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockitoBean
+    AppProperties appProperties;
     @MockitoBean
     private NotificationManager notificationManager;
 
