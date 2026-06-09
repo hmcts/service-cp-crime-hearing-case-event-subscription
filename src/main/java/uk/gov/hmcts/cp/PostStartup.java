@@ -18,7 +18,6 @@ import java.time.ZoneOffset;
 import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_INBOUND_QUEUE;
 import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_OUTBOUND_QUEUE;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.DEV;
-import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.DEVELOPER;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.PRD;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.PRP;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.SIT;
@@ -37,8 +36,8 @@ public class PostStartup {
     private ServiceBusAdministrationClient administrationClient;
 
     // Temporary: May 2026 DLQ purge for PRD/PRP — remove after cleanup is validated
-    private static final OffsetDateTime MAY_2026_START = OffsetDateTime.of(2026, 5, 1, 0, 0, 0, 0, ZoneOffset.UTC);
-    private static final OffsetDateTime MAY_2026_END = OffsetDateTime.of(2026, 6, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+    public static final OffsetDateTime MAY_2026_START = OffsetDateTime.of(2026, 5, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+    public static final OffsetDateTime MAY_2026_END = OffsetDateTime.of(2026, 6, 1, 0, 0, 0, 0, ZoneOffset.UTC);
 
     @PostConstruct
     public void postStartupLogging() {
@@ -50,7 +49,7 @@ public class PostStartup {
 
     private void clearDlqIfRequired() {
         final EnvironmentName env = appProperties.getEnvironmentName();
-        if (env == DEVELOPER || env == DEV || env == SIT) {
+        if (env == DEV || env == SIT) {
             log.info("PostStartup clearing all DLQ messages for environment:{}", env);
             serviceBusClientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 0);
             serviceBusClientService.clearDeadLetterQueue(NOTIFICATIONS_OUTBOUND_QUEUE, 0);

@@ -11,24 +11,22 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
 import uk.gov.hmcts.cp.subscription.config.AppProperties;
-import uk.gov.hmcts.cp.subscription.config.EnvironmentName;
 import uk.gov.hmcts.cp.subscription.repositories.DocumentMappingRepository;
 import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static uk.gov.hmcts.cp.PostStartup.MAY_2026_END;
+import static uk.gov.hmcts.cp.PostStartup.MAY_2026_START;
 import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_INBOUND_QUEUE;
 import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_OUTBOUND_QUEUE;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.DEV;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.PRD;
 import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.SIT;
-import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.UNKNOWN;
 
 @ExtendWith(MockitoExtension.class)
 class PostStartupTest {
@@ -100,12 +98,12 @@ class PostStartupTest {
     }
 
     @Test
-    void post_startup_should_not_clear_dlq_for_unknown_environment() {
-        when(appProperties.getEnvironmentName()).thenReturn(UNKNOWN);
+    void post_startup_should_clear_month_of_may_dlqs() {
+        when(appProperties.getEnvironmentName()).thenReturn(PRD);
 
         postStartup.postStartupLogging();
 
-        verify(serviceBusClientService, never()).clearDeadLetterQueue(any(), anyInt());
-        verify(serviceBusClientService, never()).clearDeadLetterQueue(any(), any(OffsetDateTime.class), any(OffsetDateTime.class));
+        verify(serviceBusClientService).clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, MAY_2026_START, MAY_2026_END);
+        verify(serviceBusClientService).clearDeadLetterQueue(NOTIFICATIONS_OUTBOUND_QUEUE, MAY_2026_START, MAY_2026_END);
     }
 }
