@@ -2,7 +2,6 @@ package uk.gov.hmcts.cp.subscription.integration.repositories;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.dao.DataIntegrityViolationException;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
@@ -16,7 +15,6 @@ import java.util.Optional;
 
 import static java.util.UUID.randomUUID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
 
@@ -45,40 +43,31 @@ class HearingEventSubscriptionRepositoryTest extends IntegrationTestBase {
     }
 
     @Test
-    void duplicate_insert_should_violate_unique_constraint() {
+    void findBySubscriptionIdAndHearingEventId_should_return_entity_when_both_match() {
         saveSubscription(subscriptionId, hearingEventId);
 
-        assertThatThrownBy(() -> saveSubscription(subscriptionId, hearingEventId))
-                .isInstanceOf(DataIntegrityViolationException.class);
-    }
-
-    @Test
-    void findByIdAndSubscriptionId_should_return_entity_when_both_match() {
-        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
-
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByIdAndSubscriptionId(saved.getId(), subscriptionId);
+                .findBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId);
 
         assertThat(result).isPresent();
-        assertThat(result.get().getId()).isEqualTo(saved.getId());
         assertThat(result.get().getSubscriptionId()).isEqualTo(subscriptionId);
         assertThat(result.get().getHearingEventId()).isEqualTo(hearingEventId);
     }
 
     @Test
-    void findByIdAndSubscriptionId_should_return_empty_when_subscription_id_does_not_match() {
-        HearingEventSubscriptionEntity saved = saveSubscription(subscriptionId, hearingEventId);
+    void findBySubscriptionIdAndHearingEventId_should_return_empty_when_subscription_id_does_not_match() {
+        saveSubscription(subscriptionId, hearingEventId);
 
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByIdAndSubscriptionId(saved.getId(), randomUUID());
+                .findBySubscriptionIdAndHearingEventId(randomUUID(), hearingEventId);
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    void findByIdAndSubscriptionId_should_return_empty_when_id_does_not_exist() {
+    void findBySubscriptionIdAndHearingEventId_should_return_empty_when_hearing_event_id_does_not_exist() {
         Optional<HearingEventSubscriptionEntity> result = hearingEventSubscriptionRepository
-                .findByIdAndSubscriptionId(randomUUID(), subscriptionId);
+                .findBySubscriptionIdAndHearingEventId(subscriptionId, randomUUID());
 
         assertThat(result).isEmpty();
     }

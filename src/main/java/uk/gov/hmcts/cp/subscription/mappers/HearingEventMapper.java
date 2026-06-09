@@ -38,7 +38,7 @@ public class HearingEventMapper {
                                            final HearingEventPayloadEntity payload,
                                            final Map<String, Object> payloadMap) {
         return HearingEventResponse.builder()
-                .hearingEventId(subscription.getId())
+                .hearingEventId(subscription.getHearingEventId())
                 .eventType(payload.getRawPayload().getEventType())
                 .createdAt(payload.getCreatedAt().toInstant())
                 .payload(payloadMap)

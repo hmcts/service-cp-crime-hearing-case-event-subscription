@@ -94,7 +94,6 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
     private String callbackKeyId;
 
     private static final UUID materialId = UUID.fromString("6c198796-08bb-4803-b456-fa0c29ca6021");
-    private static final UUID hearingId = UUID.fromString("b2c3d4e5-f6a7-8901-bcde-f12345678901");
     private static final String documentUri = CLIENT_SUBSCRIPTIONS_URI + "/{clientSubscriptionId}/documents/{documentId}";
     private static final String eventPayloadPath = "stubs/requests/progression/pcr-request-prison-court-register.json";
 

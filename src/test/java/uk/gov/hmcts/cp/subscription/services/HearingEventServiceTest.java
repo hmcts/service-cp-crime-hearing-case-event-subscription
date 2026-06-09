@@ -142,12 +142,10 @@ class HearingEventServiceTest {
     @Test
     void getHearingEvent_when_subscription_found_should_return_response() {
         UUID subscriptionId = randomUUID();
-        UUID consumerHearingEventId = randomUUID();
         UUID hearingEventId = randomUUID();
         Map<String, Object> payloadMap = Map.of("eventType", "PRISON_COURT_REGISTER_GENERATED");
 
         HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
-                .id(consumerHearingEventId)
                 .subscriptionId(subscriptionId)
                 .hearingEventId(hearingEventId)
                 .build();
@@ -156,15 +154,15 @@ class HearingEventServiceTest {
                 .rawPayload(eventPayload)
                 .build();
         HearingEventResponse expected = HearingEventResponse.builder()
-                .hearingEventId(consumerHearingEventId)
+                .hearingEventId(hearingEventId)
                 .build();
-        when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(consumerHearingEventId, subscriptionId))
+        when(hearingEventSubscriptionRepository.findBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId))
                 .thenReturn(Optional.of(subscription));
         when(hearingEventPayloadRepository.findById(hearingEventId)).thenReturn(Optional.of(payloadEntity));
         when(jsonMapper.toMap(eventPayload)).thenReturn(payloadMap);
         when(hearingEventPayloadMapper.toResponse(subscription, payloadEntity, payloadMap)).thenReturn(expected);
 
-        HearingEventResponse result = hearingEventPayloadService.getHearingEvent(subscriptionId, consumerHearingEventId);
+        HearingEventResponse result = hearingEventPayloadService.getHearingEvent(subscriptionId, hearingEventId);
         assertThat(result).isEqualTo(expected);
     }
 
@@ -172,7 +170,7 @@ class HearingEventServiceTest {
     void getHearingEvent_when_subscription_missing_should_throw_not_found() {
         UUID subscriptionId = randomUUID();
         UUID hearingEventId = randomUUID();
-        when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(hearingEventId, subscriptionId))
+        when(hearingEventSubscriptionRepository.findBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> hearingEventPayloadService.getHearingEvent(subscriptionId, hearingEventId))
@@ -183,18 +181,16 @@ class HearingEventServiceTest {
     @Test
     void getHearingEvent_should_throw_not_found_when_payload_entity_missing() {
         UUID subscriptionId = randomUUID();
-        UUID consumerHearingEventId = randomUUID();
         UUID hearingEventId = randomUUID();
         HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
-                .id(consumerHearingEventId)
                 .subscriptionId(subscriptionId)
                 .hearingEventId(hearingEventId)
                 .build();
-        when(hearingEventSubscriptionRepository.findByIdAndSubscriptionId(consumerHearingEventId, subscriptionId))
+        when(hearingEventSubscriptionRepository.findBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId))
                 .thenReturn(Optional.of(subscription));
         when(hearingEventPayloadRepository.findById(hearingEventId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> hearingEventPayloadService.getHearingEvent(subscriptionId, consumerHearingEventId))
+        assertThatThrownBy(() -> hearingEventPayloadService.getHearingEvent(subscriptionId, hearingEventId))
                 .isInstanceOf(ResponseStatusException.class)
                 .satisfies(ex -> {
                     ResponseStatusException rse = (ResponseStatusException) ex;
