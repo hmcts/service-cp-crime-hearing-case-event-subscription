@@ -4,12 +4,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class PostgresAvailabilityCheckTest {
+class PostgresInitialiseTest {
 
     @Test
     void throwsIllegalStateException_withHelpfulMessage_whenPostgresUnreachable() {
         assertThatThrownBy(() ->
-                PostgresAvailabilityCheck.assertPostgresReachable(
+                PostgresInitialise.assertPostgresReachable(
                         "jdbc:postgresql://localhost:9/appdb", "postgres", "postgres"))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("appdb")

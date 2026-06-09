@@ -8,13 +8,13 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class PostgresAvailabilityCheck implements ApplicationContextInitializer<ConfigurableApplicationContext> {
+public class PostgresInitialise implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
     @Override
     public void initialize(ConfigurableApplicationContext ctx) {
-        assertPostgresReachable("jdbc:postgresql://localhost:5433/appdb", "postgres", "postgres");
+        assertPostgresReachable("jdbc:postgresql://localhost:5432/appdb", "postgres", "postgres");
         TestPropertyValues.of(
-                "spring.datasource.url=jdbc:postgresql://localhost:5433/appdb",
+                "spring.datasource.url=jdbc:postgresql://localhost:5432/appdb",
                 "spring.datasource.username=postgres",
                 "spring.datasource.password=postgres",
                 "subscription.oauth-enabled=true",

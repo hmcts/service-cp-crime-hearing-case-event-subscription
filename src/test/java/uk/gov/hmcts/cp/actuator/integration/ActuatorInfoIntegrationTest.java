@@ -8,7 +8,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import uk.gov.hmcts.cp.subscription.integration.config.PostgresAvailabilityCheck;
+import uk.gov.hmcts.cp.subscription.integration.config.PostgresInitialise;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@ContextConfiguration(initializers = PostgresAvailabilityCheck.class)
+@ContextConfiguration(initializers = PostgresInitialise.class)
 @Slf4j
 @TestPropertySource(properties = {
         "vault.enabled=false"
