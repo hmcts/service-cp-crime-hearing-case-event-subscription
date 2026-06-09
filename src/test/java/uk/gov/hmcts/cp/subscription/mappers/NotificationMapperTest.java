@@ -32,6 +32,7 @@ class NotificationMapperTest {
     UUID defendentId = UUID.fromString("f791c82b-dd68-468f-9066-a31008f8f229");
     UUID documentId = UUID.fromString("24f36bc0-ecf7-4fa2-985a-afada1cdee98");
     UUID hearingId = UUID.fromString("b2c3d4e5-f6a7-8901-bcde-f12345678901");
+    UUID hearingEventId = UUID.fromString("c3d4e5f6-a7b8-9012-cdef-123456789012");
     Instant now = Instant.now();
     EventPayloadDefendantCasesInner caseOne = EventPayloadDefendantCasesInner.builder().urn("http://localhost").build();
     EventPayloadDefendantCustodyEstablishmentDetails custodyEstablishment = EventPayloadDefendantCustodyEstablishmentDetails.builder()
@@ -54,7 +55,7 @@ class NotificationMapperTest {
                 .timestamp(now)
                 .build();
 
-        EventNotificationPayload response = notificationMapper.mapToPayload(documentId, eventPayload);
+        EventNotificationPayload response = notificationMapper.mapToPayload(documentId, eventPayload, hearingEventId);
 
         assertThat(response.getEventType()).isEqualTo("PRISON_COURT_REGISTER_GENERATED");
         assertThat(response.getHearingId()).isEqualTo(hearingId);
@@ -64,6 +65,7 @@ class NotificationMapperTest {
         assertThat(response.getDocumentId()).isEqualTo(documentId);
         assertThat(response.getDocumentGeneratedTimestamp()).isEqualTo(now);
         assertThat(response.getPrisonEmailAddress()).isEqualTo("prison@example.com");
+        assertThat(response.getHearingEventId()).isEqualTo(hearingEventId);
     }
 
     @Test

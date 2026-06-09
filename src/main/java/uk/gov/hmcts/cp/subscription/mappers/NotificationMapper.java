@@ -17,13 +17,14 @@ import java.util.UUID;
 public class NotificationMapper {
     private final JsonMapper jsonMapper;
 
-    public EventNotificationPayload mapToPayload(final UUID documentId, final EventPayload eventPayload) {
+    public EventNotificationPayload mapToPayload(final UUID documentId, final EventPayload eventPayload, final UUID hearingEventId) {
         final EventPayloadDefendant defendant = eventPayload.getDefendant();
         final List<EventNotificationPayloadCasesInner> cases = defendant.getCases().stream()
                 .map(c -> EventNotificationPayloadCasesInner.builder().urn(c.getUrn()).build())
                 .toList();
         final String prisonEmailAddress = defendant.getCustodyEstablishmentDetails().getEmailAddress();
         return EventNotificationPayload.builder()
+                .hearingEventId(hearingEventId)
                 .eventType(eventPayload.getEventType())
                 .hearingId(eventPayload.getHearingId())
                 .masterDefendantId(defendant.getMasterDefendantId())
