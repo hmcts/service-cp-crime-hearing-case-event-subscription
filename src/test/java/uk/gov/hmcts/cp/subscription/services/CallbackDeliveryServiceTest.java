@@ -74,7 +74,7 @@ class CallbackDeliveryServiceTest {
     @Test
     void submit_should_queue_to_service_bus() {
         when(clientEventRepository.findClientsByEventType("PRISON_COURT_REGISTER_GENERATED")).thenReturn(List.of(clientEntity));
-        when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
+        when(notificationMapper.mapToPayload(documentId, eventPayload, null)).thenReturn(payload);
         when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(clientHmacEntity));
         when(jsonMapper.toJson(payload)).thenReturn("{payload}");
         when(jsonMapper.toJson(payloadWrapper)).thenReturn("{payload-wrapper}");
@@ -92,7 +92,7 @@ class CallbackDeliveryServiceTest {
     void submit_should_skip_when_example_endpoint() {
         ClientEntity clientWithExample = ClientEntity.builder().subscriptionId(subscriptionId).callbackUrl(EXAMPLE_ENDPOINT).build();
         when(clientEventRepository.findClientsByEventType("PRISON_COURT_REGISTER_GENERATED")).thenReturn(List.of(clientWithExample));
-        when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
+        when(notificationMapper.mapToPayload(documentId, eventPayload, null)).thenReturn(payload);
         when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(clientHmacEntity));
         when(jsonMapper.toJson(payload)).thenReturn("{payload}");
         when(hmacManager.calculateSignature(hmacKeyId, "{payload}")).thenReturn("signature");
@@ -108,7 +108,7 @@ class CallbackDeliveryServiceTest {
     @Test
     void submit_should_not_persist_when_toggle_off() {
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of());
-        when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
+        when(notificationMapper.mapToPayload(documentId, eventPayload, null)).thenReturn(payload);
 
         callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
 
@@ -120,7 +120,7 @@ class CallbackDeliveryServiceTest {
     void submit_should_call_saveIfAbsent_when_toggle_on() {
         when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(true);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of());
-        when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
+        when(notificationMapper.mapToPayload(eq(documentId), eq(eventPayload), any())).thenReturn(payload);
         when(hearingEventService.saveIfAbsent(eventPayload)).thenReturn(randomUUID());
 
         callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
@@ -133,7 +133,7 @@ class CallbackDeliveryServiceTest {
     void submit_should_not_call_saveSubscriptionIfAbsent_when_toggle_off() {
         when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(false);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of(clientEntity));
-        when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
+        when(notificationMapper.mapToPayload(documentId, eventPayload, null)).thenReturn(payload);
         when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(clientHmacEntity));
         when(jsonMapper.toJson(payload)).thenReturn("{payload}");
         when(hmacManager.calculateSignature(hmacKeyId, "{payload}")).thenReturn("signature");
@@ -151,7 +151,7 @@ class CallbackDeliveryServiceTest {
         UUID generatedHearingEventId = randomUUID();
         when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(true);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of(clientEntity));
-        when(notificationMapper.mapToPayload(documentId, eventPayload)).thenReturn(payload);
+        when(notificationMapper.mapToPayload(documentId, eventPayload, generatedHearingEventId)).thenReturn(payload);
         when(hearingEventService.saveIfAbsent(eventPayload)).thenReturn(generatedHearingEventId);
         when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(clientHmacEntity));
         when(jsonMapper.toJson(payload)).thenReturn("{payload}");
