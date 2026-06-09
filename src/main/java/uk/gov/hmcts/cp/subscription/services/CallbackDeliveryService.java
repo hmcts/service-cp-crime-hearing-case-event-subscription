@@ -41,12 +41,13 @@ public class CallbackDeliveryService {
     public void submitOutboundEvents(final EventPayload eventPayload, final UUID documentId) {
         final String eventType = eventPayload.getEventType();
         final List<ClientEntity> clients = clientEventRepository.findClientsByEventType(eventType);
-        final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload);
-        log.info("sending {} outbound notifications", clients.size());
 
         final UUID hearingEventId = appProperties.isHearingEventJsonEnabledInEnv()
                 ? hearingEventPayloadService.saveIfAbsent(eventPayload)
                 : null;
+
+        final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload, hearingEventId);
+        log.info("sending {} outbound notifications", clients.size());
 
         for (final ClientEntity client : clients) {
             if (appProperties.isHearingEventJsonEnabledInEnv()) {
