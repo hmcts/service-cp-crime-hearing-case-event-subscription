@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import uk.gov.hmcts.cp.subscription.integration.config.PostgresAvailabilityCheck;
+import uk.gov.hmcts.cp.subscription.integration.config.PostgresInitialise;
 
 import java.time.Duration;
 import java.util.List;
@@ -14,7 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@ContextConfiguration(initializers = PostgresAvailabilityCheck.class)
+@ContextConfiguration(initializers = PostgresInitialise.class)
 @TestPropertySource(properties = {
         "vault.enabled=false",
         "service-bus.auto-start-processors=false",
