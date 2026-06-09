@@ -28,7 +28,7 @@ public class PostgresInitialise implements ApplicationContextInitializer<Configu
         try (Connection conn = DriverManager.getConnection(url, user, password)) {
         } catch (SQLException e) {
             throw new IllegalStateException(
-                    "\n\n*** Integration tests require PostgreSQL on localhost:5433 (database: appdb) ***\n"
+                    "\n\n*** Integration tests require PostgreSQL on localhost:5432 (database: appdb) ***\n"
                     + "Start the full stack:\n"
                     + "  docker compose -f docker/docker-compose.yml up -d\n"
                     + "Or start postgres only:\n"
