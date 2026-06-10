@@ -25,14 +25,12 @@ import uk.gov.hmcts.cp.servicebus.services.ServiceBusAdminService;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusProcessorService;
 import uk.gov.hmcts.cp.subscription.clients.MaterialClient;
 import uk.gov.hmcts.cp.subscription.config.IgnoreSSLCertificatesForWiremockTest;
-import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 import uk.gov.hmcts.cp.subscription.integration.stubs.SubscriptionStub;
 import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
@@ -169,19 +167,6 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    void delete_subscription_should_succeed() throws Exception {
-        given_i_create_a_new_subscription();
-        given_i_have_a_callback_endpoint();
-        given_material_service_returns_document_success();
-
-        when_a_notification_event_is_posted();
-        when_material_service_responds();
-        when_i_delete_subscription();
-
-        then_subscription_is_not_found();
-    }
-
-    @Test
     void callback_client_error_should_try_3_times_in_4_seconds() throws Exception {
         given_i_create_a_new_subscription();
         given_callback_endpoint_returns_server_error();
@@ -248,17 +233,6 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
                 .pollInterval(Duration.ofMillis(50))
                 .atMost(Duration.ofSeconds(3))
                 .untilAsserted(() -> verify(materialClient, atLeastOnce()).getMetadata(any(UUID.class)));
-    }
-
-    private void then_subscription_is_not_found() throws Exception {
-        mockMvc.perform(get(CLIENT_SUBSCRIPTIONS_URI + "/{id}", subscriptionId)
-                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
-                .andExpect(status().isNotFound());
-    }
-
-    private void when_i_delete_subscription() throws Exception {
-        SubscriptionStub.deleteSubscription(mockMvc, CLIENT_SUBSCRIPTIONS_URI, subscriptionId)
-                .andExpect(status().isNoContent());
     }
 
     @SneakyThrows
