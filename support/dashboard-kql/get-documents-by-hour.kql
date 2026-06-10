@@ -2,7 +2,7 @@ ContainerLogV2
 | where PodNamespace  == 'ns-dev-amp-01'
 | where TimeGenerated > ago(1d)
 | where ContainerName != 'istio-proxy'
-| where PodName contains 'hearing-results'
+| where PodName startswith 'hearing-results-document-subscription'
 | where LogMessage contains 'getDocument request'
 | project TimeGenerated, LogLevel, LogMessage
 | make-series GetDocument = count() default=0
