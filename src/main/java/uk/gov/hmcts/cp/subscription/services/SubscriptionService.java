@@ -23,6 +23,7 @@ import uk.gov.hmcts.cp.subscription.mappers.ClientSubscriptionMapper;
 import uk.gov.hmcts.cp.subscription.repositories.ClientEventRepository;
 import uk.gov.hmcts.cp.subscription.repositories.ClientHmacRepository;
 import uk.gov.hmcts.cp.subscription.repositories.ClientRepository;
+import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 
 import java.util.List;
 import java.util.UUID;
@@ -36,6 +37,7 @@ public class SubscriptionService {
     private final ClientHmacMapper clientHmacMapper;
     private final ClientHmacRepository clientHmacRepository;
     private final ClientEventRepository clientEventRepository;
+    private final HearingEventSubscriptionRepository hearingEventSubscriptionRepository;
 
     private final ClientEntityMapper clientEntityMapper;
     private final ClientEventEntityMapper clientEventEntityMapper;
@@ -84,6 +86,7 @@ public class SubscriptionService {
     public void deleteClientSubscription(final UUID clientId, final UUID subscriptionId) {
         log.info("deleteClientSubscription clientId:{} subscriptionId:{}", clientId, subscriptionId);
         final ClientEntity client = fetchClient(clientId, subscriptionId);
+        hearingEventSubscriptionRepository.deleteAllBySubscriptionId(client.getSubscriptionId());
         clientHmacRepository.deleteAllBySubscriptionId(client.getSubscriptionId());
         clientEventRepository.deleteBySubscriptionId(client.getSubscriptionId());
         clientRepository.delete(client);

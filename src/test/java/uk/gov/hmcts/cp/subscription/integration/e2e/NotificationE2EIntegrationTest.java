@@ -168,14 +168,17 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
         and_the_subscriber_can_retrieve_the_hearing_event();
     }
 
-    private void and_the_subscriber_can_retrieve_the_hearing_event() throws Exception {
-        mockMvc.perform(get(hearingEventUri, subscriptionId, callbackHearingEventId)
-                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hearingEventId").value(callbackHearingEventId.toString()))
-                .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
+    @Test
+    void delete_subscription_should_succeed() throws Exception {
+        given_i_create_a_new_subscription();
+        given_i_have_a_callback_endpoint();
+        given_material_service_returns_document_success();
+
+        when_a_notification_event_is_posted();
+        when_material_service_responds();
+        when_i_delete_subscription();
+
+        then_subscription_is_not_found();
     }
 
     @Test
@@ -190,6 +193,16 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
         Thread.sleep(4000);
 
         then_callback_was_attempted_times(3);
+    }
+
+    private void and_the_subscriber_can_retrieve_the_hearing_event() throws Exception {
+        mockMvc.perform(get(hearingEventUri, subscriptionId, callbackHearingEventId)
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hearingEventId").value(callbackHearingEventId.toString()))
+                .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
     }
 
     private void given_i_create_a_new_subscription() throws Exception {
@@ -235,6 +248,17 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
                 .pollInterval(Duration.ofMillis(50))
                 .atMost(Duration.ofSeconds(3))
                 .untilAsserted(() -> verify(materialClient, atLeastOnce()).getMetadata(any(UUID.class)));
+    }
+
+    private void then_subscription_is_not_found() throws Exception {
+        mockMvc.perform(get(CLIENT_SUBSCRIPTIONS_URI + "/{id}", subscriptionId)
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
+                .andExpect(status().isNotFound());
+    }
+
+    private void when_i_delete_subscription() throws Exception {
+        SubscriptionStub.deleteSubscription(mockMvc, CLIENT_SUBSCRIPTIONS_URI, subscriptionId)
+                .andExpect(status().isNoContent());
     }
 
     @SneakyThrows
