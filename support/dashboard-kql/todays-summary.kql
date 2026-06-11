@@ -2,7 +2,7 @@ union
 (ContainerLogV2
     | where PodNamespace == 'ns-dev-amp-01'
     | where ContainerName != 'istio-proxy'
-    | where PodName contains 'hearing-results'
+    | where PodName startswith 'hearing-results-document-subscription'
     | where TimeGenerated >= startofday(now())
     | where LogMessage contains 'Received notification request'
     | summarize Count = count()
@@ -10,7 +10,7 @@ union
 (ContainerLogV2
     | where PodNamespace == 'ns-dev-amp-01'
     | where ContainerName != 'istio-proxy'
-    | where PodName contains 'hearing-results'
+    | where PodName startswith 'hearing-results-document-subscription'
     | where TimeGenerated >= startofday(now())
     | where LogLevel == 'error'
     | summarize Count = count()
@@ -18,7 +18,7 @@ union
 (ContainerLogV2
     | where PodNamespace == 'ns-dev-amp-01'
     | where ContainerName != 'istio-proxy'
-    | where PodName contains 'hearing-results'
+    | where PodName startswith 'hearing-results-document-subscription'
     | where TimeGenerated >= startofday(now())
     | where LogMessage contains 'ResponseStatusException'
     | summarize Count = count()

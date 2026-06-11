@@ -1,9 +1,0 @@
-let ContainerIdList = KubePodInventory
-| where Name startswith "hearing-results-document-subscription"
-| where Name !contains "dbsetup"
-| where ContainerName == "springboot-app"
-| distinct ContainerID;
-ContainerLog
-| where ContainerID in (ContainerIdList)
-| where LogEntry contains 'getDocument request'
-| summarize Count = count()

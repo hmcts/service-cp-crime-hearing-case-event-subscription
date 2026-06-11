@@ -1,0 +1,13 @@
+ContainerLogV2
+| where PodNamespace == 'ns-dev-amp-01'
+| where TimeGenerated > ago(24h)
+| where ContainerName != 'istio-proxy'
+| where PodName startswith 'hearing-results-document-subscription'
+| where LogMessage contains 'Received notification request from Progression/HearingNows Service'
+| extend LogJson = parse_json(LogMessage)
+| extend Message = tostring(LogJson.message)
+| extend EventType = extract("eventType: (\\S+)", 1, Message)
+| where isnotempty(EventType)
+| summarize Count = count() by EventType
+| project EventType = tostring(EventType), Count = toint(Count)
+| order by Count desc
