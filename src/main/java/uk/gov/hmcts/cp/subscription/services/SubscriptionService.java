@@ -87,7 +87,7 @@ public class SubscriptionService {
         log.info("deleteClientSubscription clientId:{} subscriptionId:{}", clientId, subscriptionId);
         final ClientEntity client = fetchClient(clientId, subscriptionId);
         hearingEventSubscriptionRepository.deleteAllBySubscriptionId(client.getSubscriptionId());
-//        clientHmacRepository.deleteAllBySubscriptionId(client.getSubscriptionId());
+        clientHmacRepository.deleteAllBySubscriptionId(client.getSubscriptionId());
         clientEventRepository.deleteBySubscriptionId(client.getSubscriptionId());
         clientRepository.delete(client);
     }
