@@ -19,9 +19,9 @@ class AppPropertiesTest {
     }
 
     @Test
-    void sit_environment_should_follow_switch() {
+    void sit_environment_should_always_be_off() {
         assertThat(new AppProperties(EnvironmentName.SIT, false).isHearingEventJsonEnabledInEnv()).isFalse();
-        assertThat(new AppProperties(EnvironmentName.SIT, true).isHearingEventJsonEnabledInEnv()).isTrue();
+        assertThat(new AppProperties(EnvironmentName.SIT, true).isHearingEventJsonEnabledInEnv()).isFalse();
     }
 
     @Test
