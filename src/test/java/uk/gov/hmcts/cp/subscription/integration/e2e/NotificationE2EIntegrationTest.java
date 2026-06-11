@@ -25,14 +25,12 @@ import uk.gov.hmcts.cp.servicebus.services.ServiceBusAdminService;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusProcessorService;
 import uk.gov.hmcts.cp.subscription.clients.MaterialClient;
 import uk.gov.hmcts.cp.subscription.config.IgnoreSSLCertificatesForWiremockTest;
-import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 import uk.gov.hmcts.cp.subscription.integration.stubs.SubscriptionStub;
 import uk.gov.hmcts.cp.subscription.services.JsonMapper;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
@@ -168,16 +166,6 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
         and_the_subscriber_can_retrieve_the_hearing_event();
     }
 
-    private void and_the_subscriber_can_retrieve_the_hearing_event() throws Exception {
-        mockMvc.perform(get(hearingEventUri, subscriptionId, callbackHearingEventId)
-                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.hearingEventId").value(callbackHearingEventId.toString()))
-                .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
-    }
-
     @Test
     void callback_client_error_should_try_3_times_in_4_seconds() throws Exception {
         given_i_create_a_new_subscription();
@@ -190,6 +178,16 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
         Thread.sleep(4000);
 
         then_callback_was_attempted_times(3);
+    }
+
+    private void and_the_subscriber_can_retrieve_the_hearing_event() throws Exception {
+        mockMvc.perform(get(hearingEventUri, subscriptionId, callbackHearingEventId)
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hearingEventId").value(callbackHearingEventId.toString()))
+                .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
     }
 
     private void given_i_create_a_new_subscription() throws Exception {

@@ -3,9 +3,14 @@ package uk.gov.hmcts.cp.subscription.integration.controllers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import uk.gov.hmcts.cp.openapi.model.EventPayload;
+import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
+import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 import uk.gov.hmcts.cp.subscription.integration.helpers.JwtHelper;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,6 +29,8 @@ class SubscriptionDeleteControllerIntegrationTest extends IntegrationTestBase {
     @Test
     void delete_client_subscription_should_delete_subscription() throws Exception {
         UUID subscriptionId = insertSubscription("https://example.com/event", List.of("PRISON_COURT_REGISTER_GENERATED"));
+        UUID hearingEventId = insertHearingEventPayload();
+        insertHearingEventSubscription(subscriptionId, hearingEventId);
         mockMvc.perform(delete("/client-subscriptions/{id}", subscriptionId)
                         .header("Authorization", AUTHORIZATION_HEADER_VALUE)
                         .contentType(MediaType.APPLICATION_JSON))
@@ -31,6 +38,8 @@ class SubscriptionDeleteControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isNoContent());
         assertThat(clientRepository.findAll()).hasSize(0);
         assertThat(clientEventRepository.findAll()).hasSize(0);
+        assertThat(hearingEventSubscriptionRepository
+                .existsBySubscriptionIdAndHearingEventId(subscriptionId, hearingEventId)).isFalse();
     }
 
     @Test
@@ -54,5 +63,25 @@ class SubscriptionDeleteControllerIntegrationTest extends IntegrationTestBase {
 
         assertThat(clientRepository.findByClientIdAndSubscriptionId(otherClientId, otherSubscriptionId)).isPresent();
         assertThat(clientEventRepository.findBySubscriptionId(otherSubscriptionId)).isPresent();
+    }
+
+    private UUID insertHearingEventPayload() {
+        Long eventTypeId = eventTypeRepository.findByEventName("PRISON_COURT_REGISTER_GENERATED")
+                .orElseThrow().getId();
+        HearingEventPayloadEntity saved = hearingEventPayloadRepository.save(HearingEventPayloadEntity.builder()
+                .eventId(UUID.randomUUID())
+                .eventTypeId(eventTypeId)
+                .rawPayload(EventPayload.builder().eventType("PRISON_COURT_REGISTER_GENERATED").build())
+                .createdAt(OffsetDateTime.now(ZoneOffset.UTC))
+                .build());
+        return saved.getHearingEventId();
+    }
+
+    private void insertHearingEventSubscription(final UUID subscriptionId, final UUID hearingEventId) {
+        hearingEventSubscriptionRepository.saveAndFlush(HearingEventSubscriptionEntity.builder()
+                .subscriptionId(subscriptionId)
+                .hearingEventId(hearingEventId)
+                .createdAt(OffsetDateTime.now(ZoneOffset.UTC))
+                .build());
     }
 }
