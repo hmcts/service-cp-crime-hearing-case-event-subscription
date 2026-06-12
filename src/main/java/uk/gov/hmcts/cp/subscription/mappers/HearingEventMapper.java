@@ -8,6 +8,7 @@ import uk.gov.hmcts.cp.subscription.entities.HearingEventPayloadEntity;
 import uk.gov.hmcts.cp.subscription.entities.HearingEventSubscriptionEntity;
 import uk.gov.hmcts.cp.subscription.services.ClockService;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -37,11 +38,14 @@ public class HearingEventMapper {
     public HearingEventResponse toResponse(final HearingEventSubscriptionEntity subscription,
                                            final HearingEventPayloadEntity payload,
                                            final Map<String, Object> payloadMap) {
+        final Map<String, Object> filteredPayload = new HashMap<>(payloadMap);
+        filteredPayload.remove("materialId");
+        filteredPayload.remove("eventId");
         return HearingEventResponse.builder()
                 .hearingEventId(subscription.getHearingEventId())
                 .eventType(payload.getRawPayload().getEventType())
                 .createdAt(payload.getCreatedAt().toInstant())
-                .payload(payloadMap)
+                .payload(filteredPayload)
                 .build();
     }
 }

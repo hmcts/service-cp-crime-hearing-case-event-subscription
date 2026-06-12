@@ -187,7 +187,9 @@ class NotificationE2EIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.hearingEventId").value(callbackHearingEventId.toString()))
                 .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
+                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
+                .andExpect(jsonPath("$.payload.materialId").doesNotExist())
+                .andExpect(jsonPath("$.payload.eventId").doesNotExist());
     }
 
     private void given_i_create_a_new_subscription() throws Exception {

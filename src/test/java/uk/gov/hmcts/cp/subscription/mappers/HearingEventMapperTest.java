@@ -13,6 +13,7 @@ import uk.gov.hmcts.cp.subscription.services.ClockService;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -85,5 +86,35 @@ class HearingEventMapperTest {
         assertThat(result.getEventType()).isEqualTo("PRISON_COURT_REGISTER_GENERATED");
         assertThat(result.getCreatedAt()).isEqualTo(fixedNow.toInstant());
         assertThat(result.getPayload()).isEqualTo(payloadMap);
+    }
+
+    @Test
+    void toResponse_should_strip_internal_fields_from_payload() {
+        UUID payloadFk = randomUUID();
+        UUID eventId = randomUUID();
+        UUID materialId = randomUUID();
+        EventPayload rawPayload = EventPayload.builder().eventType("PRISON_COURT_REGISTER_GENERATED").build();
+
+        Map<String, Object> payloadMapWithInternalFields = new HashMap<>();
+        payloadMapWithInternalFields.put("eventType", "PRISON_COURT_REGISTER_GENERATED");
+        payloadMapWithInternalFields.put("eventId", eventId.toString());
+        payloadMapWithInternalFields.put("materialId", materialId.toString());
+        payloadMapWithInternalFields.put("hearingId", "some-hearing-id");
+
+        HearingEventSubscriptionEntity subscription = HearingEventSubscriptionEntity.builder()
+                .hearingEventId(payloadFk)
+                .build();
+        HearingEventPayloadEntity payload = HearingEventPayloadEntity.builder()
+                .hearingEventId(payloadFk)
+                .rawPayload(rawPayload)
+                .createdAt(fixedNow)
+                .build();
+
+        HearingEventResponse result = hearingEventPayloadMapper.toResponse(subscription, payload, payloadMapWithInternalFields);
+
+        assertThat(result.getPayload()).doesNotContainKey("materialId");
+        assertThat(result.getPayload()).doesNotContainKey("eventId");
+        assertThat(result.getPayload()).containsKey("eventType");
+        assertThat(result.getPayload()).containsKey("hearingId");
     }
 }
