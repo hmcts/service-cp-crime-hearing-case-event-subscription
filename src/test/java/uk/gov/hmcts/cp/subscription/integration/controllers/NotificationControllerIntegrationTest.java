@@ -81,7 +81,9 @@ class NotificationControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.hearingEventId").value(hearingEventId.toString()))
                 .andExpect(jsonPath("$.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"));
+                .andExpect(jsonPath("$.payload.eventType").value("PRISON_COURT_REGISTER_GENERATED"))
+                .andExpect(jsonPath("$.payload.materialId").doesNotExist())
+                .andExpect(jsonPath("$.payload.eventId").doesNotExist());
     }
 
     @Test
