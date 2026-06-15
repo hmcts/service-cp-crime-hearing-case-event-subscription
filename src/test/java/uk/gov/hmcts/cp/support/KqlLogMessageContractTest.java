@@ -92,6 +92,42 @@ class KqlLogMessageContractTest {
             .isEqualTo(expectedCount);
     }
 
+    /**
+     * The inbound/outbound failure-count alerts (amp-hrds-inbound-failure-count-6.kql /
+     * amp-hrds-outbound-failure-count-6.kql) filter a single LogMessage on BOTH "failureCount:" AND
+     * the queue name ("notifications.inbound" / "notifications.outbound"). That only works if the
+     * failureCount log statement also logs the queueName — otherwise the two fragments never co-occur
+     * in one message and the alerts silently never fire.
+     *
+     * <p>This guards against dropping queueName from those log statements (the original bug that
+     * slipped past the fragment-existence contracts above).
+     */
+    @Test
+    void failure_count_log_statements_should_include_queue_name_so_inbound_outbound_alerts_can_match()
+            throws IOException {
+        final Path sourceFile = findJavaFile("ServiceBusProcessorService");
+        assertThat(sourceFile).as("ServiceBusProcessorService.java not found").isNotNull();
+
+        final String source = Files.readString(sourceFile);
+        final Pattern failureCountStatement =
+            Pattern.compile("log\\.[a-z]+\\([^;]*failureCount:[^;]*\\);");
+        final Matcher matcher = failureCountStatement.matcher(source);
+
+        int statementsChecked = 0;
+        while (matcher.find()) {
+            final String statement = matcher.group();
+            assertThat(statement)
+                .as("failureCount log statement must also log queueName, otherwise the inbound/outbound "
+                    + "failure-count alerts (which filter on the queue name) can never match:%n%s", statement)
+                .contains("queueName");
+            statementsChecked++;
+        }
+
+        assertThat(statementsChecked)
+            .as("expected to find failureCount log statements in ServiceBusProcessorService")
+            .isEqualTo(2);
+    }
+
     private Set<String> extractKqlFragments() throws IOException {
         final Set<String> fragments = new HashSet<>();
         for (final String folder : new String[]{"support/logs-kql", "support/alerts-kql"}) {
