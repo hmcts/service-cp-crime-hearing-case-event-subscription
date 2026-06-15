@@ -96,7 +96,7 @@ public class ServiceBusProcessorService {
             serviceBusHandlers.handleMessage(queueName, queueMessage.getTargetUrl(), queueMessage.getMessage());
         } catch (HttpClientErrorException.NotFound notFound) {
             final int failureCount = queueMessage.getFailureCount() + 1;
-            log.warn("handleMessage failureCount:{} of {} tries with exception 404 not found ", failureCount, properties.getMaxTries());
+            log.warn("handleMessage {} failureCount:{} of {} tries with exception 404 not found ", queueName, failureCount, properties.getMaxTries());
             if (failureCount >= properties.getMaxTries()) {
                 log.error("handleMessage FAILED FINALLY");
                 throw notFound;
@@ -104,7 +104,7 @@ public class ServiceBusProcessorService {
             clientService.queueMessage(queueName, queueMessage.getTargetUrl(), queueMessage.getMessage(), failureCount);
         } catch (Exception exception) {
             final int failureCount = queueMessage.getFailureCount() + 1;
-            log.error("handleMessage failureCount:{} of {} tries with exception: {}", failureCount, properties.getMaxTries(), exception.getMessage(), exception);
+            log.error("handleMessage {} failureCount:{} of {} tries with exception: {}", queueName, failureCount, properties.getMaxTries(), exception.getMessage(), exception);
             if (failureCount >= properties.getMaxTries()) {
                 log.error("handleMessage FAILED FINALLY");
                 throw exception;
