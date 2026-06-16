@@ -63,10 +63,11 @@ class PostStartupTest {
     }
 
     @Test
-    void post_startup_should_log_document_mappings() {
+    void post_startup_should_log_document_count_without_listing_documents() {
         when(appProperties.getEnvironmentName()).thenReturn(SIT);
         postStartup.postStartupLogging();
-        verify(documentMappingRepository).findAll();
+        verify(documentMappingRepository).count();
+        verify(documentMappingRepository, never()).findAll();
     }
 
     @Test

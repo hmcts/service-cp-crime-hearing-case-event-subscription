@@ -34,6 +34,12 @@ service-bus:
 document-service:
   url: ${DOCUMENT_SERVICE_URL:http://localhost:8082}
 
+document:
+  purge:
+    # To disable purging, set retention-days to a large value (e.g. 9999)
+    retention-days: ${DOCUMENT_PURGE_RETENTION_DAYS:30}
+    cron: ${DOCUMENT_PURGE_CRON:0 0 2 * * *}
+
 subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
 

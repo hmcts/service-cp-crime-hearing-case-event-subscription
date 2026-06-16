@@ -104,6 +104,26 @@ class DocumentServiceTest {
         assertThat(documentContent.getFileName()).isEqualTo("file.pdf");
     }
 
+    @Test
+    void get_event_type_for_document_should_return_event_name_when_found() {
+        when(documentMappingRepository.findById(documentId)).thenReturn(Optional.of(documentMappingEntity));
+
+        assertThat(documentService.getEventTypeForDocument(documentId)).isEqualTo("PRISON_COURT_REGISTER_GENERATED");
+    }
+
+    @Test
+    void get_event_type_for_document_should_throw_404_when_document_purged_or_not_found() {
+        when(documentMappingRepository.findById(documentId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> documentService.getEventTypeForDocument(documentId))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(e -> {
+                    ResponseStatusException ex = (ResponseStatusException) e;
+                    assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+                    assertThat(ex.getReason()).contains(documentId.toString());
+                });
+    }
+
     private MaterialMetadata createMetadata() {
         return MaterialMetadata.builder()
                 .fileName("file.pdf")
