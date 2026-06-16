@@ -28,10 +28,10 @@ public class DocumentPurgeService {
     private final DocumentMappingRepository documentMappingRepository;
     private final ClockService clockService;
 
-    @Value("${document.purge.retention-days:30}")
+    @Value("${document.purge.retention-days}")
     private int retentionDays;
 
-    @Scheduled(cron = "${document.purge.cron:0 0 2 * * *}")
+    @Scheduled(cron = "${document.purge.cron}")
     @Transactional
     public void purgeOldDocuments() {
         final OffsetDateTime cutoff = clockService.nowOffsetUTC().minusDays(retentionDays);
