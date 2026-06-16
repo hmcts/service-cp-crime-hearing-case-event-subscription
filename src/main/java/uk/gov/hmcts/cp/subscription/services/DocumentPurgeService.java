@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uk.gov.hmcts.cp.subscription.entities.DocumentMappingEntity;
 import uk.gov.hmcts.cp.subscription.repositories.DocumentMappingRepository;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * Daily purge of document mappings older than the configured retention period.
@@ -32,7 +34,10 @@ public class DocumentPurgeService {
     @Transactional
     public void purgeOldDocuments() {
         final OffsetDateTime cutoff = clockService.nowOffsetUTC().minusDays(retentionDays);
-        final int deletedCount = documentMappingRepository.deleteByCreatedAtBefore(cutoff);
-        log.info("DocumentPurge removed {} documents older than {}", deletedCount, cutoff);
+        final List<DocumentMappingEntity> toDelete = documentMappingRepository.findByCreatedAtBefore(cutoff);
+        toDelete.forEach(d -> log.info("DocumentPurge deleting documentId:{} materialId:{} createdAt:{}",
+                d.getDocumentId(), d.getMaterialId(), d.getCreatedAt()));
+        documentMappingRepository.deleteAll(toDelete);
+        log.info("DocumentPurge removed {} documents older than {}", toDelete.size(), cutoff);
     }
 }

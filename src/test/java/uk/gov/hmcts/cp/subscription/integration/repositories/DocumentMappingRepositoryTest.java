@@ -9,6 +9,7 @@ import uk.gov.hmcts.cp.subscription.integration.IntegrationTestBase;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,14 +41,25 @@ class DocumentMappingRepositoryTest extends IntegrationTestBase {
 
     @Transactional
     @Test
-    void deleteByCreatedAtBefore_should_remove_old_documents_and_keep_recent() {
+    void findByCreatedAtBefore_should_return_only_documents_older_than_cutoff() {
+        OffsetDateTime now = clockService.now().atOffset(ZoneOffset.UTC);
+        DocumentMappingEntity old = insertDocumentWithCreatedAt(now.minusMonths(2));
+        insertDocumentWithCreatedAt(now.minusDays(1));
+
+        List<DocumentMappingEntity> found = documentMappingRepository.findByCreatedAtBefore(now.minusMonths(1));
+
+        assertThat(found).extracting(DocumentMappingEntity::getDocumentId).containsExactly(old.getDocumentId());
+    }
+
+    @Transactional
+    @Test
+    void purging_found_documents_should_remove_old_and_keep_recent() {
         OffsetDateTime now = clockService.now().atOffset(ZoneOffset.UTC);
         DocumentMappingEntity old = insertDocumentWithCreatedAt(now.minusMonths(2));
         DocumentMappingEntity recent = insertDocumentWithCreatedAt(now.minusDays(1));
 
-        int deleted = documentMappingRepository.deleteByCreatedAtBefore(now.minusMonths(1));
+        documentMappingRepository.deleteAll(documentMappingRepository.findByCreatedAtBefore(now.minusMonths(1)));
 
-        assertThat(deleted).isEqualTo(1);
         assertThat(documentMappingRepository.findByDocumentId(old.getDocumentId())).isEmpty();
         assertThat(documentMappingRepository.findByDocumentId(recent.getDocumentId())).isPresent();
     }
