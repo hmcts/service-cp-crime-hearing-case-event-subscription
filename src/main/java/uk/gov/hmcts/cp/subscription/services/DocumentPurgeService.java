@@ -16,9 +16,6 @@ import java.time.OffsetDateTime;
  * <p>Subscribers do not retrieve progression/nows documents older than a few hours, and inbound
  * messages are dead-lettered after two weeks, so a one-month retention is safe. Once a mapping is
  * purged, document retrieval returns 404 (see DocumentService.getEventTypeForDocument).
- *
- * <p>To effectively disable purging, set {@code document.purge.retention-days} to a large value
- * (e.g. 9999) so the cutoff never matches any documents.
  */
 @Service
 @Slf4j

@@ -36,7 +36,6 @@ document-service:
 
 document:
   purge:
-    # To disable purging, set retention-days to a large value (e.g. 9999)
     retention-days: ${DOCUMENT_PURGE_RETENTION_DAYS:30}
     cron: ${DOCUMENT_PURGE_CRON:0 0 2 * * *}
 
