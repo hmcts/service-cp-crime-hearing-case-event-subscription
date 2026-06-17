@@ -43,7 +43,7 @@ public class PostStartup {
     @PostConstruct
     public void postStartupLogging() {
         log.info("PostStartup Database contains {} eventTypes", eventTypeRepository.count());
-        logRecentDocumentMappings();
+        logDocumentMappingCount();
         clearDlqIfRequired();
         logDeadLetterQueueSizes();
     }
@@ -76,11 +76,7 @@ public class PostStartup {
         }
     }
 
-    private void logRecentDocumentMappings() {
-        log.info("PostStartup Database contains {} document mappings", documentMappingRepository.count());
-        final OffsetDateTime lastMonthDate = OffsetDateTime.now().minusMonths(1);
-        documentMappingRepository.findAll().stream().filter(d -> d.getCreatedAt().isAfter(lastMonthDate)).forEach(
-                d -> log.info("PostStartup Database contains documentId:{} materialId:{} createdAt:{}", d.getDocumentId(), d.getMaterialId(), d.getCreatedAt())
-        );
+    private void logDocumentMappingCount() {
+        log.info("PostStartup Database contains {} documents", documentMappingRepository.count());
     }
 }
