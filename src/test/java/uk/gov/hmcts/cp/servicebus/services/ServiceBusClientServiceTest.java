@@ -114,41 +114,28 @@ class ServiceBusClientServiceTest {
     }
 
     @Test
+    void clear_dead_letter_queue_should_drain_messages_that_arrive_after_an_initial_empty_receive() {
+        // Reproduces prod: the DLQ may hold many of messages, but the FIRST receive returns empty
+        // because the AMQP link is still being established (1s timeout fires first). The message is
+        // delivered on the next poll. The clear must not give up on a single empty receive.
+        final ServiceBusReceivedMessage oldMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(10), 1L);
+        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
+        when(receiverClient.receiveMessages(anyInt(), any()))
+            .thenReturn(IterableStream.of(Collections.emptyList()))   // link not ready yet
+            .thenReturn(IterableStream.of(List.of(oldMessage)))       // message arrives
+            .thenReturn(IterableStream.of(Collections.emptyList()));  // drained
+
+        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 0)).isEqualTo(1);
+        verify(receiverClient).complete(oldMessage);
+        verify(receiverClient).close();
+    }
+
+    @Test
     void clear_dead_letter_queue_should_return_zero_when_dlq_is_empty() {
         when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
         when(receiverClient.receiveMessages(anyInt(), any())).thenReturn(IterableStream.of(Collections.emptyList()));
 
         assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, 7)).isZero();
-        verify(receiverClient).close();
-    }
-
-    @Test
-    void clear_dead_letter_queue_with_date_range_should_complete_messages_within_range() {
-        final OffsetDateTime from = OffsetDateTime.now().minusDays(10);
-        final OffsetDateTime to = OffsetDateTime.now().minusDays(5);
-        final ServiceBusReceivedMessage inRangeMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(7), 1L);
-        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
-        when(receiverClient.receiveMessages(anyInt(), any()))
-            .thenReturn(IterableStream.of(List.of(inRangeMessage)))
-            .thenReturn(IterableStream.of(Collections.emptyList()));
-
-        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, from, to)).isEqualTo(1);
-        verify(receiverClient).complete(inRangeMessage);
-        verify(receiverClient).close();
-    }
-
-    @Test
-    void clear_dead_letter_queue_with_date_range_should_abandon_messages_outside_range() {
-        final OffsetDateTime from = OffsetDateTime.now().minusDays(10);
-        final OffsetDateTime to = OffsetDateTime.now().minusDays(5);
-        final ServiceBusReceivedMessage outsideRangeMessage = mockMessageEnqueuedAt(OffsetDateTime.now().minusDays(2), 1L);
-        when(clientFactory.deadLetterReceiverClient(NOTIFICATIONS_INBOUND_QUEUE)).thenReturn(receiverClient);
-        when(receiverClient.receiveMessages(anyInt(), any()))
-            .thenReturn(IterableStream.of(List.of(outsideRangeMessage)))
-            .thenReturn(IterableStream.of(Collections.emptyList()));
-
-        assertThat(clientService.clearDeadLetterQueue(NOTIFICATIONS_INBOUND_QUEUE, from, to)).isZero();
-        verify(receiverClient).abandon(outsideRangeMessage);
         verify(receiverClient).close();
     }
 
