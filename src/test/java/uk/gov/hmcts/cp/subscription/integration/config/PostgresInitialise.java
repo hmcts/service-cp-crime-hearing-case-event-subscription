@@ -17,6 +17,10 @@ public class PostgresInitialise implements ApplicationContextInitializer<Configu
                 "spring.datasource.url=jdbc:postgresql://localhost:5432/appdb",
                 "spring.datasource.username=postgres",
                 "spring.datasource.password=postgres",
+                // Each cached Spring test context keeps its own Hikari pool open; with the default
+                // size of 8 the many integration-test contexts exhaust PostgreSQL max_connections
+                // ("too many clients already"). Cap it small for tests.
+                "spring.datasource.hikari.maximum-pool-size=4",
                 "subscription.oauth-enabled=true",
                 "material-client.cjscppuid=11111111-2222-3333-4444-666666666666",
                 "material-client.retry.intervalMilliSecs=100",

@@ -15,7 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @TestPropertySource(properties = {
         "vault.enabled=false",
-        "service-bus.auto-start-processors=false"
+        "service-bus.auto-start-processors=false",
+        "service-bus.max-tries=2",
+        "service-bus.retry-durations=0s"
 })
 public class ServiceBusIntegrationTestBase {
 

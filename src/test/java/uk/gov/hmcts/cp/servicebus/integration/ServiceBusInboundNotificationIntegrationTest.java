@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.openapi.model.EventPayloadDefendant;
@@ -29,11 +28,6 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 @Slf4j
 @SpringBootTest
 @ContextConfiguration(initializers = {PostgresInitialise.class, ServiceBusAvailabilityCheck.class})
-@TestPropertySource(properties = {
-        "vault.enabled=false",
-        "service-bus.max-tries=2",
-        "service-bus.retry-durations=0s"
-})
 public class ServiceBusInboundNotificationIntegrationTest extends ServiceBusIntegrationTestBase {
 
     @MockitoBean
