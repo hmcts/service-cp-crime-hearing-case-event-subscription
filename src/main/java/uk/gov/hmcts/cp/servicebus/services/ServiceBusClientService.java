@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Predicate;
 
 import static uk.gov.hmcts.cp.filters.TracingFilter.CORRELATION_ID_KEY;
 
@@ -27,6 +26,9 @@ import static uk.gov.hmcts.cp.filters.TracingFilter.CORRELATION_ID_KEY;
 @AllArgsConstructor
 @Slf4j
 public class ServiceBusClientService {
+
+    private static final Duration RECEIVE_TIMEOUT = Duration.ofSeconds(5);
+    private static final int MAX_EMPTY_RECEIVES = 3;
 
     private final ServiceBusClientFactory clientFactory;
     private final ServiceBusWrapperMapper wrapperMapper;
@@ -47,19 +49,13 @@ public class ServiceBusClientService {
     }
 
     public int clearDeadLetterQueue(final String queueName, final int olderThanDays) {
-        final OffsetDateTime cutoff = OffsetDateTime.now().minusDays(olderThanDays);
-        final int count = doClearDeadLetterQueue(queueName, enqueuedAt -> enqueuedAt.isBefore(cutoff));
+        final int count = doClearDeadLetterQueue(queueName, olderThanDays);
         log.info("Cleared {} DLQ messages older than {} days from queue:{}", count, olderThanDays, queueName);
         return count;
     }
 
-    public int clearDeadLetterQueue(final String queueName, final OffsetDateTime from, final OffsetDateTime to) {
-        final int count = doClearDeadLetterQueue(queueName, enqueuedAt -> !enqueuedAt.isBefore(from) && enqueuedAt.isBefore(to));
-        log.info("Cleared {} DLQ messages from {} to {} from queue:{}", count, from, to, queueName);
-        return count;
-    }
-
-    private int doClearDeadLetterQueue(final String queueName, final Predicate<OffsetDateTime> shouldPurge) {
+    private int doClearDeadLetterQueue(final String queueName, final int olderThanDays) {
+        final OffsetDateTime cutoff = OffsetDateTime.now().minusDays(olderThanDays);
         final Set<Long> skipped = new HashSet<>();
         int count = 0;
         try (ServiceBusReceiverClient receiver = clientFactory.deadLetterReceiverClient(queueName)) {
@@ -70,7 +66,7 @@ public class ServiceBusClientService {
                     break;
                 }
                 final OffsetDateTime enqueuedAt = message.getEnqueuedTime();
-                if (shouldPurge.test(enqueuedAt)) {
+                if (enqueuedAt.isBefore(cutoff)) {
                     log.info("Clearing DLQ message id:{} enqueuedAt:{} from queue:{}", message.getMessageId(), enqueuedAt, queueName);
                     receiver.complete(message);
                     count++;
@@ -84,8 +80,18 @@ public class ServiceBusClientService {
         return count;
     }
 
+    /**
+     * Receives the next dead-letter message, retrying on empty receives. The first receive often
+     * times out while the AMQP link is still being established, so a single empty result does not
+     * mean the queue is drained — only give up after {@link #MAX_EMPTY_RECEIVES} empty receives.
+     */
     private ServiceBusReceivedMessage nextMessage(final ServiceBusReceiverClient receiver) {
-        final Iterator<ServiceBusReceivedMessage> it = receiver.receiveMessages(1, Duration.ofSeconds(1)).iterator();
-        return it.hasNext() ? it.next() : null;
+        for (int attempt = 0; attempt < MAX_EMPTY_RECEIVES; attempt++) {
+            final Iterator<ServiceBusReceivedMessage> it = receiver.receiveMessages(1, RECEIVE_TIMEOUT).iterator();
+            if (it.hasNext()) {
+                return it.next();
+            }
+        }
+        return null;
     }
 }

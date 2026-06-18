@@ -39,6 +39,11 @@ document:
     retention-days: ${DOCUMENT_PURGE_RETENTION_DAYS:30}
     cron: ${DOCUMENT_PURGE_CRON:0 0 2 * * *}
 
+dead-letter:
+  purge:
+    retention-days: ${DEAD_LETTER_PURGE_RETENTION_DAYS:30}
+    cron: ${DEAD_LETTER_PURGE_CRON:0 0 3 * * *}
+
 subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
 
