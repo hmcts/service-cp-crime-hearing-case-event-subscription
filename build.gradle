@@ -1,7 +1,7 @@
 plugins {
   id 'application'
   id 'java'
-  id 'org.springframework.boot' version '4.0.6'
+  id 'org.springframework.boot' version '4.1.0'
   id 'io.spring.dependency-management' version '1.1.7'
   id 'org.openapi.generator' version '7.23.0'
   id 'jacoco'
@@ -33,7 +33,7 @@ apply {
 dependencies {
   // Api spec
   implementation('uk.gov.hmcts.cp:api-cp-crime-hearing-results-document-subscription:2.0.14')
-  implementation('io.swagger.core.v3:swagger-annotations:2.2.50')
+  implementation('io.swagger.core.v3:swagger-annotations:2.2.51')
 
 
   // Java core
@@ -88,6 +88,6 @@ dependencies {
   testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
   testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
-  implementation 'com.azure:azure-identity:1.18.3'
+  implementation 'com.azure:azure-identity:1.18.4'
   implementation 'com.azure:azure-security-keyvault-secrets:4.11.0'
 }
