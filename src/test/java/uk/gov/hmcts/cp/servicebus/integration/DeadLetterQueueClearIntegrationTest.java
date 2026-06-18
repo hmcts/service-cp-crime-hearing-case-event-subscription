@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties;
 import uk.gov.hmcts.cp.servicebus.integration.config.ServiceBusAvailabilityCheck;
 import uk.gov.hmcts.cp.subscription.integration.config.PostgresInitialise;
@@ -21,6 +22,13 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 
 @Slf4j
 @ContextConfiguration(initializers = {PostgresInitialise.class, ServiceBusAvailabilityCheck.class})
+// Matches the property set of the other Service Bus integration tests so this class reuses their
+// cached Spring context rather than spinning up a new one (avoids exhausting PostgreSQL connections).
+@TestPropertySource(properties = {
+        "vault.enabled=false",
+        "service-bus.max-tries=2",
+        "service-bus.retry-durations=0s"
+})
 class DeadLetterQueueClearIntegrationTest extends ServiceBusIntegrationTestBase {
 
     private static final int SEEDED_MESSAGES = 5;
