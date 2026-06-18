@@ -33,6 +33,7 @@ public class DocumentPurgeService {
     @Scheduled(cron = "${document.purge.cron}")
     @Transactional
     public void purgeOldDocuments() {
+        log.info("DocumentPurge removing documents older than {} days", retentionDays);
         final OffsetDateTime cutoff = clockService.nowOffsetUTC().minusDays(retentionDays);
         final List<DocumentMappingEntity> toDelete = documentMappingRepository.findByCreatedAtBefore(cutoff);
         toDelete.forEach(d -> log.info("DocumentPurge deleting documentId:{} materialId:{} createdAt:{}",
