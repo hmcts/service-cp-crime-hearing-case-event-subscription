@@ -39,6 +39,7 @@ class DocumentPurgeServiceTest {
     @Test
     void purge_should_delete_documents_older_than_retention_batch_by_batch_until_empty() {
         ReflectionTestUtils.setField(documentPurgeService, "retentionDays", 30);
+        ReflectionTestUtils.setField(documentPurgeService, "batchSize", 2);
         when(clockService.nowOffsetUTC()).thenReturn(NOW);
         final OffsetDateTime cutoff = NOW.minusDays(30);
         final List<DocumentMappingEntity> firstBatch = documents(3);
@@ -58,6 +59,7 @@ class DocumentPurgeServiceTest {
     @Test
     void purge_should_not_delete_when_nothing_is_older_than_retention() {
         ReflectionTestUtils.setField(documentPurgeService, "retentionDays", 30);
+        ReflectionTestUtils.setField(documentPurgeService, "batchSize", 2);
         when(clockService.nowOffsetUTC()).thenReturn(NOW);
         when(documentMappingRepository.findByCreatedAtBefore(eq(NOW.minusDays(30)), any(Limit.class)))
                 .thenReturn(List.of());

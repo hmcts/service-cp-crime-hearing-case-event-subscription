@@ -27,20 +27,21 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DocumentPurgeService {
 
-    public static final int BATCH_SIZE = 1000;
-
     private final DocumentMappingRepository documentMappingRepository;
     private final ClockService clockService;
 
     @Value("${document.purge.retention-days}")
     private int retentionDays;
 
+    @Value("${document.purge.batch-size}")
+    private int batchSize;
+
     @Scheduled(cron = "${document.purge.cron}")
     public void purgeOldDocuments() {
         final OffsetDateTime cutoff = clockService.nowOffsetUTC().minusDays(retentionDays);
         log.info("DocumentPurge removing documents older than {} days (cutoff {})", retentionDays, cutoff);
         while (true) {
-            final List<DocumentMappingEntity> batch = documentMappingRepository.findByCreatedAtBefore(cutoff, Limit.of(BATCH_SIZE));
+            final List<DocumentMappingEntity> batch = documentMappingRepository.findByCreatedAtBefore(cutoff, Limit.of(batchSize));
             if (batch.isEmpty()) {
                 break;
             }
