@@ -49,6 +49,7 @@ subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
 
 hearing-event:
+  enabled: ${HEARING_EVENT_ENABLED:true}
   json:
     enabled: ${HEARING_EVENT_JSON_ENABLED:true}
 

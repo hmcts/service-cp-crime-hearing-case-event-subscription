@@ -23,6 +23,8 @@ import uk.gov.hmcts.cp.openapi.api.NotificationApi;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
+import uk.gov.hmcts.cp.subscription.config.AppProperties;
+import uk.gov.hmcts.cp.subscription.config.EnvironmentName;
 import uk.gov.hmcts.cp.subscription.managers.NotificationManager;
 import uk.gov.hmcts.cp.subscription.model.DocumentContent;
 import uk.gov.hmcts.cp.subscription.services.EventPayloadValidator;
@@ -50,6 +52,7 @@ public class NotificationController implements InternalApi, NotificationApi {
     private final EventTypeService eventTypeService;
     private final NotificationManager notificationManager;
     private final JsonMapper jsonMapper;
+    private final AppProperties appProperties;
 
     @Value("${hearing-event.json.enabled:false}")
     private boolean hearingEventJsonEnabled;
@@ -69,6 +72,14 @@ public class NotificationController implements InternalApi, NotificationApi {
                 eventPayload.getHearingId(),
                 eventPayload.getMaterialId(),
                 eventPayload.getEventType());
+
+        // The off-switch only takes effect in DEV; every other environment always processes.
+        if (!appProperties.isHearingEventEnabled() && appProperties.getEnvironmentName() == EnvironmentName.DEV) {
+            log.warn("Notification processing is disabled (hearing-event.enabled=false) in environment:{} — "
+                            + "swallowing notification without processing. eventId: {}, eventType: {}",
+                    appProperties.getEnvironmentName(), eventPayload.getEventId(), eventPayload.getEventType());
+            return new ResponseEntity<>(HttpStatus.ACCEPTED);
+        }
 
         if (hearingEventJsonEnabled && EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
             log.error("Rejecting notification: payload is Jackson JsonNode introspection metadata, not "
