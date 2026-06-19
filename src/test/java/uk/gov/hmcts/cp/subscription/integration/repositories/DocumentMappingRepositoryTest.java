@@ -2,6 +2,7 @@ package uk.gov.hmcts.cp.subscription.integration.repositories;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Limit;
 import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cp.subscription.entities.DocumentMappingEntity;
 import uk.gov.hmcts.cp.subscription.entities.EventTypeEntity;
@@ -46,9 +47,22 @@ class DocumentMappingRepositoryTest extends IntegrationTestBase {
         DocumentMappingEntity old = insertDocumentWithCreatedAt(now.minusMonths(2));
         insertDocumentWithCreatedAt(now.minusDays(1));
 
-        List<DocumentMappingEntity> found = documentMappingRepository.findByCreatedAtBefore(now.minusMonths(1));
+        List<DocumentMappingEntity> found = documentMappingRepository.findByCreatedAtBefore(now.minusMonths(1), Limit.of(100));
 
         assertThat(found).extracting(DocumentMappingEntity::getDocumentId).containsExactly(old.getDocumentId());
+    }
+
+    @Transactional
+    @Test
+    void findByCreatedAtBefore_should_cap_results_to_the_limit() {
+        OffsetDateTime now = clockService.now().atOffset(ZoneOffset.UTC);
+        insertDocumentWithCreatedAt(now.minusMonths(2));
+        insertDocumentWithCreatedAt(now.minusMonths(3));
+        insertDocumentWithCreatedAt(now.minusMonths(4));
+
+        List<DocumentMappingEntity> found = documentMappingRepository.findByCreatedAtBefore(now.minusMonths(1), Limit.of(2));
+
+        assertThat(found).hasSize(2);
     }
 
     @Transactional
@@ -58,7 +72,7 @@ class DocumentMappingRepositoryTest extends IntegrationTestBase {
         DocumentMappingEntity old = insertDocumentWithCreatedAt(now.minusMonths(2));
         DocumentMappingEntity recent = insertDocumentWithCreatedAt(now.minusDays(1));
 
-        documentMappingRepository.deleteAll(documentMappingRepository.findByCreatedAtBefore(now.minusMonths(1)));
+        documentMappingRepository.deleteAllInBatch(documentMappingRepository.findByCreatedAtBefore(now.minusMonths(1), Limit.of(100)));
 
         assertThat(documentMappingRepository.findByDocumentId(old.getDocumentId())).isEmpty();
         assertThat(documentMappingRepository.findByDocumentId(recent.getDocumentId())).isPresent();

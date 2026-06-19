@@ -38,6 +38,7 @@ document:
   purge:
     retention-days: ${DOCUMENT_PURGE_RETENTION_DAYS:30}
     cron: ${DOCUMENT_PURGE_CRON:0 0 2 * * *}
+    batch-size: ${DOCUMENT_PURGE_BATCH_SIZE:1000}
 
 dead-letter:
   purge:

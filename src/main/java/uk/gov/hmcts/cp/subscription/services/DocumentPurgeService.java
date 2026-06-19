@@ -3,9 +3,9 @@ package uk.gov.hmcts.cp.subscription.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Limit;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import uk.gov.hmcts.cp.subscription.entities.DocumentMappingEntity;
 import uk.gov.hmcts.cp.subscription.repositories.DocumentMappingRepository;
 
@@ -18,6 +18,9 @@ import java.util.List;
  * <p>Subscribers do not retrieve progression/nows documents older than a few hours, and inbound
  * messages are dead-lettered after two weeks, so a one-month retention is safe. Once a mapping is
  * purged, document retrieval returns 404 (see DocumentService.getEventTypeForDocument).
+ *
+ * <p>Deletion runs in bounded batches so a large backlog cannot load the whole table into memory or
+ * hold a single long transaction — each batch is fetched, logged and deleted in its own transaction.
  */
 @Service
 @Slf4j
@@ -30,15 +33,21 @@ public class DocumentPurgeService {
     @Value("${document.purge.retention-days}")
     private int retentionDays;
 
+    @Value("${document.purge.batch-size}")
+    private int batchSize;
+
     @Scheduled(cron = "${document.purge.cron}")
-    @Transactional
     public void purgeOldDocuments() {
-        log.info("DocumentPurge removing documents older than {} days", retentionDays);
         final OffsetDateTime cutoff = clockService.nowOffsetUTC().minusDays(retentionDays);
-        final List<DocumentMappingEntity> toDelete = documentMappingRepository.findByCreatedAtBefore(cutoff);
-        toDelete.forEach(d -> log.info("DocumentPurge deleting documentId:{} materialId:{} createdAt:{}",
-                d.getDocumentId(), d.getMaterialId(), d.getCreatedAt()));
-        documentMappingRepository.deleteAll(toDelete);
-        log.info("DocumentPurge removed {} documents older than {}", toDelete.size(), cutoff);
+        log.info("DocumentPurge removing documents older than {} days (cutoff {})", retentionDays, cutoff);
+        while (true) {
+            final List<DocumentMappingEntity> batch = documentMappingRepository.findByCreatedAtBefore(cutoff, Limit.of(batchSize));
+            if (batch.isEmpty()) {
+                break;
+            }
+            batch.forEach(d -> log.info("DocumentPurge deleting documentId:{} createdAt:{}", d.getDocumentId(), d.getCreatedAt()));
+            documentMappingRepository.deleteAllInBatch(batch);
+            log.info("DocumentPurge deleted batch of {} documents older than {} days", batch.size(), retentionDays);
+        }
     }
 }
