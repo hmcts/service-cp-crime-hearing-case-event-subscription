@@ -16,6 +16,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.cp.filters.ClientIdResolutionFilter;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
+import uk.gov.hmcts.cp.subscription.config.AppProperties;
+import uk.gov.hmcts.cp.subscription.config.EnvironmentName;
 import uk.gov.hmcts.cp.subscription.controllers.NotificationController;
 import uk.gov.hmcts.cp.subscription.managers.NotificationManager;
 import uk.gov.hmcts.cp.subscription.model.DocumentContent;
@@ -44,6 +46,8 @@ class NotificationControllerTest {
     EventTypeService eventTypeService;
     @Mock
     NotificationManager notificationManager;
+    @Mock
+    AppProperties appProperties;
 
     @InjectMocks
     NotificationController notificationController;
@@ -74,6 +78,31 @@ class NotificationControllerTest {
         verify(clientService).queueMessage(NOTIFICATIONS_INBOUND_QUEUE, null, "payload-json", 0);
         assertThat(response.getStatusCode()).isEqualTo(ACCEPTED);
         assertThat(response.getBody()).isNull();
+    }
+
+    @Test
+    void notification_disabled_in_dev_should_swallow_and_return_accepted() {
+        when(appProperties.isHearingEventDisabledInDev()).thenReturn(true);
+        when(appProperties.getEnvironmentName()).thenReturn(EnvironmentName.DEV);
+
+        ResponseEntity<Void> response = notificationController.createNotification(payload, null);
+
+        verifyNoInteractions(clientService, eventTypeService, jsonMapper);
+        assertThat(response.getStatusCode()).isEqualTo(ACCEPTED);
+        assertThat(response.getBody()).isNull();
+    }
+
+    @Test
+    void notification_disabled_outside_dev_should_still_be_processed() {
+        when(appProperties.isHearingEventDisabledInDev()).thenReturn(true);
+        when(appProperties.getEnvironmentName()).thenReturn(EnvironmentName.PRD);
+        when(jsonMapper.toJson(payload)).thenReturn("payload-json");
+        when(eventTypeService.eventExists(payload.getEventType())).thenReturn(true);
+
+        ResponseEntity<Void> response = notificationController.createNotification(payload, null);
+
+        verify(clientService).queueMessage(NOTIFICATIONS_INBOUND_QUEUE, null, "payload-json", 0);
+        assertThat(response.getStatusCode()).isEqualTo(ACCEPTED);
     }
 
     @Test
