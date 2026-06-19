@@ -1,5 +1,6 @@
 package uk.gov.hmcts.cp.subscription.repositories;
 
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import uk.gov.hmcts.cp.subscription.entities.DocumentMappingEntity;
@@ -14,6 +15,6 @@ public interface DocumentMappingRepository extends JpaRepository<DocumentMapping
 
     Optional<DocumentMappingEntity> findByDocumentId(UUID documentId);
 
-    List<DocumentMappingEntity> findByCreatedAtBefore(OffsetDateTime cutoff);
+    List<DocumentMappingEntity> findByCreatedAtBefore(OffsetDateTime cutoff, Limit limit);
 }
 
