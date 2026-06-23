@@ -118,7 +118,8 @@ class CallbackDeliveryServiceTest {
 
     @Test
     void submit_should_call_saveIfAbsent_when_toggle_on() {
-        when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(true);
+        when(appProperties.isHearingEventJsonEnabled()).thenReturn(true);
+        when(appProperties.getEnvironmentName()).thenReturn(EnvironmentName.DEV);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of());
         when(notificationMapper.mapToPayload(eq(documentId), eq(eventPayload), any())).thenReturn(payload);
         when(hearingEventService.saveIfAbsent(eventPayload)).thenReturn(randomUUID());
@@ -131,7 +132,7 @@ class CallbackDeliveryServiceTest {
 
     @Test
     void submit_should_not_call_saveSubscriptionIfAbsent_when_toggle_off() {
-        when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(false);
+        when(appProperties.isHearingEventJsonEnabled()).thenReturn(false);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of(clientEntity));
         when(notificationMapper.mapToPayload(documentId, eventPayload, null)).thenReturn(payload);
         when(clientHmacRepository.findBySubscriptionId(subscriptionId)).thenReturn(Optional.of(clientHmacEntity));
@@ -149,7 +150,8 @@ class CallbackDeliveryServiceTest {
     @Test
     void submit_should_call_saveSubscriptionIfAbsent_per_client_when_toggle_on() {
         UUID generatedHearingEventId = randomUUID();
-        when(appProperties.isHearingEventJsonEnabledInEnv()).thenReturn(true);
+        when(appProperties.isHearingEventJsonEnabled()).thenReturn(true);
+        when(appProperties.getEnvironmentName()).thenReturn(EnvironmentName.DEV);
         when(clientEventRepository.findClientsByEventType(anyString())).thenReturn(List.of(clientEntity));
         when(notificationMapper.mapToPayload(documentId, eventPayload, generatedHearingEventId)).thenReturn(payload);
         when(hearingEventService.saveIfAbsent(eventPayload)).thenReturn(generatedHearingEventId);
