@@ -53,7 +53,7 @@ subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
 
 hearing-event:
-  disabled-in-dev: ${HEARING_EVENT_DISABLED_IN_DEV:false}
+  disabled-in-dev: ${HEARING_EVENT_DISABLED_IN_DEV:true}
   json:
     enabled: ${HEARING_EVENT_JSON_ENABLED:true}
 
