@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_INBOUND_QUEUE;
+import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_OUTBOUND_QUEUE;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -16,12 +19,15 @@ public class QueueSizeLogger {
 
     @Scheduled(cron = "${queue-size.log.cron}")
     public void logQueueSizes() {
-        administrationClient.listQueues().forEach(queue -> {
-            final QueueRuntimeProperties props = administrationClient.getQueueRuntimeProperties(queue.getName());
-            log.info("queueSize queue:{} activeMessages:{} deadLetterMessages:{}",
-                props.getName(),
-                props.getActiveMessageCount(),
-                props.getDeadLetterMessageCount());
-        });
+        logQueueSize(NOTIFICATIONS_INBOUND_QUEUE);
+        logQueueSize(NOTIFICATIONS_OUTBOUND_QUEUE);
+    }
+
+    private void logQueueSize(final String queueName) {
+        final QueueRuntimeProperties props = administrationClient.getQueueRuntimeProperties(queueName);
+        log.info("queueSize queue:{} activeMessages:{} deadLetterMessages:{}",
+            queueName,
+            props.getActiveMessageCount(),
+            props.getDeadLetterMessageCount());
     }
 }
