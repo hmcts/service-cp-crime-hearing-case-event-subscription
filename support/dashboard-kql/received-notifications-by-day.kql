@@ -1,12 +1,13 @@
 ContainerLogV2
 | where PodNamespace  == 'ns-dev-amp-01'
-| where TimeGenerated > ago(84d)
+| where TimeGenerated > ago(14d)
 | where ContainerName != 'istio-proxy'
 | where PodName startswith 'hearing-results-document-subscription'
 | where LogMessage contains 'Received notification request'
-| project TimeGenerated, LogLevel, LogMessage
 | make-series ReceivedNotification = count() default=0
     on TimeGenerated
-    from ago(84d) to now()
+    from ago(14d) to now()
     step 1d
-| render timechart
+| mv-expand TimeGenerated, ReceivedNotification
+| extend TimeGenerated = todatetime(TimeGenerated), ReceivedNotification = toint(ReceivedNotification)
+| render columnchart with (xcolumn=TimeGenerated, ycolumns=ReceivedNotification, title="Received Notifications per Day")

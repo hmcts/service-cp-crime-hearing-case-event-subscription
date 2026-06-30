@@ -1,5 +1,5 @@
 ContainerLogV2
-| where PodNamespace  == 'ns-dev-amp-01'
+| where PodNamespace == 'ns-prd-amp-01'
 | where TimeGenerated > ago(14d)
 | where ContainerName != 'istio-proxy'
 | where PodName startswith 'hearing-results-document-subscription'
