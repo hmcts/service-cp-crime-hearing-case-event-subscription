@@ -39,7 +39,8 @@ public class DocumentPurgeService {
     @Scheduled(cron = "${document.purge.cron}")
     public void purgeOldDocuments() {
         final OffsetDateTime cutoff = clockService.nowOffsetUTC().minusDays(retentionDays);
-        log.info("DocumentPurge removing documents older than {} days (cutoff {})", retentionDays, cutoff);
+        log.info("DocumentPurge documentCount:{} removing documents older than {} days (cutoff {})",
+            documentMappingRepository.count(), retentionDays, cutoff);
         while (true) {
             final List<DocumentMappingEntity> batch = documentMappingRepository.findByCreatedAtBefore(cutoff, Limit.of(batchSize));
             if (batch.isEmpty()) {
@@ -49,5 +50,6 @@ public class DocumentPurgeService {
             documentMappingRepository.deleteAllInBatch(batch);
             log.info("DocumentPurge deleted batch of {} documents older than {} days", batch.size(), retentionDays);
         }
+        log.info("DocumentPurge complete documentCount:{}", documentMappingRepository.count());
     }
 }
