@@ -28,34 +28,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 class KqlLogMessageContractTest {
 
     private static final Map<String, String> RUNTIME_VALUE_SUBSTITUTIONS = Map.of(
-        "failureCount:6", "failureCount:"
+            "failureCount:6", "failureCount:"
     );
 
     private static final Set<String> PLACEHOLDER_FRAGMENTS = Set.of(
-        "REPLACE_ME",          // trace query placeholder
-        "notifications.inbound",   // queue name embedded at runtime, not a literal log string
-        "notifications.outbound",  // queue name embedded at runtime, not a literal log string
-        "NotificationService",     // class name used as log filter, not a literal log message
-        "CallbackClient",          // class name used as log filter, not a literal log message
-        "CallbackDeliveryService", // class name used as log filter, not a literal log message
-        "correlationId"            // variable substituted at query time
+            "REPLACE_ME",          // trace query placeholder
+            "notifications.inbound",   // queue name embedded at runtime, not a literal log string
+            "notifications.outbound",  // queue name embedded at runtime, not a literal log string
+            "NotificationService",     // class name used as log filter, not a literal log message
+            "CallbackClient",          // class name used as log filter, not a literal log message
+            "CallbackDeliveryService", // class name used as log filter, not a literal log message
+            "correlationId"            // variable substituted at query time
     );
 
     private static final Pattern KQL_CONTAINS_PATTERN =
-        Pattern.compile("(?:\\| where|or) LogMessage contains ['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("(?:\\| where|or) LogMessage contains ['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
 
     static Stream<Arguments> kqlLogMessageContracts() {
         return Stream.of(
-            kqlContract("Received notification request from Progression/HearingNows", "NotificationController", 1),
-            kqlContract("Received notification request",                  "NotificationController", 1),
-            kqlContract("handleMessage",                                  "ServiceBusProcessorService", 5),
-            kqlContract("processInboundEvent",                            "NotificationService", 2),
-            kqlContract("handleMessage FAILED FINALLY",                   "ServiceBusProcessorService", 2),
-            kqlContract("handleError unexpected error on",                 "ServiceBusProcessorService", 1),
-            kqlContract("Sending notification",                           "CallbackClient", 1),
-            kqlContract("PostStartup Queue",                               "PostStartup", 1),
-            kqlContract("failureCount:",                                   "ServiceBusProcessorService", 2),
-            kqlContract("duplicate subscription request",                  "SubscriptionValidationService", 1)
+                kqlContract("Received notification request from Progression/HearingNows", "NotificationController", 1),
+                kqlContract("Received notification request", "NotificationController", 1),
+                kqlContract("handleMessage", "ServiceBusProcessorService", 5),
+                kqlContract("processInboundEvent", "NotificationService", 2),
+                kqlContract("handleMessage FAILED FINALLY", "ServiceBusProcessorService", 2),
+                kqlContract("handleError unexpected error on", "ServiceBusProcessorService", 1),
+                kqlContract("Sending notification", "CallbackClient", 1),
+                kqlContract("failureCount:", "ServiceBusProcessorService", 2),
+                kqlContract("duplicate subscription request", "SubscriptionValidationService", 1)
         );
     }
 
@@ -67,12 +66,12 @@ class KqlLogMessageContractTest {
     void all_kql_log_message_fragments_should_be_covered_by_contracts() throws IOException {
         final Set<String> kqlFragments = extractKqlFragments();
         final Set<String> contractFragments = kqlLogMessageContracts()
-            .map(args -> (String) args.get()[0])
-            .collect(Collectors.toSet());
+                .map(args -> (String) args.get()[0])
+                .collect(Collectors.toSet());
 
         assertThat(kqlFragments)
-            .as("KQL fragments not covered by contract test — add entries to kqlLogMessageContracts()")
-            .containsExactlyInAnyOrderElementsOf(contractFragments);
+                .as("KQL fragments not covered by contract test — add entries to kqlLogMessageContracts()")
+                .containsExactlyInAnyOrderElementsOf(contractFragments);
     }
 
     @ParameterizedTest(name = "\"{0}\" should appear {2} time(s) in {1}")
@@ -86,10 +85,10 @@ class KqlLogMessageContractTest {
         final int actualCount = countOccurrences(source, fragment);
 
         assertThat(actualCount)
-            .as("Log message fragment \"%s\" expected %d time(s) in %s but found %d — "
-                + "be careful changing this log message it may affect KQL alert queries",
-                fragment, expectedCount, className, actualCount)
-            .isEqualTo(expectedCount);
+                .as("Log message fragment \"%s\" expected %d time(s) in %s but found %d — "
+                                + "be careful changing this log message it may affect KQL alert queries",
+                        fragment, expectedCount, className, actualCount)
+                .isEqualTo(expectedCount);
     }
 
     /**
@@ -110,22 +109,22 @@ class KqlLogMessageContractTest {
 
         final String source = Files.readString(sourceFile);
         final Pattern failureCountStatement =
-            Pattern.compile("log\\.[a-z]+\\([^;]*failureCount:[^;]*\\);");
+                Pattern.compile("log\\.[a-z]+\\([^;]*failureCount:[^;]*\\);");
         final Matcher matcher = failureCountStatement.matcher(source);
 
         int statementsChecked = 0;
         while (matcher.find()) {
             final String statement = matcher.group();
             assertThat(statement)
-                .as("failureCount log statement must also log queueName, otherwise the inbound/outbound "
-                    + "failure-count alerts (which filter on the queue name) can never match:%n%s", statement)
-                .contains("queueName");
+                    .as("failureCount log statement must also log queueName, otherwise the inbound/outbound "
+                            + "failure-count alerts (which filter on the queue name) can never match:%n%s", statement)
+                    .contains("queueName");
             statementsChecked++;
         }
 
         assertThat(statementsChecked)
-            .as("expected to find failureCount log statements in ServiceBusProcessorService")
-            .isEqualTo(2);
+                .as("expected to find failureCount log statements in ServiceBusProcessorService")
+                .isEqualTo(2);
     }
 
     private Set<String> extractKqlFragments() throws IOException {
@@ -157,9 +156,9 @@ class KqlLogMessageContractTest {
     private Path findJavaFile(final String className) throws IOException {
         try (Stream<Path> files = Files.walk(Path.of("src/main/java"))) {
             return files
-                .filter(p -> p.getFileName().toString().equals(className + ".java"))
-                .findFirst()
-                .orElse(null);
+                    .filter(p -> p.getFileName().toString().equals(className + ".java"))
+                    .findFirst()
+                    .orElse(null);
         }
     }
 
