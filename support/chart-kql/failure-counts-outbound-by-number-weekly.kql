@@ -1,0 +1,20 @@
+ContainerLogV2
+| where PodName startswith "hearing-results-document-subscription"
+| where PodName !contains "dbsetup"
+| where ContainerName == "springboot-app"
+| where LogMessage contains "failureCount:"
+| where LogMessage contains "notifications.outbound"
+| extend LogJson = parse_json(LogMessage)
+| extend FailureCount = toint(extract(@'failureCount:(\d+)', 1, tostring(LogJson.message)))
+| where isnotnull(FailureCount)
+| summarize
+    ['01'] = countif(FailureCount == 1),
+    ['02'] = countif(FailureCount == 2),
+    ['03'] = countif(FailureCount == 3),
+    ['04'] = countif(FailureCount == 4),
+    ['05'] = countif(FailureCount == 5),
+    ['06'] = countif(FailureCount == 6),
+    ['10'] = countif(FailureCount == 10),
+    ['20'] = countif(FailureCount == 20)
+    by Week = startofweek(TimeGenerated)
+| order by Week asc
