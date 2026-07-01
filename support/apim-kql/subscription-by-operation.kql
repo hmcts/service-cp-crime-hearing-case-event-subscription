@@ -1,0 +1,7 @@
+// Which APIM subscription each HRDS operation is called with.
+// Shows whether e.g. getDocument comes in under a different key than other traffic.
+requests
+| where name contains "hrds"
+| extend SubName = tostring(customDimensions["Subscription Name"])
+| summarize Requests = count() by operation_Name, SubName
+| order by operation_Name asc, Requests desc

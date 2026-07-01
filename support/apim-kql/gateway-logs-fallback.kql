@@ -1,0 +1,19 @@
+// Fallback: APIM gateway logs (only if diagnostic logging is enabled).
+// If ApiManagementGatewayLogs is empty, the diagnostic setting is likely in legacy
+// "Azure diagnostics" mode, so the data lands in AzureDiagnostics instead.
+
+// Resource-specific mode:
+ApiManagementGatewayLogs
+| where TimeGenerated > ago(1h)
+| where Url contains "/hrds" or OperationName contains "hrds"
+| summarize Requests = count(), Throttled = countif(ResponseCode == 429)
+        by ApimSubscriptionId, ResponseCode
+| order by Requests desc
+
+// Legacy "Azure diagnostics" mode (subscription in apimSubscriptionId_s):
+// AzureDiagnostics
+// | where ResourceProvider == "MICROSOFT.APIMANAGEMENT"
+// | where url_s contains "/hrds"
+// | summarize Requests = count(), Throttled = countif(responseCode_d == 429)
+//         by apimSubscriptionId_s, tostring(responseCode_d)
+// | order by Requests desc

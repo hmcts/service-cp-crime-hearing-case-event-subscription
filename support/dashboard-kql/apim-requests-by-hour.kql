@@ -1,0 +1,17 @@
+// APIM HRDS requests by outcome, last 24h (one column per hour, stacked Success/Throttled/Error).
+// Same smoke detector as the by-day tile, at hourly resolution for the current picture.
+// Source: App Insights `requests`. In a workspace-scoped dashboard tile this table is `AppRequests`.
+requests
+| where timestamp > ago(1d)
+| where name contains "hrds"
+| extend Outcome = case(
+    resultCode == "429", "2 Throttled",
+    toint(resultCode) >= 400, "3 Error",     // 4xx (non-429) + 5xx
+    "1 Success")                             // 2xx/3xx
+// Numeric prefixes force series order so colours are stable: Success=blue, Throttled=orange, Error=teal.
+| make-series Requests = count() default=0
+    on timestamp
+    from ago(1d) to now()
+    step 1h
+    by Outcome
+| render columnchart kind=stacked

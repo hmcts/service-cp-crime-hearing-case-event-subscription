@@ -1,0 +1,11 @@
+// Distinct APIM subscriptions/products calling HRDS, with request counts and time span.
+// One row = all callers share a subscription (same key/rate limit).
+// Multiple rows = different subscriptions; Product indicates the rate-limit tier.
+requests
+| where name contains "hrds"
+| extend SubName = tostring(customDimensions["Subscription Name"]),
+         SubId   = tostring(customDimensions["Subscription Id"]),
+         Product = tostring(customDimensions["Product"])
+| summarize Requests = count(), FirstSeen = min(timestamp), LastSeen = max(timestamp)
+        by SubName, SubId, Product
+| order by Requests desc

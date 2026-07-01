@@ -1,0 +1,8 @@
+// Rate-limit throttling (HTTP 429) per APIM subscription/product for HRDS.
+requests
+| where name contains "hrds"
+| extend SubName = tostring(customDimensions["Subscription Name"]),
+         Product = tostring(customDimensions["Product"])
+| summarize Total = count(), Throttled = countif(resultCode == "429") by SubName, Product
+| extend ThrottlePct = round(100.0 * Throttled / Total, 1)
+| order by Throttled desc

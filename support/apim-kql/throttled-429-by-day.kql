@@ -1,0 +1,11 @@
+// Rate-limit throttling (HTTP 429) per day for the last 2 weeks, by APIM subscription/product.
+requests
+| where timestamp > ago(14d)
+| where name contains "hrds"
+| extend SubName = tostring(customDimensions["Subscription Name"]),
+         Product = tostring(customDimensions["Product"])
+| summarize Total = count(), Throttled = countif(resultCode == "429")
+        by Day = bin(timestamp, 1d), SubName, Product
+| extend ThrottlePct = round(100.0 * Throttled / Total, 1)
+| order by Day asc, Throttled desc
+| render columnchart kind=stacked   // uncomment for a chart of Throttled over time

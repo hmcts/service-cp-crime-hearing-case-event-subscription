@@ -1,0 +1,8 @@
+// Recent HRDS requests through APIM, with the APIM subscription and product used.
+requests
+| where name contains "hrds"
+| extend SubName = tostring(customDimensions["Subscription Name"]),
+         SubId   = tostring(customDimensions["Subscription Id"]),
+         Product = tostring(customDimensions["Product"])
+| project timestamp, operation_Name, url, resultCode, SubName, SubId, Product
+| order by timestamp desc

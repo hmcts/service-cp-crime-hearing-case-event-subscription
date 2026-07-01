@@ -8,6 +8,4 @@ ContainerLogV2
     on TimeGenerated
     from ago(14d) to now()
     step 1d
-| mv-expand TimeGenerated, ReceivedNotification
-| extend TimeGenerated = todatetime(TimeGenerated), ReceivedNotification = toint(ReceivedNotification)
-| render columnchart with (xcolumn=TimeGenerated, ycolumns=ReceivedNotification, title="Received Notifications per Day")
+| render columnchart

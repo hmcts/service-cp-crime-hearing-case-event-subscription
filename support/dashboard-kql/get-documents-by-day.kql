@@ -8,6 +8,4 @@ ContainerLogV2
     on TimeGenerated
     from ago(14d) to now()
     step 1d
-| mv-expand TimeGenerated, GetDocumentRequests
-| extend TimeGenerated = todatetime(TimeGenerated), GetDocumentRequests = toint(GetDocumentRequests)
-| render columnchart with (xcolumn=TimeGenerated, ycolumns=GetDocumentRequests, title="Get Document Requests per Day")
+| render columnchart
