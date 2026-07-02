@@ -34,5 +34,7 @@ class QueueSizeLoggerTest {
 
         verify(administrationClient).getQueueRuntimeProperties(NOTIFICATIONS_INBOUND_QUEUE);
         verify(administrationClient).getQueueRuntimeProperties(NOTIFICATIONS_OUTBOUND_QUEUE);
+        verify(inboundProps).getScheduledMessageCount();
+        verify(outboundProps).getScheduledMessageCount();
     }
 }
