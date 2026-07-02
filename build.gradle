@@ -84,10 +84,10 @@ dependencies {
 
   // Project specific
   implementation 'org.awaitility:awaitility:4.3.0'
-  implementation('com.azure:azure-messaging-servicebus:7.17.18')
+  implementation('com.azure:azure-messaging-servicebus:7.17.19')
   testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
   testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
   implementation 'com.azure:azure-identity:1.18.4'
-  implementation 'com.azure:azure-security-keyvault-secrets:4.11.0'
+  implementation 'com.azure:azure-security-keyvault-secrets:4.11.1'
 }
