@@ -25,9 +25,10 @@ public class QueueSizeLogger {
 
     private void logQueueSize(final String queueName) {
         final QueueRuntimeProperties props = administrationClient.getQueueRuntimeProperties(queueName);
-        log.info("queueSize queue:{} activeMessages:{} deadLetterMessages:{}",
+        log.info("queueSize queue:{} activeMessages:{} scheduledMessages:{} deadLetterMessages:{}",
             queueName,
             props.getActiveMessageCount(),
+            props.getScheduledMessageCount(),
             props.getDeadLetterMessageCount());
     }
 }
