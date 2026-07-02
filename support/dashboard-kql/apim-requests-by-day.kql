@@ -9,9 +9,7 @@ requests
     toint(resultCode) >= 400, "3 Error",     // 4xx (non-429) + 5xx
     "1 Success")                             // 2xx/3xx
 // Numeric prefixes force series order so colours are stable: Success=blue, Throttled=orange, Error=teal.
-| make-series Requests = count() default=0
-    on timestamp
-    from ago(14d) to now()
-    step 1d
-    by Outcome
+// summarize+bin returns flat rows; make-series arrays won't render as a stacked columnchart.
+// Time column aliased to TimeGenerated to match the dashboard tile template's xAxis.
+| summarize Requests = count() by TimeGenerated = bin(timestamp, 1d), Outcome
 | render columnchart kind=stacked
