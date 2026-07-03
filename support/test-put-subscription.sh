@@ -4,7 +4,6 @@
 # 1. GET the subscription to confirm it exists (expect 200).
 # 2. PUT with eventTypes set to "Not_Valid" — APIM correctly returns 400 Bad Request,
 #    but the prod WAF (amp.cjscp.org.uk) mangles this into a 404.
-#    This is the root cause of notifications ending up in the DLQ.
 #
 # Required env vars (do NOT commit real values):
 #   PREPROD_CLIENT_ID, PREPROD_CLIENT_SECRET, PREPROD_DATA_SCOPE
@@ -60,7 +59,7 @@ PUT_RESPONSE=$(curl --silent --location --request PUT \
     "callbackUrl": "https://prdamp01.ingress01.prd.lv.cjscp.org.uk/hrds/mock-callback"
   },
   "eventTypes": [
-    "Not_Valid"
+    "NEE_FootballBanning"
   ]
 }')
 
