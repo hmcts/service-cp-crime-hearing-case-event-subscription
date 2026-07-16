@@ -6,6 +6,9 @@ environment:
 spring:
   application:
     name: service-cp-crime-hearing-results-document-subscription
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jms.autoconfigure.JmsAutoConfiguration
   jpa:
     open-in-view: false
   datasource:
