@@ -49,10 +49,6 @@ queue-size:
   log:
     cron: ${QUEUE_SIZE_LOG_CRON:0 0 * * * *}
 
-cp:
-  audit:
-    enabled: ${AUDIT_ENABLED:false}
-
 subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
 
