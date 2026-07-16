@@ -28,6 +28,7 @@ import static uk.gov.hmcts.cp.filters.TracingFilter.CORRELATION_ID_KEY;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class SubscriptionController implements SubscriptionApi {
 
     private final SubscriptionService subscriptionService;
