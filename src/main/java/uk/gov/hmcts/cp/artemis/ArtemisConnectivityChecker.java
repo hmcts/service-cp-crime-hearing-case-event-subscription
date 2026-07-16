@@ -14,7 +14,7 @@ import java.util.List;
 public class ArtemisConnectivityChecker {
 
     private static final int PORT = 61616;
-    private static final String CONNECTION_TIMEOUT_PARAMS = "callTimeout=5000&connectionTtl=5000&initialConnectAttempts=1&reconnectAttempts=0";
+    private static final String CONNECTION_TIMEOUT_PARAMS = "call_timeout=5000&connection_ttl=5000&initial_connect_attempts=1&reconnect_attempts=0";
 
     @Value("${artemis.connectivity.hosts.primary}")
     private String primaryHost;
