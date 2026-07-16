@@ -48,6 +48,7 @@ import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIO
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class NotificationController implements InternalApi, NotificationApi {
 
     private final ServiceBusClientService clientService;
