@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.owasp.encoder.Encode;
 import uk.gov.hmcts.cp.hmac.services.EncodingService;
 import uk.gov.hmcts.cp.hmac.services.HmacSigningService;
+import uk.gov.hmcts.cp.audit.annotation.AuditExclude;
 import uk.gov.hmcts.cp.vault.SecretStoreServiceInterface;
 
 import java.security.InvalidKeyException;
@@ -27,6 +28,7 @@ import static uk.gov.hmcts.cp.subscription.model.EventNotificationPayloadWrapper
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@AuditExclude
 @ConditionalOnExpression(
     "'${environment.name}' == 'DEVELOPER' || '${environment.name}' == 'DEV' || '${environment.name}' == 'SIT'"
 )
