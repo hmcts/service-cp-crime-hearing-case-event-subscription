@@ -1,0 +1,48 @@
+package uk.gov.hmcts.cp.artemis;
+
+import jakarta.jms.Connection;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+@Slf4j
+public class ArtemisConnectivityChecker {
+
+    private static final int PORT = 61616;
+    private static final String CONNECTION_TIMEOUT_PARAMS = "callTimeout=5000&connectionTtl=5000&initialConnectAttempts=1&reconnectAttempts=0";
+
+    @Value("${artemis.connectivity.hosts.primary}")
+    private String primaryHost;
+
+    @Value("${artemis.connectivity.hosts.secondary}")
+    private String secondaryHost;
+
+    @Scheduled(cron = "0 0 * * * *")
+    public void checkConnectivity() {
+        boolean allOk = true;
+        for (final String host : List.of(primaryHost, secondaryHost)) {
+            allOk &= checkHost(host);
+        }
+        if (allOk) {
+            log.info("artemis connectivity check successful primaryHost:{} secondaryHost:{}", primaryHost, secondaryHost);
+        }
+    }
+
+    private boolean checkHost(final String host) {
+        final String url = "tcp://" + host + ":" + PORT + "?" + CONNECTION_TIMEOUT_PARAMS;
+        try (ActiveMQConnectionFactory factory = new ActiveMQConnectionFactory(url);
+             Connection connection = factory.createConnection("", "")) {
+            connection.start();
+            log.info("artemis connectivity check host:{} port:{} OK", host, PORT);
+            return true;
+        } catch (Exception e) {
+            log.error("artemis connectivity check host:{} port:{} FAILED ERROR:{}", host, PORT, e.getMessage());
+            return false;
+        }
+    }
+}

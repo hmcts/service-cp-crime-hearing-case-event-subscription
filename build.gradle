@@ -82,6 +82,9 @@ dependencies {
   implementation 'io.jsonwebtoken:jjwt:0.13.0'
 
 
+  // Artemis connectivity checker
+  implementation 'org.springframework.boot:spring-boot-starter-artemis'
+
   // Project specific
   implementation 'org.awaitility:awaitility:4.3.0'
   implementation('com.azure:azure-messaging-servicebus:7.17.19')
