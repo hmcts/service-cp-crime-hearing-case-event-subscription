@@ -7,7 +7,7 @@ plugins {
   id 'jacoco'
   id 'maven-publish'
   id 'com.github.ben-manes.versions' version '0.54.0'
-  id 'org.cyclonedx.bom' version '3.2.4'
+  id 'org.cyclonedx.bom' version '3.3.0'
   id 'com.gorylenko.gradle-git-properties' version '4.0.1'
   id 'com.avast.gradle.docker-compose' version '0.17.21'
 }
@@ -88,7 +88,7 @@ dependencies {
   // Project specific
   implementation 'org.awaitility:awaitility:4.3.0'
   implementation('com.azure:azure-messaging-servicebus:7.17.19')
-  testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.1'
+  testImplementation 'org.wiremock.integrations:wiremock-spring-boot:4.2.2'
   testImplementation 'org.wiremock:wiremock-standalone:3.13.2'
 
   implementation 'com.azure:azure-identity:1.18.4'
