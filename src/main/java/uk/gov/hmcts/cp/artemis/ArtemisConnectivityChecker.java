@@ -13,13 +13,13 @@ import java.util.List;
 @Slf4j
 public class ArtemisConnectivityChecker {
 
-    private static final int PORT = 61616;
+    private static final int PORT = 61_616;
     private static final String CONNECTION_TIMEOUT_PARAMS = "call_timeout=5000&connection_ttl=5000&initial_connect_attempts=1&reconnect_attempts=0";
 
-    @Value("${artemis.connectivity.hosts.primary}")
+    @Value("${artemis.host.primary}")
     private String primaryHost;
 
-    @Value("${artemis.connectivity.hosts.secondary}")
+    @Value("${artemis.host.secondary}")
     private String secondaryHost;
 
     @Scheduled(cron = "0 0 * * * *")
