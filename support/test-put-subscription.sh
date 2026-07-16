@@ -3,11 +3,12 @@
 #
 # 1. GET the subscription to confirm it exists (expect 200).
 # 2. PUT with eventTypes set to "Not_Valid" — APIM correctly returns 400 Bad Request,
-#    but the prod WAF (amp.cjscp.org.uk) mangles this into a 404.
+#    but the prod WAF mangles this into a 404.
 #
 # Required env vars (do NOT commit real values):
 #   PREPROD_CLIENT_ID, PREPROD_CLIENT_SECRET, PREPROD_DATA_SCOPE
 #   PREPROD_TENANT_ID, PREPROD_APIM_SUBSCRIPTION_KEY, PREPROD_SUBSCRIPTION_ID, PREPROD_APIM_BASE_URL
+#   PREPROD_CALLBACK_URL
 
 set -euo pipefail
 
@@ -17,6 +18,7 @@ set -euo pipefail
 : "${PREPROD_APIM_SUBSCRIPTION_KEY:?Set PREPROD_APIM_SUBSCRIPTION_KEY}"
 : "${PREPROD_TENANT_ID:?Set PREPROD_TENANT_ID}"
 : "${PREPROD_SUBSCRIPTION_ID:?Set PREPROD_SUBSCRIPTION_ID}"
+: "${PREPROD_CALLBACK_URL:?Set PREPROD_CALLBACK_URL}"
 
 : "${PREPROD_APIM_BASE_URL:?Set PREPROD_APIM_BASE_URL}"
 
@@ -54,14 +56,14 @@ PUT_RESPONSE=$(curl --silent --location --request PUT \
   --header "Ocp-Apim-Subscription-Key: ${PREPROD_APIM_SUBSCRIPTION_KEY}" \
   --header "Authorization: Bearer ${TOKEN}" \
   --header "Content-Type: application/json" \
-  --data '{
-  "notificationEndpoint": {
-    "callbackUrl": "https://prdamp01.ingress01.prd.lv.cjscp.org.uk/hrds/mock-callback"
+  --data "{
+  \"notificationEndpoint\": {
+    \"callbackUrl\": \"${PREPROD_CALLBACK_URL}\"
   },
-  "eventTypes": [
-    "NEE_FootballBanning"
+  \"eventTypes\": [
+    \"NEE_FootballBanning\"
   ]
-}')
+}")
 
 PUT_STATUS=$(echo "$PUT_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
 echo "PUT HTTP $PUT_STATUS"
