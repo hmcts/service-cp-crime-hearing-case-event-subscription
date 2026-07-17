@@ -75,3 +75,6 @@ management:
       base-path: /actuator
       exposure:
         include: health, info, prometheus
+  health:
+    jms:
+      enabled: false
