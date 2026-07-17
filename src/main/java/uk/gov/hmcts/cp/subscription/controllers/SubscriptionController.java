@@ -15,6 +15,7 @@ import uk.gov.hmcts.cp.openapi.model.ClientSubscriptionRequest;
 import uk.gov.hmcts.cp.openapi.model.EventTypeResponse;
 import uk.gov.hmcts.cp.openapi.model.HmacCredentials;
 import uk.gov.hmcts.cp.openapi.model.RotateSecretRequest;
+import uk.gov.hmcts.cp.audit.annotation.AuditDetail;
 import uk.gov.hmcts.cp.subscription.services.EventTypeService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionValidationService;
@@ -27,6 +28,7 @@ import static uk.gov.hmcts.cp.filters.TracingFilter.CORRELATION_ID_KEY;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 public class SubscriptionController implements SubscriptionApi {
 
     private final SubscriptionService subscriptionService;
@@ -34,6 +36,7 @@ public class SubscriptionController implements SubscriptionApi {
     private final SubscriptionValidationService subscriptionValidationService;
 
     @Override
+    @AuditDetail(eventName = "hrds.create-client-subscription", action = "Create")
     public ResponseEntity<ClientSubscription> createClientSubscription(
             final ClientSubscriptionRequest clientSubscriptionRequest,
             @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
@@ -47,6 +50,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @AuditDetail(eventName = "hrds.update-client-subscription", action = "Update", pathParams = {"clientSubscriptionId"})
     public ResponseEntity<ClientSubscription> updateClientSubscription(
             final UUID clientSubscriptionId,
             final ClientSubscriptionRequest clientSubscriptionRequest,
@@ -59,6 +63,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @AuditDetail(eventName = "hrds.get-client-subscription", pathParams = {"clientSubscriptionId"})
     public ResponseEntity<ClientSubscription> getClientSubscription(
             final UUID clientSubscriptionId,
             @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
@@ -70,6 +75,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @AuditDetail(eventName = "hrds.delete-client-subscription", action = "Delete", pathParams = {"clientSubscriptionId"})
     public ResponseEntity<Void> deleteClientSubscription(
             final UUID clientSubscriptionId,
             @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
@@ -81,6 +87,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @AuditDetail(eventName = "hrds.rotate-client-subscription-secret", action = "Update", pathParams = {"clientSubscriptionId"})
     public ResponseEntity<HmacCredentials> rotateClientSubscriptionSecret(
             final UUID clientSubscriptionId,
             final RotateSecretRequest rotateSecretRequest,
@@ -93,6 +100,7 @@ public class SubscriptionController implements SubscriptionApi {
     }
 
     @Override
+    @AuditDetail(eventName = "hrds.get-event-types")
     public ResponseEntity<EventTypeResponse> getEventTypes() {
         final EventTypeResponse eventTypes = eventTypeService.getAllEventTypes();
         return ResponseEntity.ok()

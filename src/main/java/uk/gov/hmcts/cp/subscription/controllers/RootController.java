@@ -4,11 +4,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import uk.gov.hmcts.cp.audit.annotation.AuditExclude;
 
 import static org.springframework.http.ResponseEntity.ok;
 
 @RestController
 @Slf4j
+@AuditExclude
 public class RootController {
 
     /**
