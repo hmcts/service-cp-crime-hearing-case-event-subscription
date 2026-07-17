@@ -53,6 +53,11 @@ queue-size:
   log:
     cron: ${QUEUE_SIZE_LOG_CRON:0 0 * * * *}
 
+artemis:
+  host:
+    primary: ${ARTEMIS_HOST_PRIMARY:localhost}
+    secondary: ${ARTEMIS_HOST_SECONDARY:localhost}
+
 cp:
   audit:
     enabled: ${AUDIT_ENABLED:false}

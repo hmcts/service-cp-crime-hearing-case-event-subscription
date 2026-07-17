@@ -42,18 +42,16 @@ class AuditFilterIntegrationTest extends IntegrationTestBase {
     @Test
     void calling_audit_detail_endpoint_without_correlation_id_should_return_403() throws Exception {
         final UUID subscriptionId = UUID.randomUUID();
-        final UUID documentId     = UUID.randomUUID();
 
-        mockMvc.perform(get("/client-subscriptions/{subId}/documents/{docId}", subscriptionId, documentId))
+        mockMvc.perform(get("/client-subscriptions/{subId}", subscriptionId))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void calling_audit_detail_endpoint_with_correlation_id_should_not_be_blocked_by_audit_filter() throws Exception {
         final UUID subscriptionId = UUID.randomUUID();
-        final UUID documentId     = UUID.randomUUID();
 
-        mockMvc.perform(get("/client-subscriptions/{subId}/documents/{docId}", subscriptionId, documentId)
+        mockMvc.perform(get("/client-subscriptions/{subId}", subscriptionId)
                         .header(CORRELATION_ID_KEY, UUID.randomUUID().toString()))
                 .andExpect(status().is(not(equalTo(403))));
     }
