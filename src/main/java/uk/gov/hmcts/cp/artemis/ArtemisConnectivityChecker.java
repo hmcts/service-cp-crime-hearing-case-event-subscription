@@ -14,7 +14,7 @@ import java.util.List;
 public class ArtemisConnectivityChecker {
 
     private static final int PORT = 61_616;
-    private static final String CONNECTION_TIMEOUT_PARAMS = "call_timeout=5000&connection_ttl=5000&initial_connect_attempts=1&reconnect_attempts=0";
+    private static final String CONNECTION_TIMEOUT_PARAMS = "sslEnabled=true&verifyHost=false&call_timeout=5000&connection_ttl=5000&initial_connect_attempts=1&reconnect_attempts=0";
 
     @Value("${artemis.host.primary}")
     private String primaryHost;
@@ -41,7 +41,7 @@ public class ArtemisConnectivityChecker {
             log.info("artemis connectivity check host:{} port:{} OK", host, PORT);
             return true;
         } catch (Exception e) {
-            log.error("artemis connectivity check host:{} port:{} FAILED ERROR:{}", host, PORT, e.getMessage());
+            log.error("artemis connectivity check host:{} port:{} FAILED", host, PORT, e);
             return false;
         }
     }
