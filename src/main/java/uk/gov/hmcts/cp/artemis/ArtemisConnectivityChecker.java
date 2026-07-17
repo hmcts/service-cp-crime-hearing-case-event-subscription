@@ -16,14 +16,17 @@ public class ArtemisConnectivityChecker {
     private static final int PORT = 61_616;
     private static final String CONNECTION_TIMEOUT_PARAMS = "sslEnabled=true&verifyHost=false&call_timeout=5000&connection_ttl=5000&initial_connect_attempts=1&reconnect_attempts=0";
 
-    @Value("${cp.audit.hosts}")
-    private List<String> hosts;
+    @Value("${cp.audit.hosts[0]}")
+    private String primaryHost;
+
+    @Value("${cp.audit.hosts[1]}")
+    private String secondaryHost;
 
     @Scheduled(cron = "0 0 * * * *")
     public void checkConnectivity() {
-        final boolean allOk = hosts.stream().allMatch(this::checkHost);
+        final boolean allOk = List.of(primaryHost, secondaryHost).stream().allMatch(this::checkHost);
         if (allOk) {
-            log.info("artemis connectivity check successful hosts:{}", hosts);
+            log.info("artemis connectivity check successful primaryHost:{} secondaryHost:{}", primaryHost, secondaryHost);
         }
     }
 
