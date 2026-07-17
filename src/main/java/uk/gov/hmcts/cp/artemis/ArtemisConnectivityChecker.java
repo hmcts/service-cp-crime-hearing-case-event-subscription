@@ -41,7 +41,7 @@ public class ArtemisConnectivityChecker {
             log.info("artemis connectivity check host:{} port:{} OK", host, PORT);
             return true;
         } catch (Exception e) {
-            log.error("artemis connectivity check host:{} port:{} FAILED ERROR:{}", host, PORT, e.getMessage());
+            log.error("artemis connectivity check host:{} port:{} FAILED", host, PORT, e);
             return false;
         }
     }
