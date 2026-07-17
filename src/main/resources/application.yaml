@@ -55,6 +55,9 @@ queue-size:
 cp:
   audit:
     enabled: ${AUDIT_ENABLED:false}
+    hosts:
+      - ${ARTEMIS_HOST_PRIMARY:localhost}
+      - ${ARTEMIS_HOST_SECONDARY:localhost}
 
 subscription:
   oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
