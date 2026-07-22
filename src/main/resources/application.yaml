@@ -56,6 +56,7 @@ queue-size:
 cp:
   audit:
     enabled: ${AUDIT_ENABLED:false}
+    block-on-failure: ${AUDIT_BLOCK_ON_FAILURE:false}
     hosts:
       - ${ARTEMIS_HOST_PRIMARY:localhost}
       - ${ARTEMIS_HOST_SECONDARY:localhost}

@@ -23,6 +23,7 @@ import uk.gov.hmcts.cp.openapi.api.NotificationApi;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
+import uk.gov.hmcts.cp.audit.annotation.AuditDetail;
 import uk.gov.hmcts.cp.audit.annotation.AuditExclude;
 import uk.gov.hmcts.cp.subscription.config.AppProperties;
 import uk.gov.hmcts.cp.subscription.config.EnvironmentName;
@@ -115,7 +116,7 @@ public class NotificationController implements InternalApi, NotificationApi {
     }
 
     @Override
-    @AuditExclude
+    @AuditDetail(eventName = "hrds.get-document", action = "Update", pathParams = {"clientSubscriptionId", "documentId"})
     public ResponseEntity<Resource> getDocument(
             @NotNull @PathVariable("clientSubscriptionId") final UUID clientSubscriptionId,
             @NotNull @PathVariable("documentId") final UUID documentId,
