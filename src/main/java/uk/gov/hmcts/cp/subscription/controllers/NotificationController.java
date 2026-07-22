@@ -116,7 +116,7 @@ public class NotificationController implements InternalApi, NotificationApi {
     }
 
     @Override
-    @AuditDetail
+    @AuditDetail(eventName = "hrds.get-document", action = "Update", pathParams = {"clientSubscriptionId", "documentId"})
     public ResponseEntity<Resource> getDocument(
             @NotNull @PathVariable("clientSubscriptionId") final UUID clientSubscriptionId,
             @NotNull @PathVariable("documentId") final UUID documentId,
