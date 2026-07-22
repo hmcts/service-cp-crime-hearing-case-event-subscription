@@ -8,8 +8,7 @@ apiTest/.gradle/
 !gradle/wrapper/gradle-wrapper.properties
 *.class
 bin/main/application.yaml
-.claude/CLAUDE.md
-.claude/worktrees
+.claude/
 
 ### STS ###
 .apt_generated
