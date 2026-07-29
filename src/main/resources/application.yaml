@@ -25,7 +25,7 @@ spring:
 
 material-client:
   url: ${MATERIAL_CLIENT_URL:http://localhost:8081}
-  cjscppuid: ${CJSCPPUID:00000000-0000-0000-0000-000000000000}
+  cjscppuid: ${CJSCPPUID:96ce0992-d7dd-4237-8109-aa8ce8a43746}
 
 service-bus:
   # Emulator vs Azure is detected automatically from the connection string (https = Azure, sb:// = emulator)

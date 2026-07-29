@@ -2,13 +2,16 @@ package uk.gov.hmcts.cp.subscription.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import uk.gov.hmcts.cp.audit.model.AuditMdcKeys;
 import uk.gov.hmcts.cp.filters.UUIDService;
+import uk.gov.hmcts.cp.subscription.config.MaterialClientProperties;
 import uk.gov.hmcts.cp.subscription.clients.MaterialClient;
 import uk.gov.hmcts.cp.subscription.clients.MaterialDocumentClient;
 import uk.gov.hmcts.cp.subscription.entities.DocumentMappingEntity;
@@ -34,6 +37,7 @@ public class DocumentService {
     private final MaterialClient materialClient;
     private final MaterialDocumentClient materialDocumentClient;
     private final UUIDService uuidService;
+    private final MaterialClientProperties materialClientProperties;
 
     @Transactional
     public UUID saveDocumentMapping(final UUID materialId, final String eventType) {
@@ -57,6 +61,8 @@ public class DocumentService {
         final DocumentMappingEntity documentMapping = documentMappingRepository.findByDocumentId(documentId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document not found: " + documentId));
         final UUID materialId = documentMapping.getMaterialId();
+        MDC.put(AuditMdcKeys.MATERIAL_ID, materialId.toString());
+        MDC.put(AuditMdcKeys.USER_ID, materialClientProperties.getCjscppuid());
         log.info("getDocumentContent documentId:{} resolved to materialId:{}", documentId, materialId);
         final MaterialMetadata metadata = materialClient.getMetadata(materialId);
         final String contentUrl = materialClient.getContentUrl(materialId);

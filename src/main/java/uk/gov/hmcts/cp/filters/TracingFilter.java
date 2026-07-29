@@ -40,7 +40,7 @@ public class TracingFilter extends OncePerRequestFilter {
                                     @Nonnull final FilterChain filterChain) throws ServletException, IOException {
         try {
             final String correlationId = getCorrelationId(request);
-            MDC.put(CORRELATION_ID_KEY, getCorrelationId(request));
+            MDC.put(CORRELATION_ID_KEY, correlationId);
             response.setHeader(CORRELATION_ID_KEY, correlationId);
             filterChain.doFilter(request, response);
         } finally {

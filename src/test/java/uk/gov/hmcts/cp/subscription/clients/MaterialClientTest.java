@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+import uk.gov.hmcts.cp.subscription.config.MaterialClientProperties;
 
 import java.util.UUID;
 
@@ -24,11 +25,16 @@ class MaterialClientTest {
     @Mock
     RestTemplate restTemplate;
 
+    @Mock
+    MaterialClientProperties properties;
+
     MaterialClient materialClient;
 
     @BeforeEach
     void setUp() {
-        materialClient = new MaterialClient(restTemplate, "http://material-service", "11111111-2222-3333-4444-666666666666");
+        when(properties.getBaseUrl()).thenReturn("http://material-service");
+        when(properties.getCjscppuid()).thenReturn("11111111-2222-3333-4444-666666666666");
+        materialClient = new MaterialClient(restTemplate, properties);
     }
 
     @Test

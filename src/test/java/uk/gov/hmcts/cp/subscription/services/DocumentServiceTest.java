@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.filters.UUIDService;
 import uk.gov.hmcts.cp.subscription.clients.MaterialClient;
 import uk.gov.hmcts.cp.subscription.clients.MaterialDocumentClient;
+import uk.gov.hmcts.cp.subscription.config.MaterialClientProperties;
 import uk.gov.hmcts.cp.subscription.entities.DocumentMappingEntity;
 import uk.gov.hmcts.cp.subscription.entities.EventTypeEntity;
 import uk.gov.hmcts.cp.subscription.mappers.DocumentMapper;
@@ -44,6 +45,8 @@ class DocumentServiceTest {
     DocumentMappingRepository documentMappingRepository;
     @Mock
     EventTypeRepository eventTypeRepository;
+    @Mock
+    MaterialClientProperties materialClientProperties;
     @Mock
     MaterialClient materialClient;
     @Mock

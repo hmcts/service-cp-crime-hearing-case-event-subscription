@@ -36,7 +36,7 @@ dependencies {
   implementation('io.swagger.core.v3:swagger-annotations:2.2.52')
 
   // Audit
-  implementation('uk.gov.hmcts.cp:cp-audit-springboot-annotations:0.0.6')
+  implementation('uk.gov.hmcts.cp:cp-audit-springboot-annotations:0.0.8')
 
 
   // Java core
