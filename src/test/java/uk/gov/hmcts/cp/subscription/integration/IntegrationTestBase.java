@@ -41,7 +41,8 @@ import java.util.UUID;
 @ContextConfiguration(initializers = PostgresInitialise.class)
 @TestPropertySource(properties = {
         "vault.enabled=false",
-        "service-bus.auto-start-processors=false"
+        "service-bus.auto-start-processors=false",
+        "cp.audit.enabled=false"
 })
 public abstract class IntegrationTestBase {
 
