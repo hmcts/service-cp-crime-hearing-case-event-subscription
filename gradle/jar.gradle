@@ -25,6 +25,10 @@ bootJar {
 }
 
 tasks.withType(AbstractArchiveTask).configureEach {
-  preserveFileTimestamps = false
+  // bootJar must keep timestamps so build-info.properties version changes
+  // produce a different JAR hash and are not silently skipped by Docker layer cache
+  if (it.name != 'bootJar') {
+    preserveFileTimestamps = false
+  }
   reproducibleFileOrder = true
 }
