@@ -22,6 +22,8 @@ bootJar {
   manifest {
     attributes('Implementation-Version': project.version.toString())
   }
+
+  outputs.cacheIf { false }
 }
 
 tasks.withType(AbstractArchiveTask).configureEach {
