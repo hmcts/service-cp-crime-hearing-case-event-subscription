@@ -1,3 +1,7 @@
 springBoot {
-    buildInfo()
+    buildInfo {
+        properties {
+            version = System.getProperty('ARTEFACT_VERSION') ?: project.version
+        }
+    }
 }
