@@ -8,4 +8,5 @@ springBoot {
 
 tasks.named('bootBuildInfo') {
     outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
 }
