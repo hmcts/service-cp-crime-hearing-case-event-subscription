@@ -179,6 +179,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v6.2.0
         with:
           gradle-version: current
+          cache-disabled: true
 
       - name: Gradle Publish
         if: ${{ inputs.is_publish }}
