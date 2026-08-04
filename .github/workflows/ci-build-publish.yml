@@ -101,7 +101,7 @@ jobs:
         run: |
           echo "Building with ARTEFACT_VERSION=$ARTEFACT_VERSION"
           ./gradlew composeUp
-          ./gradlew build -DARTEFACT_VERSION=$ARTEFACT_VERSION
+          ./gradlew build -DARTEFACT_VERSION=$ARTEFACT_VERSION --no-build-cache
           ./gradlew composeDown
 
       - name: Extract repo name
