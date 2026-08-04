@@ -201,6 +201,7 @@ jobs:
           set +e
           output=$(./gradlew publish \
             -DARTEFACT_VERSION=$ARTEFACT_VERSION \
+            --no-build-cache \
             -DGITHUB_REPOSITORY=${{ github.repository }} \
             -DGITHUB_ACTOR=${{ github.actor }} \
             -DGITHUB_TOKEN=$GITHUB_TOKEN \
