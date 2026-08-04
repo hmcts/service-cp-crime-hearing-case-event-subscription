@@ -5,3 +5,7 @@ springBoot {
         }
     }
 }
+
+tasks.named('bootBuildInfo') {
+    outputs.upToDateWhen { false }
+}
