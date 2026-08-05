@@ -449,6 +449,6 @@ jobs:
               "env": "sit",
               "cpbackendenv": "sitccm01",
               "stack": "sitamp01",
-              "cluster": "K8-SIT-CS01-CL02"
+              "cluster": "K8-SIT-CS01-CL01"
             }
 
