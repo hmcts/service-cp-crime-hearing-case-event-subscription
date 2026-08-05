@@ -181,6 +181,12 @@ jobs:
           gradle-version: current
           cache-disabled: true
 
+      - name: Download pre-built JAR
+        uses: actions/download-artifact@v8
+        with:
+          name: app-jar
+          path: build/libs
+
       - name: Gradle Publish
         if: ${{ inputs.is_publish }}
         env:
@@ -189,18 +195,17 @@ jobs:
           AZURE_DEVOPS_ARTIFACT_USERNAME: ${{ secrets.AZURE_DEVOPS_ARTIFACT_USERNAME }}
           AZURE_DEVOPS_ARTIFACT_TOKEN: ${{ secrets.AZURE_DEVOPS_ARTIFACT_TOKEN }}
         run: |
-          if [ -z "AZURE_DEVOPS_ARTIFACT_USERNAME" ]; then
-            echo "::warning::AZURE_DEVOPS_ARTIFACT_USERNAME is null or not set"
-          fi
-
           if [ -z "$AZURE_DEVOPS_ARTIFACT_TOKEN" ]; then
             echo "::warning::AZURE_DEVOPS_ARTIFACT_TOKEN is null or not set"
           fi
 
           echo "Publishing artefact for version: $ARTEFACT_VERSION"
+          ls -la build/libs/
 
           set +e
-          output=$(./gradlew publish \
+          output=$(./gradlew generatePomFileForMavenJavaPublication \
+            publishMavenJavaPublicationToAzureArtifactsRepository \
+            publishMavenJavaPublicationToGitHubPackagesRepository \
             -DARTEFACT_VERSION=$ARTEFACT_VERSION \
             --no-build-cache \
             -DGITHUB_REPOSITORY=${{ github.repository }} \

@@ -17,8 +17,9 @@ repositories {
 publishing {
   publications {
     mavenJava(MavenPublication) {
-      artifact(tasks.named('bootJar'))
-      artifact(tasks.named('jar'))
+      // Use a direct file reference so publish-artefact can use the pre-built JAR
+      // from the build job without triggering bootJar/bootBuildInfo to re-run.
+      artifact(file("${buildDir}/libs/${rootProject.name}-${version}.jar"))
       pom {
         name = project.name
         url = "https://github.com/${githubRepo ?: 'org/repo'}"
