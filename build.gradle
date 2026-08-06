@@ -6,7 +6,7 @@ plugins {
   id 'org.openapi.generator' version '7.24.0'
   id 'jacoco'
   id 'maven-publish'
-  id 'com.github.ben-manes.versions' version '0.58.0'
+  id 'com.github.ben-manes.versions' version '0.59.0'
   id 'org.cyclonedx.bom' version '3.3.0'
   id 'com.gorylenko.gradle-git-properties' version '4.0.1'
   id 'com.avast.gradle.docker-compose' version '0.17.21'
@@ -33,7 +33,7 @@ apply {
 dependencies {
   // Api spec
   implementation('uk.gov.hmcts.cp:api-cp-crime-hearing-results-document-subscription:2.0.14')
-  implementation('io.swagger.core.v3:swagger-annotations:2.2.52')
+  implementation('io.swagger.core.v3:swagger-annotations:2.2.53')
 
   // Audit
   implementation('uk.gov.hmcts.cp:cp-audit-springboot-annotations:0.0.8')
