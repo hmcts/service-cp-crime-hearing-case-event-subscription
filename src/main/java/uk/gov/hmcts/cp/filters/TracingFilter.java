@@ -50,7 +50,7 @@ public class TracingFilter extends OncePerRequestFilter {
 
     private String getCorrelationId(final HttpServletRequest request) {
         if (request.getHeader(CORRELATION_ID_KEY) == null) {
-            String generated = uuidService.randomString();
+            final String generated = uuidService.randomString();
             log.info("No 'X-Correlation-Id' header found. Generated correlationId:{}", generated);
             return generated;
         }
