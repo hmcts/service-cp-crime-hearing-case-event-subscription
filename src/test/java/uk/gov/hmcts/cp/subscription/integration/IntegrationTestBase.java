@@ -2,6 +2,7 @@ package uk.gov.hmcts.cp.subscription.integration;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -87,6 +88,11 @@ public abstract class IntegrationTestBase {
             .notificationEndpoint(notificationEndpoint)
             .eventTypes(List.of("PRISON_COURT_REGISTER_GENERATED"))
             .build();
+
+    @AfterEach
+    protected void tearDown() {
+        clearAllTables();
+    }
 
     protected void clearAllTables() {
         log.info("Clearing all tables");
