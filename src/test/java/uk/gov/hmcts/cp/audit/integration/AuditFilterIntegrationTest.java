@@ -1,8 +1,6 @@
 package uk.gov.hmcts.cp.audit.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -11,6 +9,7 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.cp.audit.config.ArtemisAuditAutoConfiguration;
 import uk.gov.hmcts.cp.audit.model.AuditMessage;
 import uk.gov.hmcts.cp.audit.service.AuditClockService;
 import uk.gov.hmcts.cp.audit.service.AuditSenderService;
@@ -35,9 +34,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuditFilterIntegrationTest extends IntegrationTestBase {
 
     private static final Instant FIXED_TIME = Instant.parse("2026-01-01T10:00:00Z");
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    /**
+     * The production mapper, not a locally-configured one — a local mapper with
+     * WRITE_DATES_AS_TIMESTAMPS disabled is what previously hid the numeric-timestamp bug that
+     * audit2dls rejected.
+     */
+    private static final ObjectMapper MAPPER = new ArtemisAuditAutoConfiguration().auditObjectMapper();
 
     @MockitoBean
     AuditSenderService auditSenderService;
@@ -80,7 +82,7 @@ class AuditFilterIntegrationTest extends IntegrationTestBase {
         verify(auditSenderService, times(2)).send(payloadCaptor.capture());
         final List<AuditMessage> payloads = payloadCaptor.getAllValues();
         final UUID correlationId = payloads.get(0).getContent().getCorrelationId();
-        final UUID metadataId = payloads.get(0).getContent().getMetadata().getId();
+        final UUID metadataId = payloads.get(0).getMetadata().getId();
 
         JSONAssert.assertEquals(
                 expectedRequest(correlationId, subscriptionId, metadataId),
@@ -123,52 +125,58 @@ class AuditFilterIntegrationTest extends IntegrationTestBase {
     private String expectedRequest(final UUID correlationId, final UUID subscriptionId, final UUID metadataId) {
         return """
                 {
+                  "_metadata": {
+                    "id":        "%s",
+                    "name":      "audit.events.audit-recorded",
+                    "createdAt": "2026-01-01T10:00:00Z",
+                    "context":   { "user": null }
+                  },
                   "origin":    "hearing-results-document",
                   "component": "QUERY_API",
                   "timestamp": "2026-01-01T10:00:00Z",
                   "content": {
+                    "eventName":       "hrds.get-client-subscription",
                     "eventType":       "REQUEST",
                     "action":          "View",
+                    "clientId":        "11111111-2222-3333-4444-555555555555",
                     "correlationId":   "%s",
                     "responseStatus":  null,
                     "materialId":      null,
                     "caseId":          null,
                     "hearingId":       null,
                     "courtDocumentId": null,
-                    "pathParams": { "clientSubscriptionId": "%s" },
-                    "_metadata": {
-                      "id":   "%s",
-                      "name": "hrds.get-client-subscription",
-                      "context": { "user": null }
-                    }
+                    "pathParams": { "clientSubscriptionId": "%s" }
                   }
                 }
-                """.formatted(correlationId, subscriptionId, metadataId);
+                """.formatted(metadataId, correlationId, subscriptionId);
     }
 
     private String expectedResponse(final UUID correlationId, final UUID subscriptionId, final UUID metadataId) {
         return """
                 {
+                  "_metadata": {
+                    "id":        "%s",
+                    "name":      "audit.events.audit-recorded",
+                    "createdAt": "2026-01-01T10:00:00Z",
+                    "context":   { "user": null }
+                  },
                   "origin":    "hearing-results-document",
                   "component": "QUERY_API",
                   "timestamp": "2026-01-01T10:00:00Z",
                   "content": {
+                    "eventName":       "hrds.get-client-subscription",
                     "eventType":       "RESPONSE",
                     "action":          "View",
+                    "clientId":        "11111111-2222-3333-4444-555555555555",
                     "correlationId":   "%s",
                     "responseStatus":  200,
                     "materialId":      null,
                     "caseId":          null,
                     "hearingId":       null,
                     "courtDocumentId": null,
-                    "pathParams": { "clientSubscriptionId": "%s" },
-                    "_metadata": {
-                      "id":   "%s",
-                      "name": "hrds.get-client-subscription",
-                      "context": { "user": null }
-                    }
+                    "pathParams": { "clientSubscriptionId": "%s" }
                   }
                 }
-                """.formatted(correlationId, subscriptionId, metadataId);
+                """.formatted(metadataId, correlationId, subscriptionId);
     }
 }
