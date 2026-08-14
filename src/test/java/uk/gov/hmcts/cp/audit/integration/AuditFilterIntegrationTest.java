@@ -1,8 +1,6 @@
 package uk.gov.hmcts.cp.audit.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -11,6 +9,7 @@ import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import uk.gov.hmcts.cp.audit.config.ArtemisAuditAutoConfiguration;
 import uk.gov.hmcts.cp.audit.model.AuditMessage;
 import uk.gov.hmcts.cp.audit.service.AuditClockService;
 import uk.gov.hmcts.cp.audit.service.AuditSenderService;
@@ -20,6 +19,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -35,9 +35,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuditFilterIntegrationTest extends IntegrationTestBase {
 
     private static final Instant FIXED_TIME = Instant.parse("2026-01-01T10:00:00Z");
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    /** Sent as the CJSCPPUID request header — the source the audit library reads the user from. */
+    private static final String CJSCPPUID_HEADER = "CJSCPPUID";
+    private static final String TEST_USER_ID = "99999999-8888-7777-6666-555555555555";
+    /**
+     * The production mapper, not a locally-configured one — a local mapper with
+     * WRITE_DATES_AS_TIMESTAMPS disabled is what previously hid the numeric-timestamp bug that
+     * audit2dls rejected.
+     */
+    private static final ObjectMapper MAPPER = new ArtemisAuditAutoConfiguration().auditObjectMapper();
 
     @MockitoBean
     AuditSenderService auditSenderService;
@@ -74,13 +80,14 @@ class AuditFilterIntegrationTest extends IntegrationTestBase {
         final UUID subscriptionId = insertSubscription("https://callback", List.of("PRISON_COURT_REGISTER_GENERATED"));
 
         mockMvc.perform(get("/client-subscriptions/{subscriptionId}", subscriptionId)
-                        .header(AUTHORIZATION, AUTHORIZATION_HEADER_VALUE))
+                        .header(AUTHORIZATION, AUTHORIZATION_HEADER_VALUE)
+                        .header(CJSCPPUID_HEADER, TEST_USER_ID))
                 .andExpect(status().isOk());
 
         verify(auditSenderService, times(2)).send(payloadCaptor.capture());
         final List<AuditMessage> payloads = payloadCaptor.getAllValues();
         final UUID correlationId = payloads.get(0).getContent().getCorrelationId();
-        final UUID metadataId = payloads.get(0).getContent().getMetadata().getId();
+        final UUID metadataId = payloads.get(0).getMetadata().getId();
 
         JSONAssert.assertEquals(
                 expectedRequest(correlationId, subscriptionId, metadataId),
@@ -91,6 +98,19 @@ class AuditFilterIntegrationTest extends IntegrationTestBase {
                 expectedResponse(correlationId, subscriptionId, metadataId),
                 MAPPER.writeValueAsString(payloads.get(1)),
                 JSONCompareMode.STRICT);
+    }
+
+    @Test
+    void audit_event_should_carry_no_user_when_the_cjscppuid_header_is_absent() throws Exception {
+        final UUID subscriptionId = insertSubscription("https://callback", List.of("PRISON_COURT_REGISTER_GENERATED"));
+
+        mockMvc.perform(get("/client-subscriptions/{subscriptionId}", subscriptionId)
+                        .header(AUTHORIZATION, AUTHORIZATION_HEADER_VALUE))
+                .andExpect(status().isOk());
+
+        verify(auditSenderService, times(2)).send(payloadCaptor.capture());
+        assertThat(payloadCaptor.getAllValues())
+                .allSatisfy(message -> assertThat(message.getMetadata().getContext().user()).isNull());
     }
 
     @Test
@@ -123,52 +143,58 @@ class AuditFilterIntegrationTest extends IntegrationTestBase {
     private String expectedRequest(final UUID correlationId, final UUID subscriptionId, final UUID metadataId) {
         return """
                 {
+                  "_metadata": {
+                    "id":        "%s",
+                    "name":      "audit.events.audit-recorded",
+                    "createdAt": "2026-01-01T10:00:00Z",
+                    "context":   { "user": "%s" }
+                  },
                   "origin":    "hearing-results-document",
                   "component": "QUERY_API",
                   "timestamp": "2026-01-01T10:00:00Z",
                   "content": {
+                    "eventName":       "hrds.get-client-subscription",
                     "eventType":       "REQUEST",
                     "action":          "View",
+                    "clientId":        "11111111-2222-3333-4444-555555555555",
                     "correlationId":   "%s",
                     "responseStatus":  null,
                     "materialId":      null,
                     "caseId":          null,
                     "hearingId":       null,
                     "courtDocumentId": null,
-                    "pathParams": { "clientSubscriptionId": "%s" },
-                    "_metadata": {
-                      "id":   "%s",
-                      "name": "hrds.get-client-subscription",
-                      "context": { "user": null }
-                    }
+                    "pathParams": { "clientSubscriptionId": "%s" }
                   }
                 }
-                """.formatted(correlationId, subscriptionId, metadataId);
+                """.formatted(metadataId, TEST_USER_ID, correlationId, subscriptionId);
     }
 
     private String expectedResponse(final UUID correlationId, final UUID subscriptionId, final UUID metadataId) {
         return """
                 {
+                  "_metadata": {
+                    "id":        "%s",
+                    "name":      "audit.events.audit-recorded",
+                    "createdAt": "2026-01-01T10:00:00Z",
+                    "context":   { "user": "%s" }
+                  },
                   "origin":    "hearing-results-document",
                   "component": "QUERY_API",
                   "timestamp": "2026-01-01T10:00:00Z",
                   "content": {
+                    "eventName":       "hrds.get-client-subscription",
                     "eventType":       "RESPONSE",
                     "action":          "View",
+                    "clientId":        "11111111-2222-3333-4444-555555555555",
                     "correlationId":   "%s",
                     "responseStatus":  200,
                     "materialId":      null,
                     "caseId":          null,
                     "hearingId":       null,
                     "courtDocumentId": null,
-                    "pathParams": { "clientSubscriptionId": "%s" },
-                    "_metadata": {
-                      "id":   "%s",
-                      "name": "hrds.get-client-subscription",
-                      "context": { "user": null }
-                    }
+                    "pathParams": { "clientSubscriptionId": "%s" }
                   }
                 }
-                """.formatted(correlationId, subscriptionId, metadataId);
+                """.formatted(metadataId, TEST_USER_ID, correlationId, subscriptionId);
     }
 }

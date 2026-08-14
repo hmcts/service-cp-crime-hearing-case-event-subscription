@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import uk.gov.hmcts.cp.subscription.config.SubscriptionClientConfig;
@@ -15,7 +17,17 @@ import uk.gov.hmcts.cp.subscription.util.JwtTokenParser;
 import java.io.IOException;
 import java.util.UUID;
 
+/**
+ * Ordered between {@link TracingFilter} (HIGHEST_PRECEDENCE) and the audit library's
+ * {@code AuditFilter} (HIGHEST_PRECEDENCE + 10) so that {@link #MDC_CLIENT_ID} is populated before
+ * the request audit event is built and is still populated when the response event is built — the
+ * MDC entry is cleared on the way out, which happens after the audit filter regains control.
+ *
+ * <p>Trade-off: auth now runs before auditing, so requests rejected with 401 here produce no audit
+ * event. They are still logged below.
+ */
 @Component
+@Order(Ordered.HIGHEST_PRECEDENCE + 5)
 @Slf4j
 public class ClientIdResolutionFilter extends OncePerRequestFilter {
 
