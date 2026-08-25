@@ -8,7 +8,6 @@ import uk.gov.hmcts.cp.hmac.managers.HmacManager;
 import uk.gov.hmcts.cp.openapi.model.EventNotificationPayload;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
-import uk.gov.hmcts.cp.subscription.config.AppProperties;
 import uk.gov.hmcts.cp.subscription.entities.ClientEntity;
 import uk.gov.hmcts.cp.subscription.entities.ClientHmacEntity;
 import uk.gov.hmcts.cp.subscription.mappers.NotificationMapper;
@@ -20,9 +19,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static uk.gov.hmcts.cp.servicebus.config.ServiceBusProperties.NOTIFICATIONS_OUTBOUND_QUEUE;
-import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.DEV;
-import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.DEVELOPER;
-import static uk.gov.hmcts.cp.subscription.config.EnvironmentName.STE;
 
 @Service
 @Slf4j
@@ -38,25 +34,15 @@ public class CallbackDeliveryService {
     private final JsonMapper jsonMapper;
     private final ServiceBusClientService clientService;
     private final HmacManager hmacManager;
-    private final HearingEventService hearingEventPayloadService;
-    private final AppProperties appProperties;
 
     public void submitOutboundEvents(final EventPayload eventPayload, final UUID documentId) {
         final String eventType = eventPayload.getEventType();
         final List<ClientEntity> clients = clientEventRepository.findClientsByEventType(eventType);
 
-        final UUID hearingEventId = isHearingEventJsonEnabled()
-                ? hearingEventPayloadService.saveIfAbsent(eventPayload)
-                : null;
-
-        final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload, hearingEventId);
+        final EventNotificationPayload eventNotificationPayload = notificationMapper.mapToPayload(documentId, eventPayload);
         log.info("sending {} outbound notifications", clients.size());
 
         for (final ClientEntity client : clients) {
-            if (isHearingEventJsonEnabled()) {
-                hearingEventPayloadService.saveSubscriptionIfAbsent(client.getSubscriptionId(), hearingEventId);
-            }
-
             final ClientHmacEntity clientHmac = clientHmacRepository.findBySubscriptionId(client.getSubscriptionId())
                     .orElseThrow(() -> HMAC_NOT_FOUND);
             final String signature = hmacManager.calculateSignature(clientHmac.getKeyId(), jsonMapper.toJson(eventNotificationPayload));
@@ -68,10 +54,5 @@ public class CallbackDeliveryService {
                 clientService.queueMessage(NOTIFICATIONS_OUTBOUND_QUEUE, client.getCallbackUrl(), payload, 0);
             }
         }
-    }
-
-    private boolean isHearingEventJsonEnabled() {
-        return appProperties.isHearingEventJsonEnabled() &&
-                (appProperties.getEnvironmentName() == DEVELOPER || appProperties.getEnvironmentName() == STE || appProperties.getEnvironmentName() == DEV);
     }
 }

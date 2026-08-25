@@ -102,21 +102,17 @@ uk.gov.hmcts.cp/
     entities/ (JPA, UUID PKs)
       ClientEntity / ClientEventEntity / ClientHmacEntity
       DocumentMappingEntity / EventTypeEntity
-      HearingEventPayloadEntity                 Stores raw inbound event payloads
-      HearingEventSubscriptionEntity            Links hearing events to subscriber subscriptions
     mappers/ (MapStruct)
       ClientEntityMapper / ClientEventEntityMapper / ClientHmacMapper
       ClientSubscriptionMapper / DocumentMapper / EventTypeMapper
-      HearingEventMapper / NotificationMapper
+      NotificationMapper
     repositories/
       ClientRepository / ClientEventRepository / ClientHmacRepository
       DocumentMappingRepository / EventTypeRepository
-      HearingEventPayloadRepository / HearingEventSubscriptionRepository
     services/
       SubscriptionService                       Client registration and management
       NotificationService                       Inbound event processing
       CallbackDeliveryService                   Outbound callback dispatch
-      HearingEventService                       Query hearing events by subscription
       EventTypeService / DocumentService / MaterialService / SubscriptionValidationService
       EventPayloadValidator                     Validates inbound event payload structure
       JsonMapper                                ObjectMapper wrapper for payload serialisation

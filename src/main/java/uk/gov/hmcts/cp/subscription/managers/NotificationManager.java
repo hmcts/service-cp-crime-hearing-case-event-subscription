@@ -6,11 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
-import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.subscription.model.DocumentContent;
 import uk.gov.hmcts.cp.subscription.services.CallbackDeliveryService;
 import uk.gov.hmcts.cp.subscription.services.DocumentService;
-import uk.gov.hmcts.cp.subscription.services.HearingEventService;
 import uk.gov.hmcts.cp.subscription.services.NotificationService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionService;
 
@@ -29,7 +27,6 @@ public class NotificationManager {
     private final DocumentService documentService;
     private final SubscriptionService subscriptionService;
     private final CallbackDeliveryService callbackDeliveryService;
-    private final HearingEventService hearingEventService;
 
     public void validateClientOwnsSubscription(final UUID clientId, final UUID subscriptionId) {
         subscriptionService.assertClientOwnsSubscription(clientId, subscriptionId);
@@ -40,11 +37,6 @@ public class NotificationManager {
         final UUID documentId = notificationService.processInboundEvent(eventPayload);
         callbackDeliveryService.submitOutboundEvents(eventPayload, documentId);
         log.info("processNotification complete eventId:{} documentId:{}", eventPayload.getEventId(), documentId);
-    }
-
-    public HearingEventResponse getHearingEvent(final UUID subscriptionId, final UUID hearingEventId) {
-        log.info("getHearingEvent subscriptionId={} hearingEventId={}", subscriptionId, hearingEventId);
-        return hearingEventService.getHearingEvent(subscriptionId, hearingEventId);
     }
 
     public DocumentContent getDocumentContent(final UUID clientSubscriptionId, final UUID documentId) {

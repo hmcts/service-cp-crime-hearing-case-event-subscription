@@ -24,8 +24,6 @@ import uk.gov.hmcts.cp.subscription.repositories.ClientHmacRepository;
 import uk.gov.hmcts.cp.subscription.repositories.ClientRepository;
 import uk.gov.hmcts.cp.subscription.repositories.DocumentMappingRepository;
 import uk.gov.hmcts.cp.subscription.repositories.EventTypeRepository;
-import uk.gov.hmcts.cp.subscription.repositories.HearingEventPayloadRepository;
-import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 import uk.gov.hmcts.cp.subscription.services.ClockService;
 
 import java.io.IOException;
@@ -75,12 +73,6 @@ public abstract class IntegrationTestBase {
     @Autowired
     protected ClockService clockService;
 
-    @Autowired
-    protected HearingEventSubscriptionRepository hearingEventSubscriptionRepository;
-
-    @Autowired
-    protected HearingEventPayloadRepository hearingEventPayloadRepository;
-
     protected NotificationEndpoint notificationEndpoint = NotificationEndpoint.builder()
             .callbackUrl("https://my-callback-url")
             .build();
@@ -98,10 +90,8 @@ public abstract class IntegrationTestBase {
         log.info("Clearing all tables");
         clientHmacRepository.deleteAll();
         clientEventRepository.deleteAll();
-        hearingEventSubscriptionRepository.deleteAll();
         clientRepository.deleteAll();
         documentMappingRepository.deleteAll();
-        hearingEventPayloadRepository.deleteAll();
     }
 
     protected UUID insertSubscription(String notificationUri, List<String> entityEventTypes) {
