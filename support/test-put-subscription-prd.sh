@@ -65,3 +65,12 @@ PUT_RESPONSE=$(curl --silent --location --request PUT \
 
 PUT_STATUS=$(echo "$PUT_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
 echo "PUT HTTP $PUT_STATUS"
+
+DELETE_RESPONSE=$(curl --silent --location --request DELETE \
+  --write-out "\nHTTP_STATUS:%{http_code}" \
+  "${PROD_APIM_BASE_URL}/hrds/client-subscriptions/${PROD_SUBSCRIPTION_ID}" \
+  --header "Ocp-Apim-Subscription-Key: ${PROD_APIM_SUBSCRIPTION_KEY}" \
+  --header "Authorization: Bearer ${TOKEN}" )
+
+DELETE_STATUS=$(echo "$DELETE_RESPONSE" | grep "HTTP_STATUS:" | cut -d: -f2)
+echo "DELETE HTTP $DELETE_STATUS"
