@@ -12,7 +12,6 @@ import org.slf4j.MDC;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import uk.gov.hmcts.cp.filters.ClientIdResolutionFilter;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
@@ -114,22 +113,7 @@ class NotificationControllerTest {
     }
 
     @Test
-    void jsonnode_introspection_payload_is_accepted_when_toggle_disabled() {
-        EventPayload introspectionPayload = EventPayload.builder()
-                .payload(Map.of("nodeType", "OBJECT", "containerNode", true, "object", true))
-                .build();
-        when(jsonMapper.toJson(introspectionPayload)).thenReturn("payload-json");
-        when(eventTypeService.eventExists(introspectionPayload.getEventType())).thenReturn(true);
-
-        ResponseEntity<Void> response = notificationController.createNotification(introspectionPayload, null);
-
-        verify(clientService).queueMessage(NOTIFICATIONS_INBOUND_QUEUE, null, "payload-json", 0);
-        assertThat(response.getStatusCode()).isEqualTo(ACCEPTED);
-    }
-
-    @Test
-    void jsonnode_introspection_payload_is_rejected_when_toggle_enabled() {
-        ReflectionTestUtils.setField(notificationController, "hearingEventJsonEnabled", true);
+    void jsonnode_introspection_payload_is_rejected() {
         EventPayload introspectionPayload = EventPayload.builder()
                 .payload(Map.of("nodeType", "OBJECT", "containerNode", true, "object", true))
                 .build();

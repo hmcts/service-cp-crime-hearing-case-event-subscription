@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -22,7 +21,6 @@ import uk.gov.hmcts.cp.filters.ClientIdResolutionFilter;
 import uk.gov.hmcts.cp.openapi.api.InternalApi;
 import uk.gov.hmcts.cp.openapi.api.NotificationApi;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
-import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.servicebus.services.ServiceBusClientService;
 import uk.gov.hmcts.cp.subscription.config.AppProperties;
 import uk.gov.hmcts.cp.subscription.config.EnvironmentName;
@@ -55,9 +53,6 @@ public class NotificationController implements InternalApi, NotificationApi {
     private final JsonMapper jsonMapper;
     private final AppProperties appProperties;
 
-    @Value("${hearing-event.json.enabled:false}")
-    private boolean hearingEventJsonEnabled;
-
     @Override
     public Optional<NativeWebRequest> getRequest() {
         return Optional.empty();
@@ -80,7 +75,7 @@ public class NotificationController implements InternalApi, NotificationApi {
             return new ResponseEntity<>(HttpStatus.ACCEPTED);
         }
 
-        if (hearingEventJsonEnabled && EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
+        if (EventPayloadValidator.isJsonNodeIntrospection(eventPayload.getPayload())) {
             log.error("Rejecting notification: payload is Jackson JsonNode introspection metadata, not "
                             + "document content (producer serialisation regression). eventId: {}, eventType: {}",
                     eventPayload.getEventId(), eventPayload.getEventType());
@@ -95,23 +90,6 @@ public class NotificationController implements InternalApi, NotificationApi {
 
         log.warn("Received notification with unknown event type: {}", eventPayload.getEventType());
         return new ResponseEntity<>(HttpStatus.ACCEPTED);
-    }
-
-    @Override
-    @AuditExclude
-    public ResponseEntity<HearingEventResponse> getHearingEvent(
-            @NotNull @PathVariable("clientSubscriptionId") final UUID clientSubscriptionId,
-            @NotNull @PathVariable("hearingEventId") final UUID hearingEventId,
-            @RequestHeader(value = CORRELATION_ID_KEY, required = false) final UUID xCorrelationId) {
-        if (!hearingEventJsonEnabled) {
-            log.info("hearingEventJsonEnabled feature toggle is off, returning 501 clientSubscriptionId:{} hearingEventId:{}", clientSubscriptionId, hearingEventId);
-            return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
-        }
-        final UUID clientId = UUID.fromString(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID));
-        log.info("getHearingEvent request clientId:{} clientSubscriptionId:{} hearingEventId:{}", clientId, clientSubscriptionId, hearingEventId);
-        notificationManager.validateClientOwnsSubscription(clientId, clientSubscriptionId);
-        final HearingEventResponse response = notificationManager.getHearingEvent(clientSubscriptionId, hearingEventId);
-        return ResponseEntity.ok(response);
     }
 
     @Override

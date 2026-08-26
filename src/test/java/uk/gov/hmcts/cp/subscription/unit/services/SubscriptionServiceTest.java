@@ -23,7 +23,6 @@ import uk.gov.hmcts.cp.subscription.mappers.ClientSubscriptionMapper;
 import uk.gov.hmcts.cp.subscription.repositories.ClientEventRepository;
 import uk.gov.hmcts.cp.subscription.repositories.ClientHmacRepository;
 import uk.gov.hmcts.cp.subscription.repositories.ClientRepository;
-import uk.gov.hmcts.cp.subscription.repositories.HearingEventSubscriptionRepository;
 import uk.gov.hmcts.cp.subscription.services.ClockService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionValidationService;
@@ -57,8 +56,6 @@ class SubscriptionServiceTest {
     ClientHmacRepository clientHmacRepository;
     @Mock
     ClientEventRepository clientEventRepository;
-    @Mock
-    HearingEventSubscriptionRepository hearingEventSubscriptionRepository;
     @Mock
     ClientEntityMapper clientEntityMapper;
     @Mock
@@ -162,18 +159,7 @@ class SubscriptionServiceTest {
         subscriptionService.deleteClientSubscription(clientId, subscriptionId);
 
         verify(clientRepository).findByClientIdAndSubscriptionId(clientId, subscriptionId);
-        verify(hearingEventSubscriptionRepository).deleteAllBySubscriptionId(subscriptionId);
         verify(clientEventRepository).deleteBySubscriptionId(subscriptionId);
-        verify(clientRepository).delete(clientEntity);
-    }
-
-    @Test
-    void delete_subscrition_should_also_delete_hearing_event_subscriptions() {
-        when(clientRepository.findByClientIdAndSubscriptionId(clientId, subscriptionId)).thenReturn(Optional.of(clientEntity));
-
-        subscriptionService.deleteClientSubscription(clientId, subscriptionId);
-
-        verify(hearingEventSubscriptionRepository).deleteAllBySubscriptionId(subscriptionId);
         verify(clientRepository).delete(clientEntity);
     }
 

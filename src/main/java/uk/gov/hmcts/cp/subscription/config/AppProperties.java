@@ -12,18 +12,14 @@ public class AppProperties {
 
     private final EnvironmentName environmentName;
     private final boolean hearingEventDisabledInDev;
-    private final boolean hearingEventJsonEnabled;
 
     public AppProperties(
             @Value("${environment.name}") final EnvironmentName environmentName,
-            @Value("${hearing-event.disabled-in-dev}") final boolean hearingEventDisabledInDev,
-            @Value("${hearing-event.json.enabled}") final boolean hearingEventJsonEnabled
+            @Value("${hearing-event.disabled-in-dev}") final boolean hearingEventDisabledInDev
 ) {
         this.environmentName = environmentName;
         this.hearingEventDisabledInDev = hearingEventDisabledInDev;
-        this.hearingEventJsonEnabled = hearingEventJsonEnabled;
         log.info("Initialised AppProperties with environmentName:{}", environmentName);
         log.info("Initialised AppProperties with hearingEventDisabledInDev:{}", this.hearingEventDisabledInDev);
-        log.info("Initialised AppProperties with hearingEventJsonEnabled:{}", this.hearingEventJsonEnabled);
     }
 }

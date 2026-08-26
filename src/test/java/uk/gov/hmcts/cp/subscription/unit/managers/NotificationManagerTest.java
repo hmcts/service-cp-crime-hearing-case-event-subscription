@@ -9,12 +9,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.openapi.model.EventPayload;
-import uk.gov.hmcts.cp.openapi.model.HearingEventResponse;
 import uk.gov.hmcts.cp.subscription.managers.NotificationManager;
 import uk.gov.hmcts.cp.subscription.model.DocumentContent;
 import uk.gov.hmcts.cp.subscription.services.CallbackDeliveryService;
 import uk.gov.hmcts.cp.subscription.services.DocumentService;
-import uk.gov.hmcts.cp.subscription.services.HearingEventService;
 import uk.gov.hmcts.cp.subscription.services.NotificationService;
 import uk.gov.hmcts.cp.subscription.services.SubscriptionService;
 
@@ -44,9 +42,6 @@ class NotificationManagerTest {
 
     @Mock
     CallbackDeliveryService callbackDeliveryService;
-
-    @Mock
-    HearingEventService hearingEventService;
 
     @InjectMocks
     NotificationManager notificationManager;
@@ -85,18 +80,6 @@ class NotificationManagerTest {
         DocumentContent result = notificationManager.getDocumentContent(subscriptionId, documentId);
 
         assertThat(result).isEqualTo(content);
-    }
-
-    @Test
-    void getHearingEvent_should_delegate_to_hearing_event_service() {
-        UUID hearingEventId = UUID.randomUUID();
-        HearingEventResponse expected = HearingEventResponse.builder().build();
-        when(hearingEventService.getHearingEvent(subscriptionId, hearingEventId)).thenReturn(expected);
-
-        HearingEventResponse result = notificationManager.getHearingEvent(subscriptionId, hearingEventId);
-
-        assertThat(result).isEqualTo(expected);
-        verify(hearingEventService).getHearingEvent(subscriptionId, hearingEventId);
     }
 
     @Test

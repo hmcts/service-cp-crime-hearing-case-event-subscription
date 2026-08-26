@@ -51,7 +51,8 @@ class FlywayMigrationIntegrityTest {
             Map.entry("V1.012__document_mapping_event_type_to_fk.sql", "58202942229269db18fbe4a46e7c440b90ea068938bf920a21f8c45ada30dcea"),
             Map.entry("V1.013__add_hearing_event_payload.sql", "a4475a976df4514b86da79855ee6443ac79ebd361688cebf1f15183910e16d13"),
             Map.entry("V1.014__add_hearing_event_subscriptions.sql", "8019ef8e4a09b2c2e46f3acd615eb965bfeb17065b03aa8ed0b064bdb3e01b78"),
-            Map.entry("V1.015__add_document_mapping_created_at_index.sql", "2d0f1849266737e1cff3071b94fdf85368c809c73f880bc0dee6fa3bdfb03025")
+            Map.entry("V1.015__add_document_mapping_created_at_index.sql", "2d0f1849266737e1cff3071b94fdf85368c809c73f880bc0dee6fa3bdfb03025"),
+            Map.entry("V1.016__drop_hearing_event_tables.sql", "1707e824fcb191c542ab808bf2c6b74239584c675613b3195103f30f2b66ffc1")
     );
 
     @Test

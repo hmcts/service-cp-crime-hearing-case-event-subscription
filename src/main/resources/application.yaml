@@ -66,8 +66,6 @@ subscription:
 
 hearing-event:
   disabled-in-dev: ${HEARING_EVENT_DISABLED_IN_DEV:false}
-  json:
-    enabled: ${HEARING_EVENT_JSON_ENABLED:true}
 
 vault:
   enabled: ${AZURE_VAULT_ENABLED:false}
