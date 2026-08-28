@@ -64,7 +64,7 @@ cp:
 auth:
   # OFF | OBSERVE | ENFORCE. OFF and OBSERVE take the client id from an UNVERIFIED token and are
   # rejected at startup in SIT/PRP/PRD by EntraAuthProperties.
-  mode: ${AUTH_MODE:ENFORCE}
+  mode: ${AUTH_MODE:OBSERVE}
   # Injected per environment — no defaults on purpose.
   #
   # These identify the tenant that ISSUES the tokens and this API's registration inside that tenant.

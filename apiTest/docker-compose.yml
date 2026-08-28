@@ -56,9 +56,6 @@ services:
       MATERIAL_CLIENT_URL: http://wiremock:8080
       SERVICE_BUS_MAX_TRIES: 4
       AZURE_VAULT_ENABLED: false
-      # DEVELOPER, not DEV: this is a container started by the test harness, not the deployed
-      # dev environment. DEV is a deployed environment, where EntraAuthProperties rejects
-      # AUTH_MODE=OFF at startup — naming it DEV here would stop the service booting.
       ENVIRONMENT_NAME: DEVELOPER
       # These black-box tests run against a container with no route to Entra, so its JWKS cannot be
       # fetched and a real token cannot be verified. OFF takes the client id from the unverified

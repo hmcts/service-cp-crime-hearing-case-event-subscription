@@ -84,7 +84,7 @@ class EntraTokenValidatorTest {
 
     @Test
     @DisplayName("a well-formed app-only token is accepted and yields azp as the client id")
-    void acceptsValidAppOnlyToken() {
+    void acceptsValidAppOnlyToken() throws TokenValidationException {
         final ValidatedCaller caller = validator.validate(bearer(mint(claims -> { })));
 
         assertThat(caller.clientId()).isEqualTo(UUID.fromString(CLIENT_ID));
@@ -103,7 +103,7 @@ class EntraTokenValidatorTest {
 
     @Test
     @DisplayName("the client id is azp, never the service principal object id in oid/sub")
-    void usesAzpNotObjectIdAsClientId() {
+    void usesAzpNotObjectIdAsClientId() throws TokenValidationException {
         final ValidatedCaller caller = validator.validate(bearer(mint(claims -> { })));
 
         assertThat(caller.clientId()).isEqualTo(UUID.fromString(CLIENT_ID));
@@ -343,7 +343,7 @@ class EntraTokenValidatorTest {
 
     @Test
     @DisplayName("the unverified path returns azp without validating anything, and is flagged unverified")
-    void unverifiedExtractionDoesNotValidate() {
+    void unverifiedExtractionDoesNotValidate() throws TokenValidationException {
         // Signed by a key the validator does not trust, and expired — the enforcing path rejects it.
         final String forged = mint(claims -> claims.expirationTime(secondsFromNow(-99999)));
 

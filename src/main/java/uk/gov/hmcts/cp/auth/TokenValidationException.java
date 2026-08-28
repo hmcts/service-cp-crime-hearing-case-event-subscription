@@ -8,9 +8,13 @@ import lombok.Getter;
  * <p>Carries a coarse {@link Reason} rather than a detailed message: the reason is safe to log and
  * to expose in {@code WWW-Authenticate}, whereas token contents are not. The raw token is never
  * held by this exception.
+ *
+ * <p><b>Checked deliberately.</b> A rejected token is an expected outcome that a caller must turn
+ * into a response, not a bug. Declaring it makes that obligation part of every signature on the
+ * path, so a new call site cannot forget to handle it and quietly return 500 in place of 401.
  */
 @Getter
-public class TokenValidationException extends RuntimeException {
+public class TokenValidationException extends Exception {
 
     private static final long serialVersionUID = 1L;
 

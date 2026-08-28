@@ -45,7 +45,7 @@ public class AuthorizationPolicy {
 
     /** True when the path is reachable without a token — see the two lists above. */
     public boolean isExemptFromValidation(final String requestUri) {
-        final String path = normalise(requestUri);
+        final String path = stripTrailingSlash(requestUri);
         if (PUBLIC_EXACT_PATHS.contains(path) || INTERNAL_UNVALIDATED_PATHS.contains(path)) {
             return true;
         }
@@ -61,7 +61,7 @@ public class AuthorizationPolicy {
      * @throws TokenValidationException with {@code INSUFFICIENT_ROLE} when the caller holds no role
      *         this API recognises
      */
-    public void assertAuthorized(final ValidatedCaller caller) {
+    public void assertAuthorized(final ValidatedCaller caller) throws TokenValidationException {
         if (KNOWN_ROLES.stream().noneMatch(caller::hasRole)) {
             throw new TokenValidationException(TokenValidationException.Reason.INSUFFICIENT_ROLE);
         }
@@ -71,7 +71,7 @@ public class AuthorizationPolicy {
      * Strips a single trailing slash. Traversal and encoding are already normalised by the servlet
      * container before {@code getRequestURI()} reaches here.
      */
-    private static String normalise(final String requestUri) {
+    private static String stripTrailingSlash(final String requestUri) {
         if (requestUri == null) {
             return "";
         }

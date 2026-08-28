@@ -104,12 +104,8 @@ public class EntraTokenValidator {
         return verifier;
     }
 
-    /**
-     * Validates the {@code Authorization} header and returns the verified caller.
-     *
-     * @throws TokenValidationException with a coarse reason; never containing token material
-     */
-    public ValidatedCaller validate(final String authorizationHeader) {
+    /** Validates the {@code Authorization} header and returns the verified caller. */
+    public ValidatedCaller validate(final String authorizationHeader) throws TokenValidationException {
         final String token = extractBearerToken(authorizationHeader);
         final JWTClaimsSet claims = verify(token);
         return toCaller(claims);
@@ -122,7 +118,8 @@ public class EntraTokenValidator {
      *
      * <p>Every claim here is attacker-controlled. Never call this on an enforcement path.
      */
-    public UUID unverifiedClientIdForNonEnforcingModesOnly(final String authorizationHeader) {
+    public UUID unverifiedClientIdForNonEnforcingModesOnly(final String authorizationHeader)
+            throws TokenValidationException {
         final String token = extractBearerToken(authorizationHeader);
         try {
             return toClientId(SignedJWT.parse(token).getJWTClaimsSet());
@@ -131,7 +128,7 @@ public class EntraTokenValidator {
         }
     }
 
-    private static String extractBearerToken(final String authorizationHeader) {
+    private static String extractBearerToken(final String authorizationHeader) throws TokenValidationException {
         if (authorizationHeader == null || authorizationHeader.isBlank()) {
             throw new TokenValidationException(MISSING_AUTHORIZATION_HEADER);
         }
@@ -146,7 +143,7 @@ public class EntraTokenValidator {
         return token;
     }
 
-    private JWTClaimsSet verify(final String token) {
+    private JWTClaimsSet verify(final String token) throws TokenValidationException {
         final SignedJWT signedJwt;
         try {
             signedJwt = SignedJWT.parse(token);
@@ -162,7 +159,7 @@ public class EntraTokenValidator {
         }
     }
 
-    private static ValidatedCaller toCaller(final JWTClaimsSet claims) {
+    private static ValidatedCaller toCaller(final JWTClaimsSet claims) throws TokenValidationException {
         assertAppOnly(claims);
         final List<String> roles = readRoles(claims);
         if (roles.isEmpty()) {
@@ -175,7 +172,7 @@ public class EntraTokenValidator {
      * For an app-only token Entra sets {@code sub} to the service principal object id, so it equals
      * {@code oid}. For a delegated token {@code sub} identifies the user and the two differ.
      */
-    private static void assertAppOnly(final JWTClaimsSet claims) {
+    private static void assertAppOnly(final JWTClaimsSet claims) throws TokenValidationException {
         final String subject = claims.getSubject();
         final String objectId = claims.getClaim(CLAIM_OID) == null ? null : claims.getClaim(CLAIM_OID).toString();
         if (subject == null || !subject.equals(objectId)) {
@@ -183,7 +180,7 @@ public class EntraTokenValidator {
         }
     }
 
-    private static List<String> readRoles(final JWTClaimsSet claims) {
+    private static List<String> readRoles(final JWTClaimsSet claims) throws TokenValidationException {
         try {
             final List<String> roles = claims.getStringListClaim(CLAIM_ROLES);
             return roles == null ? List.of() : roles;
@@ -197,7 +194,7 @@ public class EntraTokenValidator {
      * It is not {@code oid}/{@code sub}, which is the service principal object id for that
      * application in the tenant.
      */
-    private static UUID toClientId(final JWTClaimsSet claims) {
+    private static UUID toClientId(final JWTClaimsSet claims) throws TokenValidationException {
         final String azp;
         try {
             azp = claims.getStringClaim(CLAIM_AZP);

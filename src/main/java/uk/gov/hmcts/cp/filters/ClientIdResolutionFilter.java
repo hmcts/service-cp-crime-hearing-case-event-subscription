@@ -90,7 +90,7 @@ public class ClientIdResolutionFilter extends OncePerRequestFilter {
         }
     }
 
-    private ValidatedCaller resolveCaller(final HttpServletRequest request) {
+    private ValidatedCaller resolveCaller(final HttpServletRequest request) throws TokenValidationException {
         final String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (authProperties.getMode() == AuthMode.OFF) {
@@ -117,7 +117,7 @@ public class ClientIdResolutionFilter extends OncePerRequestFilter {
      */
     private ValidatedCaller observeOnly(final HttpServletRequest request,
                                         final String authorizationHeader,
-                                        final TokenValidationException ex) {
+                                        final TokenValidationException ex) throws TokenValidationException {
         meterRegistry.counter(METRIC_OBSERVED_FAILURE, TAG_REASON, ex.getReason().name()).increment();
         final ValidatedCaller caller = unverifiedCaller(authorizationHeader);
         final String safeMethod = sanitizeForLog(request.getMethod());
@@ -127,7 +127,7 @@ public class ClientIdResolutionFilter extends OncePerRequestFilter {
         return caller;
     }
 
-    private ValidatedCaller unverifiedCaller(final String authorizationHeader) {
+    private ValidatedCaller unverifiedCaller(final String authorizationHeader) throws TokenValidationException {
         return new ValidatedCaller(
                 tokenValidator.unverifiedClientIdForNonEnforcingModesOnly(authorizationHeader),
                 java.util.List.of(),
