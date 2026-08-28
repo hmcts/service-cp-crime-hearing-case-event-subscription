@@ -1,171 +1,297 @@
 package uk.gov.hmcts.cp.filters;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.web.client.HttpClientErrorException;
-import uk.gov.hmcts.cp.subscription.config.SubscriptionClientConfig;
-import uk.gov.hmcts.cp.subscription.util.JwtTokenParser;
+import uk.gov.hmcts.cp.auth.AuthMode;
+import uk.gov.hmcts.cp.auth.AuthorizationPolicy;
+import uk.gov.hmcts.cp.auth.EntraAuthProperties;
+import uk.gov.hmcts.cp.auth.EntraTokenValidator;
+import uk.gov.hmcts.cp.auth.TokenValidationException;
+import uk.gov.hmcts.cp.auth.TokenValidationException.Reason;
+import uk.gov.hmcts.cp.auth.ValidatedCaller;
+import uk.gov.hmcts.cp.subscription.config.AppProperties;
+import uk.gov.hmcts.cp.subscription.config.EnvironmentName;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ClientIdResolutionFilterTest {
 
-    private static final String CLIENT_SUBSCRIPTIONS_PATH = "/client-subscriptions";
-    private static final String NOTIFICATIONS_PREFIX = "/notifications";
+    private static final String TOKEN_HEADER = "Bearer a.valid.token";
+    private static final UUID CLIENT_ID = UUID.fromString("a8791612-17bd-484b-9508-df66fad20037");
+    private static final String SUBSCRIPTIONS_PATH = "/client-subscriptions";
 
     @Mock
-    private HttpServletRequest httpRequest;
+    private EntraTokenValidator tokenValidator;
     @Mock
     private FilterChain filterChain;
-    @Mock
-    private JwtTokenParser jwtTokenParser;
 
-    private MockHttpServletResponse httpResponse;
-    private ClientIdResolutionFilter filter;
+    private MeterRegistry meterRegistry;
+    private MockHttpServletResponse response;
 
     @BeforeEach
     void setUp() {
-        httpResponse = new MockHttpServletResponse();
-        SubscriptionClientConfig configOauthEnabled = new SubscriptionClientConfig(true);
-        filter = new ClientIdResolutionFilter(jwtTokenParser, configOauthEnabled);
+        meterRegistry = new SimpleMeterRegistry();
+        response = new MockHttpServletResponse();
     }
 
+    @AfterEach
+    void clearMdc() {
+        MDC.clear();
+    }
+
+    // ---------------------------------------------------------------- deny by default
+
     @Test
-    void path_outside_client_subscriptions_should_not_be_filtered() throws Exception {
-        when(httpRequest.getRequestURI()).thenReturn("/actuator/health");
-        filter.doFilter(httpRequest, httpResponse, filterChain);
-        verify(filterChain).doFilter(httpRequest, httpResponse);
+    @DisplayName("public paths bypass the filter without a token")
+    void publicPathIsNotFiltered() throws Exception {
+        final MockHttpServletRequest request = get("/actuator/health");
+
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
         assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
     }
 
     @Test
-    void path_client_subscriptions_with_id_should_be_filtered() throws Exception {
-        UUID testClientUuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH + "/123");
-        when(jwtTokenParser.extractClientIdFromToken(httpRequest)).thenReturn(testClientUuid);
+    @DisplayName("the inbound notification endpoint bypasses the filter without a token — internal call")
+    void internalNotificationEndpointIsNotFiltered() throws Exception {
+        final MockHttpServletRequest request = post("/notifications");
 
-        filter.doFilter(httpRequest, httpResponse, filterChain);
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
 
-        verify(filterChain).doFilter(httpRequest, httpResponse);
+        verify(filterChain).doFilter(request, response);
+        verify(tokenValidator, never()).validate(any());
+        assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
+    }
+
+    // ---------------------------------------------------------------- enforce
+
+    @Test
+    void validTokenPopulatesClientIdAndProceeds() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        when(tokenValidator.validate(TOKEN_HEADER)).thenReturn(validCaller());
+
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertThat(meterRegistry.counter("cp.auth.success").count()).isEqualTo(1.0d);
+    }
+
+    @Test
+    @DisplayName("the client id is removed from MDC after the request, so it cannot leak between requests")
+    void clientIdIsClearedFromMdcAfterRequest() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        when(tokenValidator.validate(TOKEN_HEADER)).thenReturn(validCaller());
+
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
+
         assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
     }
 
     @Test
-    void path_notifications_should_not_be_filtered() throws Exception {
-        when(httpRequest.getRequestURI()).thenReturn(NOTIFICATIONS_PREFIX );
-        filter.doFilter(httpRequest, httpResponse, filterChain);
-        verify(filterChain).doFilter(httpRequest, httpResponse);
-        assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
+    void authenticationFailureIsRejectedWith401AndChallenge() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        when(tokenValidator.validate(TOKEN_HEADER))
+                .thenThrow(new TokenValidationException(Reason.INVALID_SIGNATURE));
+
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
+
+        verify(filterChain, never()).doFilter(any(), any());
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).contains("error=\"invalid_token\"");
+        assertThat(meterRegistry.counter("cp.auth.failure", "reason", "INVALID_SIGNATURE").count()).isEqualTo(1.0d);
     }
 
     @Test
-    void valid_bearer_with_azp_should_put_client_id_in_mdc_and_continue() throws Exception {
-        UUID testClientUuid = UUID.fromString("11111111-2222-3333-4444-555555555555");
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH);
-        when(jwtTokenParser.extractClientIdFromToken(httpRequest)).thenReturn(testClientUuid);
+    @DisplayName("an authorisation failure is 403, not 401")
+    void authorisationFailureIsRejectedWith403() throws Exception {
+        final MockHttpServletRequest request = post(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        when(tokenValidator.validate(TOKEN_HEADER))
+                .thenThrow(new TokenValidationException(Reason.INSUFFICIENT_ROLE));
 
-        filter.doFilter(httpRequest, httpResponse, filterChain);
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
 
-        verify(filterChain).doFilter(httpRequest, httpResponse);
-        assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).contains("insufficient_scope");
     }
 
     @Test
-    void no_client_id_in_token_should_return_401() throws Exception {
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH);
-        when(jwtTokenParser.extractClientIdFromToken(httpRequest))
-            .thenThrow(new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "Missing or invalid authorisation token"));
+    @DisplayName("a missing token gets a bare Bearer challenge per RFC 6750")
+    void missingTokenGetsBareChallenge() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        when(tokenValidator.validate(null))
+                .thenThrow(new TokenValidationException(Reason.MISSING_AUTHORIZATION_HEADER));
 
-        filter.doFilter(httpRequest, httpResponse, filterChain);
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
 
-        assertThat(httpResponse.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        verify(filterChain, never()).doFilter(httpRequest, httpResponse);
+        assertThat(response.getStatus()).isEqualTo(401);
+        assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).isEqualTo("Bearer");
     }
 
     @Test
-    void oauth_disabled_with_client_id_header_should_put_header_value_in_mdc() throws Exception {
-        UUID clientId = UUID.fromString("aaaaaaaa-bbbb-4ccc-dddd-eeeeeeeeeeee");
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH);
-        when(httpRequest.getHeader("X-Client-Id")).thenReturn(clientId.toString());
-        SubscriptionClientConfig configOauthDisabled = new SubscriptionClientConfig(false);
-        ClientIdResolutionFilter filterOauthDisabled = new ClientIdResolutionFilter(jwtTokenParser, configOauthDisabled);
+    @DisplayName("the rejection body never contains the token")
+    void rejectionBodyDoesNotContainToken() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        when(tokenValidator.validate(TOKEN_HEADER))
+                .thenThrow(new TokenValidationException(Reason.INVALID_CLAIMS));
 
-        filterOauthDisabled.doFilter(httpRequest, httpResponse, filterChain);
+        filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
 
-        verify(filterChain).doFilter(httpRequest, httpResponse);
-        assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
+        assertThat(response.getContentAsString()).doesNotContain("a.valid.token");
     }
 
     @Test
-    void oauth_disabled_with_header_should_resolve_different_clients_per_request() throws Exception {
-        UUID client1 = UUID.fromString("aaaaaaaa-1111-4444-8888-111111111111");
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH);
-        when(httpRequest.getHeader("X-Client-Id")).thenReturn(client1.toString());
-        SubscriptionClientConfig configOauthDisabled = new SubscriptionClientConfig(false);
-        ClientIdResolutionFilter filterOauthDisabled = new ClientIdResolutionFilter(jwtTokenParser, configOauthDisabled);
+    @DisplayName("CRLF in the request path cannot forge a log record")
+    void rejectionLogIsNotInjectable() throws Exception {
+        // CWE-117. The path is attacker-controlled and both rejection paths log it, so newlines must
+        // be stripped — otherwise a caller fabricates log lines of their own. CodeQL flagged the
+        // observe path; this covers the reject path, which fires on every 401.
+        final Logger filterLogger = (Logger) LoggerFactory.getLogger(ClientIdResolutionFilter.class);
+        final ListAppender<ILoggingEvent> captured = new ListAppender<>();
+        captured.start();
+        filterLogger.addAppender(captured);
+        try {
+            final MockHttpServletRequest request =
+                    new MockHttpServletRequest("GET", "/client-subscriptions\r\nWARN forged entry");
+            request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+            when(tokenValidator.validate(TOKEN_HEADER))
+                    .thenThrow(new TokenValidationException(Reason.INVALID_SIGNATURE));
 
-        filterOauthDisabled.doFilter(httpRequest, httpResponse, filterChain);
-        verify(filterChain).doFilter(httpRequest, httpResponse);
-        assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
+            filter(AuthMode.ENFORCE).doFilter(request, response, filterChain);
 
-        UUID client2 = UUID.fromString("bbbbbbbb-2222-4444-8888-222222222222");
-        when(httpRequest.getHeader("X-Client-Id")).thenReturn(client2.toString());
-        filterOauthDisabled.doFilter(httpRequest, httpResponse, filterChain);
-        verify(filterChain, times(2)).doFilter(httpRequest, httpResponse);
-        assertThat(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)).isNull();
+            assertThat(captured.list)
+                    .isNotEmpty()
+                    .allSatisfy(event -> assertThat(event.getFormattedMessage())
+                            .doesNotContain("\r")
+                            .doesNotContain("\n"));
+        } finally {
+            filterLogger.detachAppender(captured);
+        }
     }
 
     @Test
-    void oauth_disabled_with_null_header_should_return_401() throws Exception {
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH);
-        when(httpRequest.getHeader("X-Client-Id")).thenReturn(null);
-        SubscriptionClientConfig configOauthDisabled = new SubscriptionClientConfig(false);
-        ClientIdResolutionFilter filterOauthDisabled = new ClientIdResolutionFilter(jwtTokenParser, configOauthDisabled);
+    @DisplayName("an X-Client-Id header is ignored — identity comes only from the token")
+    void clientIdHeaderIsIgnored() throws Exception {
+        final UUID attackerSupplied = UUID.fromString("99999999-9999-9999-9999-999999999999");
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        request.addHeader("X-Client-Id", attackerSupplied.toString());
+        when(tokenValidator.validate(TOKEN_HEADER)).thenReturn(validCaller());
 
-        filterOauthDisabled.doFilter(httpRequest, httpResponse, filterChain);
+        final List<String> observed = new java.util.ArrayList<>();
+        filter(AuthMode.ENFORCE).doFilter(request, response, (req, res) ->
+                observed.add(MDC.get(ClientIdResolutionFilter.MDC_CLIENT_ID)));
 
-        assertThat(httpResponse.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        verify(filterChain, never()).doFilter(httpRequest, httpResponse);
+        assertThat(observed).containsExactly(CLIENT_ID.toString());
+    }
+
+    // ---------------------------------------------------------------- observe
+
+    @Test
+    @DisplayName("observe mode lets an invalid token through and records what would have been rejected")
+    void observeModeAllowsInvalidTokenAndCounts() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        when(tokenValidator.validate(TOKEN_HEADER))
+                .thenThrow(new TokenValidationException(Reason.INVALID_SIGNATURE));
+        when(tokenValidator.unverifiedClientIdForNonEnforcingModesOnly(TOKEN_HEADER)).thenReturn(CLIENT_ID);
+
+        filter(AuthMode.OBSERVE).doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(meterRegistry.counter("cp.auth.observed.failure", "reason", "INVALID_SIGNATURE").count())
+                .isEqualTo(1.0d);
     }
 
     @Test
-    void oauth_disabled_with_invalid_uuid_header_should_return_401() throws Exception {
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH);
-        when(httpRequest.getHeader("X-Client-Id")).thenReturn("not-a-valid-uuid");
-        SubscriptionClientConfig configOauthDisabled = new SubscriptionClientConfig(false);
-        ClientIdResolutionFilter filterOauthDisabled = new ClientIdResolutionFilter(jwtTokenParser, configOauthDisabled);
+    @DisplayName("observe mode still rejects a request with no token at all, matching previous behaviour")
+    void observeModeRejectsMissingToken() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        when(tokenValidator.validate(null)).thenThrow(new TokenValidationException(Reason.MISSING_AUTHORIZATION_HEADER));
+        when(tokenValidator.unverifiedClientIdForNonEnforcingModesOnly(null))
+                .thenThrow(new TokenValidationException(Reason.MISSING_AUTHORIZATION_HEADER));
 
-        filterOauthDisabled.doFilter(httpRequest, httpResponse, filterChain);
+        filter(AuthMode.OBSERVE).doFilter(request, response, filterChain);
 
-        assertThat(httpResponse.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        verify(filterChain, never()).doFilter(httpRequest, httpResponse);
+        verify(filterChain, never()).doFilter(any(), any());
+        assertThat(response.getStatus()).isEqualTo(401);
     }
 
+    // ---------------------------------------------------------------- off
+
     @Test
-    void unexpected_exception_in_filter_should_also_return_401() throws Exception {
-        when(httpRequest.getRequestURI()).thenReturn(CLIENT_SUBSCRIPTIONS_PATH);
-        when(jwtTokenParser.extractClientIdFromToken(httpRequest))
-            .thenThrow(new RuntimeException("unexpected failure"));
+    @DisplayName("off mode does not validate at all")
+    void offModeSkipsValidation() throws Exception {
+        final MockHttpServletRequest request = get(SUBSCRIPTIONS_PATH);
+        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER);
+        when(tokenValidator.unverifiedClientIdForNonEnforcingModesOnly(TOKEN_HEADER)).thenReturn(CLIENT_ID);
 
-        filter.doFilter(httpRequest, httpResponse, filterChain);
+        filter(AuthMode.OFF).doFilter(request, response, filterChain);
 
-        assertThat(httpResponse.getStatus()).isEqualTo(HttpServletResponse.SC_UNAUTHORIZED);
-        verify(filterChain, never()).doFilter(httpRequest, httpResponse);
+        verify(tokenValidator, never()).validate(any());
+        verify(filterChain).doFilter(request, response);
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private ClientIdResolutionFilter filter(final AuthMode mode) {
+        return new ClientIdResolutionFilter(
+                tokenValidator,
+                new AuthorizationPolicy(),
+                properties(mode),
+                meterRegistry);
+    }
+
+    private static EntraAuthProperties properties(final AuthMode mode) {
+        return new EntraAuthProperties(mode,
+                "e2995d11-9947-4e78-9de6-d44e0603518e",
+                "bff71afb-9651-445e-bec7-158796787815",
+                "", "", 60, 600,
+                new AppProperties(EnvironmentName.DEVELOPER, false));
+    }
+
+    private static ValidatedCaller validCaller() {
+        return new ValidatedCaller(CLIENT_ID, List.of(AuthorizationPolicy.ROLE_READ), true);
+    }
+
+    private static MockHttpServletRequest get(final String uri) {
+        return new MockHttpServletRequest("GET", uri);
+    }
+
+    private static MockHttpServletRequest post(final String uri) {
+        return new MockHttpServletRequest("POST", uri);
     }
 }

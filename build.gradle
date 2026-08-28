@@ -81,8 +81,8 @@ dependencies {
   // implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'
 
 
-  // Jwt token
-  implementation 'io.jsonwebtoken:jjwt:0.13.0'
+  // Jwt token validation — Entra access token validation (signature, JWKS, claims).
+  implementation 'com.nimbusds:nimbus-jose-jwt:10.0.2'
 
 
   // Artemis connectivity checker

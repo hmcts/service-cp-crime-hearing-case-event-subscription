@@ -1,0 +1,96 @@
+@startuml
+title Entra access token validation — main classes\nuk.gov.hmcts.cp
+
+hide circle
+skinparam wrapWidth 200
+skinparam nodesep 40
+skinparam ranksep 60
+skinparam class {
+  BackgroundColor #E8F5E9
+  BorderColor     #2E7D32
+  BackgroundColor<<filter>> #FFF8E1
+  BorderColor<<filter>>     #F9A825
+}
+
+package filters {
+  class ClientIdResolutionFilter <<filter>> {
+    Authenticates every request and
+    puts the caller's id in MDC
+  }
+}
+
+package auth {
+  class AuthorizationPolicy {
+    Which paths need a token,
+    and which roles count
+  }
+  class EntraTokenValidator {
+    Verifies the signature and
+    the claims; yields the caller
+  }
+  class EntraAuthProperties {
+    Tenant, audience, mode.
+    Fails startup if unsafe
+  }
+  class ValidatedCaller {
+    The verified caller:
+    clientId + roles
+  }
+  class TokenValidationException {
+    One coarse failure,
+    safe to log and return
+  }
+  enum Reason {
+    11 failure reasons.
+    Decides 401 vs 403
+  }
+  enum AuthMode {
+    OFF / OBSERVE / ENFORCE
+  }
+}
+
+ClientIdResolutionFilter --> AuthorizationPolicy : exempt path?\nknown role?
+ClientIdResolutionFilter --> EntraTokenValidator : validate
+ClientIdResolutionFilter --> EntraAuthProperties : mode
+ClientIdResolutionFilter ..> TokenValidationException : maps to\n401 / 403
+
+EntraTokenValidator --> EntraAuthProperties : issuer, audience,\ntenant, skew
+EntraTokenValidator ..> ValidatedCaller : returns
+EntraTokenValidator ..> TokenValidationException : throws
+AuthorizationPolicy ..> TokenValidationException : throws
+
+EntraAuthProperties --> AuthMode
+TokenValidationException +-- Reason
+
+legend right
+  |= | **Per request** |
+  | 1 | Path exempt? Infrastructure or internal — let it through |
+  | 2 | Verify the signature against the cached tenant JWKS |
+  | 3 | Check iss, aud, exp, nbf, tid, ver |
+  | 4 | Require app-only, then read azp as the caller |
+  | 5 | Require a role this API recognises |
+  | 6 | Put clientId in MDC — every query is scoped by it |
+  | — | Any failure: 401 authn / 403 authz, token never logged |
+endlegend
+
+note top of ClientIdResolutionFilter
+  Order = HIGHEST_PRECEDENCE + 5: after TracingFilter,
+  before the audit filter, so clientId is in MDC when
+  the audit event is built.
+  ..
+  Deny by default. Two exemption lists, matched exactly:
+  infrastructure (/actuator, /, /mock-callback) and
+  internal (POST /notifications).
+end note
+
+note bottom of EntraTokenValidator
+  RS256 pinned in the key selector, which consults only
+  the configured JWKS — so alg:none, alg confusion and
+  header-supplied keys (jku/jwk/x5u) cannot verify.
+  ..
+  App-only is inferred from sub == oid plus roles present
+  plus scp absent, never from idtyp — Entra omits that
+  claim by default.
+end note
+
+@enduml

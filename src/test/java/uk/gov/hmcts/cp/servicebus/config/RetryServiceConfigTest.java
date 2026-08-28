@@ -16,6 +16,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @ContextConfiguration(initializers = PostgresInitialise.class)
 @TestPropertySource(properties = {
+        "auth.mode=OFF",
         "vault.enabled=false",
         "service-bus.auto-start-processors=false",
         "service-bus.retry-durations=500ms,30s,5m,1h,4h"
