@@ -82,7 +82,7 @@ dependencies {
 
 
   // Jwt token validation — Entra access token validation (signature, JWKS, claims).
-  implementation 'com.nimbusds:nimbus-jose-jwt:10.0.2'
+  implementation 'com.nimbusds:nimbus-jose-jwt:10.9.1'
 
 
   // Artemis connectivity checker
