@@ -17,6 +17,14 @@ tasks.named('test') {
   group = "Verification"
   useJUnitPlatform()
 
+  // Gradle does not forward -D from the CLI into the forked test JVM. Without this passthrough the
+  // documented -Djunit.jupiter.conditions.deactivate flag is silently ignored and the manual
+  // EntraTokenValidationApiTest reports SKIPPED rather than running. Opt-in only, so CI is unaffected.
+  final String deactivate = System.getProperty('junit.jupiter.conditions.deactivate')
+  if (deactivate) {
+    systemProperty 'junit.jupiter.conditions.deactivate', deactivate
+  }
+
   testLogging {
     events "passed", "skipped", "failed"
     exceptionFormat = 'full'

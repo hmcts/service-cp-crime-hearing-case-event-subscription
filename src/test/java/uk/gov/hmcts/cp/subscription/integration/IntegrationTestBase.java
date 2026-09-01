@@ -1,10 +1,14 @@
 package uk.gov.hmcts.cp.subscription.integration;
 
+import com.nimbusds.jose.jwk.source.JWKSource;
+import com.nimbusds.jose.proc.SecurityContext;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.ContextConfiguration;
@@ -41,9 +45,30 @@ import java.util.UUID;
 @TestPropertySource(properties = {
         "vault.enabled=false",
         "service-bus.auto-start-processors=false",
-        "cp.audit.enabled=false"
+        "cp.audit.enabled=false",
+        // Integration tests run against real token validation, with the JWKS supplied in-process by
+        // JwtHelper. They must not run with enforcement off, or they would stop covering the
+        // authentication path entirely.
+        "auth.mode=ENFORCE",
+        "auth.tenant-id=" + JwtHelper.TENANT_ID,
+        "auth.audience=" + JwtHelper.AUDIENCE,
+        "spring.main.allow-bean-definition-overriding=true"
 })
 public abstract class IntegrationTestBase {
+
+    /**
+     * Serves the test signing key as the application's JWKS, replacing the bean that would otherwise
+     * fetch Entra's. This is the only thing stubbed — signature, issuer, audience, expiry, app-only
+     * and role checks all run for real.
+     */
+    @TestConfiguration
+    static class TestJwksConfiguration {
+
+        @Bean
+        JWKSource<SecurityContext> entraJwkSource() {
+            return JwtHelper.jwkSource();
+        }
+    }
 
     protected static final UUID MATERIAL_ID_TIMEOUT = UUID.fromString("11111111-1111-1111-1111-111111111112");
     protected static final String NOTIFICATIONS_URI = "/notifications";

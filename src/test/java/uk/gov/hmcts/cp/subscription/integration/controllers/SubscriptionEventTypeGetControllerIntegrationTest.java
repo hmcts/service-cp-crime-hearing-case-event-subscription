@@ -29,7 +29,8 @@ class SubscriptionEventTypeGetControllerIntegrationTest extends IntegrationTestB
                 .category("WARRANT")
                 .build();
 
-        MvcResult result = mockMvc.perform(get("/event-types"))
+        MvcResult result = mockMvc.perform(get("/event-types")
+                .header("Authorization", AUTHORIZATION_HEADER_VALUE))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andReturn();

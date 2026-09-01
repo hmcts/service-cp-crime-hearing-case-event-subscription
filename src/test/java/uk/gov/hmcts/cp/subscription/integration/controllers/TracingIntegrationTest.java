@@ -56,7 +56,7 @@ class TracingIntegrationTest extends IntegrationTestBase {
                 .thenThrow(new RuntimeException("Only get single correlationId"));
 
         MvcResult result = mockMvc.perform(get("/client-subscriptions/{id}", UUID.randomUUID())
-                        .header("X-Client-Id", TEST_CLIENT_ID.toString()))
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
                 .andReturn();
 
         assertThat(result.getResponse().getHeader(CORRELATION_ID_KEY)).isEqualTo(GENERATED_CORRELATION_ID);
@@ -66,7 +66,7 @@ class TracingIntegrationTest extends IntegrationTestBase {
     void incoming_correlation_id_should_be_used() throws Exception {
         MvcResult result = mockMvc.perform(get("/client-subscriptions/{id}", UUID.randomUUID())
                         .header(CORRELATION_ID_KEY, TEST_CORRELATION_ID)
-                        .header("X-Client-Id", "11111111-2222-3333-4444-555555555555"))
+                        .header("Authorization", AUTHORIZATION_HEADER_VALUE))
                 .andReturn();
 
         String responseCorrelationId = result.getResponse().getHeader(CORRELATION_ID_KEY);

@@ -20,6 +20,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ContextConfiguration(initializers = PostgresInitialise.class)
 @Slf4j
 @TestPropertySource(properties = {
+        "auth.mode=OFF",
         "vault.enabled=false"
 })
 class ActuatorInfoIntegrationTest {
