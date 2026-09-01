@@ -14,6 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Slf4j
 @SpringBootTest
 @TestPropertySource(properties = {
+        "auth.mode=OFF",
         "vault.enabled=false",
         "service-bus.auto-start-processors=false",
         "service-bus.max-tries=2",

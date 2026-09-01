@@ -56,7 +56,20 @@ services:
       MATERIAL_CLIENT_URL: http://wiremock:8080
       SERVICE_BUS_MAX_TRIES: 4
       AZURE_VAULT_ENABLED: false
-      ENVIRONMENT_NAME: DEV
+      ENVIRONMENT_NAME: DEVELOPER
+      # These black-box tests run against a container with no route to Entra, so its JWKS cannot be
+      # fetched and a real token cannot be verified. OFF takes the client id from the unverified
+      # token, which is what these tests present.
+      #
+      # Consequence: this tier provides NO authentication coverage. That lives in
+      # EntraTokenValidatorTest (the conformance suite) and the integration tests, which run with
+      # auth.mode=ENFORCE against an in-process JWKS. Do not treat a green apiTest run as evidence
+      # that token validation works.
+      #
+      # EntraAuthProperties rejects OFF at startup in SIT/PRP/PRD, so this cannot reach a deployed
+      # environment. To cover auth here instead, serve a JWKS from the wiremock container and point
+      # AUTH_JWKS_URI at it, minting matching tokens in the tests.
+      AUTH_MODE: "OFF"
 
     depends_on:
       - db

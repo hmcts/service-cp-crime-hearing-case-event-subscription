@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @SpringBootTest
 @ContextConfiguration(initializers = {PostgresInitialise.class, ServiceBusAvailabilityCheck.class})
 @TestPropertySource(properties = {
+        "auth.mode=OFF",
         "vault.enabled=false"
 })
 public class ServiceBusAdminIntegrationTest {

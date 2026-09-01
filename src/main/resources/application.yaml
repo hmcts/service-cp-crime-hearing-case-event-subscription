@@ -61,8 +61,30 @@ cp:
       - ${ARTEMIS_HOST_PRIMARY:localhost}
       - ${ARTEMIS_HOST_SECONDARY:localhost}
 
-subscription:
-  oauth-enabled: ${SUBSCRIPTION_OAUTH_ENABLED:true}
+auth:
+  # OFF | OBSERVE | ENFORCE. OFF and OBSERVE take the client id from an UNVERIFIED token and are
+  # rejected at startup in SIT/PRP/PRD by EntraAuthProperties.
+  mode: ${AUTH_MODE:OBSERVE}
+  # Injected per environment — no defaults on purpose.
+  #
+  # These identify the tenant that ISSUES the tokens and this API's registration inside that tenant.
+  # Where the service is hosted in a different Azure tenant from the one issuing tokens, these are
+  # the ISSUING tenant's values; the hosting tenant's directory id is the wrong answer.
+  #
+  # Leaving them blank makes EntraAuthProperties fail startup when mode is ENFORCE or OBSERVE. That
+  # is deliberate: a default would let a deployment that forgot to inject come up healthy on another
+  # environment's tenant and reject every token with INVALID_CLAIMS — a silent misconfiguration
+  # rather than a loud one. Run locally with AUTH_MODE=OFF, which skips the check.
+  #
+  # v2.0 tokens carry the bare client-ID GUID, not api://<...>. It must be this API's own
+  # registration: a token minted for a sibling CP API is correctly rejected on audience.
+  tenant-id: ${AUTH_TENANT_ID:}
+  audience: ${AUTH_AUDIENCE:}
+  # Derived from tenant-id when blank.
+  issuer: ${AUTH_ISSUER:}
+  jwks-uri: ${AUTH_JWKS_URI:}
+  clock-skew-seconds: ${AUTH_CLOCK_SKEW_SECONDS:60}
+  jwks-cache-ttl-seconds: ${AUTH_JWKS_CACHE_TTL_SECONDS:600}
 
 hearing-event:
   disabled-in-dev: ${HEARING_EVENT_DISABLED_IN_DEV:false}

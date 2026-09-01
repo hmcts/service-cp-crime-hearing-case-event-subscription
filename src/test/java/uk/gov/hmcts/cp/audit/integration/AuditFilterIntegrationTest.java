@@ -62,6 +62,8 @@ class AuditFilterIntegrationTest extends IntegrationTestBase {
 
     @Test
     void calling_audit_excluded_endpoint_should_not_send_audit_event() throws Exception {
+        // /notifications is an internal call from Progression / Hearing NOWs and is exempt from
+        // token validation, so no Authorization header is needed here.
         mockMvc.perform(post("/notifications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"eventType\":\"UNKNOWN_EVENT_TYPE\",\"eventId\":\"a4554152-10fb-44fe-a015-226f8d547c91\","
