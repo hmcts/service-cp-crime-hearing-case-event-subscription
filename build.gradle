@@ -76,6 +76,7 @@ dependencies {
 
   // --- Observability / Actuator / OTEL / Prometheus ---
   implementation 'org.springframework.boot:spring-boot-starter-actuator'
+  implementation 'io.micrometer:micrometer-registry-prometheus'
   implementation 'org.hibernate.validator:hibernate-validator'
   // Skip this till we get connection sorted and have some ideas about what we want from it
   // implementation 'org.springframework.boot:spring-boot-starter-opentelemetry'

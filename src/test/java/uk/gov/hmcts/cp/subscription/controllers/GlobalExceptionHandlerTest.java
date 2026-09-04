@@ -16,6 +16,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.http.HttpMethod;
 import uk.gov.hmcts.cp.openapi.model.ErrorResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +38,14 @@ class GlobalExceptionHandlerTest {
         EntityNotFoundException e2 = new EntityNotFoundException("Not found message", null);
         ResponseEntity<ErrorResponse> response2 = globalExceptionHandler.handleNotFoundException(e2);
         assertErrorFields(response2, NOT_FOUND, "not_found", "Not found message");
+    }
+
+    @Test
+    void no_resource_found_should_be_404_not_500() {
+        NoResourceFoundException e = new NoResourceFoundException(HttpMethod.GET, "/no-such-path", "no-such-path");
+        ResponseEntity<ErrorResponse> response = globalExceptionHandler.handleNoResourceFound(e);
+        assertErrorFields(response, NOT_FOUND, "not_found",
+                "No static resource no-such-path for request '/no-such-path'.");
     }
 
     @Test

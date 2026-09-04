@@ -15,6 +15,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.validation.FieldError;
 import uk.gov.hmcts.cp.openapi.model.ErrorResponse;
 
@@ -40,6 +41,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({EntityNotFoundException.class, NoHandlerFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFoundException(final Exception exception) {
         log.error("NotFoundException {}", exception.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse(ERROR_NOT_FOUND, exception.getMessage()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(final NoResourceFoundException exception) {
+        log.debug("No resource found for {}", exception.getResourcePath());
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(errorResponse(ERROR_NOT_FOUND, exception.getMessage()));
