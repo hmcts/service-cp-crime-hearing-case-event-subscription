@@ -1,0 +1,10 @@
+requests
+| where timestamp > ago(1d)
+| where name contains "hrds"
+| extend Subscription = tostring(customDimensions["Subscription Name"])
+| summarize Requests = count() by TimeGenerated = bin(timestamp, 1h), Subscription
+| render columnchart kind=stacked
+| extend Subscription = case(
+    Subscription == "a5482814-2338-4eb6-b100-8a59fc93baa5", "PRP",
+    Subscription == "6fe42d58-7037-45be-80da-3d05f0bb8c1e", "PROD",
+    Subscription)
